@@ -132,7 +132,11 @@ git add apps/explorer/priv/account/migrations/*add_identity_id_to_public_tag_sub
 git commit -m "feat(account): add identity_id FK to public tag submissions"
 ```
 
-### Task 2: One-shot backfill migration
+### Task 2: SKIPPED — encrypted email column blocks SQL backfill
+
+During execution, `account_identities.email` was found to be encrypted via Cloak (`Explorer.Encrypted.Binary`, stored as `bytea`). Postgres rejects `LOWER(bytea)`, so the raw-SQL backfill in the original plan is impossible. Per the brainstorming decision "orphan rows stay orphaned," this is acceptable: all historical anonymous rows simply fall into the orphan bucket and never appear under any user. The data shape and ownership model are unchanged — only the cardinality of "rows-that-could-have-been-attributed" goes from "the email-match subset" to "none." No no-op migration is committed; Task 2 is dropped from the work list.
+
+### Task 2 (ORIGINAL — superseded, kept for archival): One-shot backfill migration
 
 **Files:**
 - Create: `apps/explorer/priv/account/migrations/<ts+1>_backfill_public_tag_submissions_identity.exs`

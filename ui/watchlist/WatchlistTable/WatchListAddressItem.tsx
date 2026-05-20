@@ -59,7 +59,7 @@ const WatchListAddressItem = ({ item, isLoading }: { item: WatchlistAddress; isL
           <IconSvg name="tokens" boxSize={ 5 } isLoading={ isLoading } borderRadius="sm"/>
           <Skeleton loading={ isLoading } display="inline-flex">
             <span>{ `Tokens:${ nbsp }` + item.tokens_count + (item.tokens_overflow ? '+' : '') }</span>
-            <Text color="text.secondary">{ `${ nbsp }($${ BigNumber(item.tokens_fiat_value).toFormat(2) })` }</Text>
+            <Text color="text.secondary">{ `${ nbsp }($${ BigNumber(item.tokens_fiat_value || 0).toFormat(2) })` }</Text>
           </Skeleton>
         </HStack>
       ) }

@@ -142,3 +142,76 @@ test('edit modal opens with row tag name pre-filled', async({ render, mockApiRes
   // FormFieldText with floating label uses label not placeholder attribute; assert by input name
   await expect(page.locator('input[name="tag_name"]')).toHaveValue('My Custom Tag');
 });
+
+test('edit modal save sends PUT and closes dialog', async({ render, mockApiResponse, page }) => {
+  const items: Array<PublicTagApplicationRow> = [
+    { ...PUBLIC_TAG_APPLICATION_ROW, id: 1, status: 'pending', tag_name: 'Original Tag' },
+  ];
+
+  await mockApiResponse('admin:public_tag_applications_list', { items, next_page_params: null }, pathParams);
+  await mockApiResponse('admin:public_tag_application_update', { ...PUBLIC_TAG_APPLICATION_ROW, tag_name: 'Updated Tag' },
+    { pathParams: { chainId, id: '1' } });
+
+  const component = await render(<PublicTagApplicationsList/>);
+  await expect(component.getByRole('button', { name: 'Edit' }).first()).toBeVisible();
+  await component.getByRole('button', { name: 'Edit' }).first().click();
+  await expect(page.getByText('Edit tag request')).toBeVisible();
+
+  const tagInput = page.locator('input[name="tag_name"]');
+  await tagInput.fill('Updated Tag');
+
+  const putPromise = page.waitForRequest((req) => req.method() === 'PUT', { timeout: 5000 });
+  await page.getByRole('button', { name: 'Save' }).click();
+  await putPromise;
+
+  await expect(page.getByText('Edit tag request')).toBeHidden();
+});
+
+test('edit modal save error renders alert and keeps dialog open', async({ render, mockApiResponse, page }) => {
+  const items: Array<PublicTagApplicationRow> = [
+    { ...PUBLIC_TAG_APPLICATION_ROW, id: 1, status: 'pending', tag_name: 'Original Tag' },
+  ];
+
+  await mockApiResponse('admin:public_tag_applications_list', { items, next_page_params: null }, pathParams);
+  await mockApiResponse(
+    'admin:public_tag_application_update',
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    { message: 'tag_name: too long' } as any,
+    { pathParams: { chainId, id: '1' }, status: 422 },
+  );
+
+  const component = await render(<PublicTagApplicationsList/>);
+  await expect(component.getByRole('button', { name: 'Edit' }).first()).toBeVisible();
+  await component.getByRole('button', { name: 'Edit' }).first().click();
+  await expect(page.getByText('Edit tag request')).toBeVisible();
+
+  await page.getByRole('button', { name: 'Save' }).click();
+
+  await expect(page.getByRole('alert')).toBeVisible();
+  await expect(page.getByText('Edit tag request')).toBeVisible();
+});
+
+test('clearing filter back to All fires request without status param', async({ render, mockApiResponse, page }) => {
+  await mockApiResponse(
+    'admin:public_tag_applications_list',
+    generateListStub<'admin:public_tag_applications_list'>(PUBLIC_TAG_APPLICATION_ROW, 2, { next_page_params: null }),
+    pathParams,
+  );
+  await mockApiResponse(
+    'admin:public_tag_applications_list',
+    generateListStub<'admin:public_tag_applications_list'>(PUBLIC_TAG_APPLICATION_ROW, 1, { next_page_params: null }),
+    { ...pathParams, queryParams: { status: 'approved' } },
+  );
+
+  const component = await render(<PublicTagApplicationsList/>);
+  await expect(component.getByRole('button', { name: 'Approved' })).toBeVisible();
+  await component.getByRole('button', { name: 'Approved' }).click();
+
+  // Now click All to clear the filter
+  const noStatusReqPromise = page.waitForRequest(
+    (req) => !req.url().includes('status='),
+    { timeout: 5000 },
+  );
+  await component.getByRole('button', { name: 'All' }).click();
+  await noStatusReqPromise;
+});

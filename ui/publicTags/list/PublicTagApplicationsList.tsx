@@ -6,6 +6,7 @@ import type { PublicTagApplicationRow, PublicTagApplicationStatus } from 'types/
 import appConfig from 'configs/app';
 import { PUBLIC_TAG_APPLICATION_ROW } from 'stubs/publicTagSubmissions';
 import { generateListStub } from 'stubs/utils';
+import { Button } from 'toolkit/chakra/button';
 import { ACTION_BAR_HEIGHT_DESKTOP } from 'ui/shared/ActionBar';
 import DataListDisplay from 'ui/shared/DataListDisplay';
 import useQueryWithPages from 'ui/shared/pagination/useQueryWithPages';
@@ -20,7 +21,7 @@ const PublicTagApplicationsList = () => {
   const [ editItem, setEditItem ] = React.useState<PublicTagApplicationRow | null>(null);
   const [ statusFilter, setStatusFilter ] = React.useState<PublicTagApplicationStatus | undefined>(undefined);
 
-  const { data, isError, isPlaceholderData, pagination, onFilterChange } = useQueryWithPages({
+  const { data, isError, isPlaceholderData, pagination, onFilterChange, refetch } = useQueryWithPages({
     resourceName: 'admin:public_tag_applications_list',
     pathParams: { chainId: appConfig.chain.id },
     filters: statusFilter ? { status: statusFilter } : undefined,
@@ -99,6 +100,11 @@ const PublicTagApplicationsList = () => {
       >
         { content }
       </DataListDisplay>
+      { isError && (
+        <Button variant="outline" size="sm" onClick={ refetch } mt={ 3 }>
+          Retry
+        </Button>
+      ) }
       { isError !== true && data?.items.length === 0 && (
         <VStack mt={ 8 } gap={ 2 }>
           <Text color="text.secondary" textAlign="center">

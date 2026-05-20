@@ -1,3 +1,4 @@
+import { Box } from '@chakra-ui/react';
 import { useQueryClient } from '@tanstack/react-query';
 import React, { useCallback, useState } from 'react';
 import { FormProvider, useForm } from 'react-hook-form';
@@ -69,7 +70,11 @@ const PublicTagApplicationEditModal = ({ item, open, onOpenChange }: Props) => {
         <FormProvider { ...formApi }>
           <form onSubmit={ formApi.handleSubmit(onSubmit) }>
             <DialogBody>
-              { error && <p style={{ color: 'red', marginBottom: 8 }}>{ error }</p> }
+              { error && (
+                <Box role="alert" aria-live="assertive" color="red.500" mb={ 2 }>
+                  { error }
+                </Box>
+              ) }
               <FormFieldText<EditFormFields>
                 name="tag_name"
                 placeholder="Tag name"

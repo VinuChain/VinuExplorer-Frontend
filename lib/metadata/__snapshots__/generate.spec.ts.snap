@@ -8,9 +8,10 @@ exports[`generates correct metadata for: > dynamic route 1`] = `
   "opengraph": {
     "description": "",
     "imageUrl": "",
-    "title": "Blockscout transaction 0x12345 | Blockscout",
+    "title": "Blockscout transaction 0x12345 | VinuExplorer",
   },
-  "title": "Blockscout transaction 0x12345 | Blockscout",
+  "siteJsonLd": undefined,
+  "title": "Blockscout transaction 0x12345 | VinuExplorer",
 }
 `;
 
@@ -41,22 +42,24 @@ exports[`generates correct metadata for: > dynamic route with API data 1`] = `
   "opengraph": {
     "description": "",
     "imageUrl": "",
-    "title": "Blockscout USDT token details | Blockscout",
+    "title": "Blockscout USDT token details | VinuExplorer",
   },
-  "title": "Blockscout USDT token details | Blockscout",
+  "siteJsonLd": undefined,
+  "title": "Blockscout USDT token details | VinuExplorer",
 }
 `;
 
 exports[`generates correct metadata for: > static route 1`] = `
 {
   "canonical": "http://localhost:3000/txs",
-  "description": "Open-source block explorer by Blockscout. Search transactions, verify smart contracts, analyze addresses, and track network activity. Complete blockchain data and APIs for the Blockscout (Blockscout) Explorer network.",
+  "description": "VinuExplorer is the official explorer for VinuChain, the world's first determinably feeless EVM, L1.",
   "jsonLd": undefined,
   "opengraph": {
     "description": "",
     "imageUrl": "http://localhost:3000/static/og_image.png",
-    "title": "Blockscout transactions - Blockscout explorer | Blockscout",
+    "title": "Blockscout transactions - Blockscout explorer | VinuExplorer",
   },
-  "title": "Blockscout transactions - Blockscout explorer | Blockscout",
+  "siteJsonLd": undefined,
+  "title": "Blockscout transactions - Blockscout explorer | VinuExplorer",
 }
 `;

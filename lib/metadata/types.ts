@@ -35,6 +35,24 @@ export interface ProductSchema {
     };
 }
 
+export interface OrganizationSchema {
+    '@context': string;
+    '@type': 'Organization';
+    name: string;
+    url: string;
+    logo?: string;
+    sameAs?: Array<string>;
+}
+
+export interface WebSiteSchema {
+    '@context': string;
+    '@type': 'WebSite';
+    name: string;
+    url: string;
+}
+
+export type SiteSchema = OrganizationSchema | WebSiteSchema;
+
 export interface Metadata {
     title: string;
     description: string;
@@ -45,4 +63,5 @@ export interface Metadata {
     };
     canonical: string | undefined;
     jsonLd?: ProductSchema;
+    siteJsonLd?: Array<SiteSchema>;
 }

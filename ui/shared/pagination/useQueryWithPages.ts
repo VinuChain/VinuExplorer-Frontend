@@ -178,19 +178,27 @@ export default function useQueryWithPages<Resource extends PaginatedResourceName
   }, [ router, page, pageParams, scrollToTop, queryClient, resourceName ]);
 
   const resetPage = useCallback(({ chainValue }: { chainValue?: Array<string> } = {}) => {
-    queryClient.removeQueries({ queryKey: [ resourceName ] });
-
     scrollToTop();
     const nextRouterQuery = omit(router.query, [ 'next_page_params', 'page' ]);
     if (chainValue) {
       nextRouterQuery.chain_id = chainValue[0];
     }
+
+    // When the user is already on page 1 with no chain change, pushing to the
+    // identical URL with `shallow: true` can leave the router.push promise
+    // unresolved in production (Pages Router same-URL edge), so the refetch
+    // must happen directly instead of inside `.then(...)`.
+    if (page === 1 && !chainValue) {
+      refetch();
+      return;
+    }
+
+    queryClient.removeQueries({ queryKey: [ resourceName ] });
     router.push({ pathname: router.pathname, query: nextRouterQuery }, undefined, { shallow: true }).then(() => {
       queryClient.removeQueries({ queryKey: [ resourceName ] });
       setPage(1);
       setPageParams(INITIAL_PAGE_PARAMS);
       chainValue && setChainValue(chainValue);
-      page === 1 && !chainValue && refetch();
       window.setTimeout(() => {
         // FIXME after router is updated we still have inactive queries for previously visited page (e.g third), where we came from
         // so have to remove it but with some delay :)

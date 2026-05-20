@@ -376,15 +376,32 @@ describe('if there are multiple pages', () => {
     expect(result.current.data).toEqual(responses.page_filtered);
     expect(result.current.pagination.page).toBe(1);
     expect(fetchMock).toHaveBeenCalledTimes(2);
-    expect(mockRouterPush).toHaveBeenCalledTimes(1);
-    expect(mockRouterPush).toHaveBeenLastCalledWith(
-      {
-        pathname: '/blocks',
-        query: {},
-      },
-      undefined,
-      { shallow: true },
-    );
+    // On page 1 we refetch directly instead of pushing to the identical URL,
+    // because Next.js Pages Router can fail to resolve same-URL shallow pushes.
+    expect(mockRouterPush).not.toHaveBeenCalled();
+  });
+
+  it('refetches even when router.push to the same URL never resolves', async() => {
+    // Next.js Pages Router can fail to resolve router.push when the target URL
+    // is identical to the current one (no query change, shallow: true). The
+    // refresh button must still trigger a refetch in that case.
+    mockUseRouter.mockReturnValue({ ...router, pathname: '/blocks' });
+    mockRouterPush.mockImplementationOnce(() => new Promise(() => undefined));
+
+    fetchMock.once(JSON.stringify(responses.page_1), responseInit);
+    fetchMock.once(JSON.stringify(responses.page_filtered), responseInit);
+
+    const { result } = renderHook(() => useQueryWithPages(params), { wrapper });
+    await waitForApiResponse();
+
+    await act(async() => {
+      result.current.pagination.resetPage();
+    });
+    await waitForApiResponse();
+
+    expect(fetchMock).toHaveBeenCalledTimes(2);
+    expect(result.current.data).toEqual(responses.page_filtered);
+    expect(result.current.pagination.page).toBe(1);
   });
 
   it('keeps tab and filter query params when reset is called on the first page', async() => {
@@ -410,19 +427,9 @@ describe('if there are multiple pages', () => {
     await waitForApiResponse();
 
     expect(result.current.data).toEqual(responses.page_filtered);
-    expect(mockRouterPush).toHaveBeenCalledTimes(1);
-    expect(mockRouterPush).toHaveBeenLastCalledWith(
-      {
-        pathname: '/txs',
-        query: {
-          tab: 'pending',
-          filter: 'validated',
-          foo: 'bar',
-        },
-      },
-      undefined,
-      { shallow: true },
-    );
+    // On page 1 we refetch directly, so existing query params on the URL
+    // (`tab`, `filter`, `foo`) stay untouched and no router push is issued.
+    expect(mockRouterPush).not.toHaveBeenCalled();
   });
 
   it('when navigates between pages can scroll to custom element', async() => {

@@ -39,11 +39,9 @@ export interface SubmitRequestBody {
   };
 }
 
-export interface FormSubmitResultItem {
-  error: string | null;
-  payload: SubmitRequestBody;
-  submission?: PublicTagApplicationRow;
-}
+export type FormSubmitResultItem =
+  { status: 'ok'; payload: SubmitRequestBody; submission: PublicTagApplicationRow } |
+  { status: 'error'; payload: SubmitRequestBody; error: string };
 
 export type FormSubmitResult = Array<FormSubmitResultItem>;
 

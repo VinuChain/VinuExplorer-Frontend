@@ -78,14 +78,14 @@ const PublicTagsSubmitForm = ({ config, userInfo, onSubmitResult }: Props) => {
         })
         .then((result) => {
           const submission = result as PublicTagApplicationRow;
-          return { error: null, payload: body, submission };
+          return { status: 'ok' as const, payload: body, submission };
         })
         .catch((error: unknown) => {
           const errorObj = getErrorObj(error);
           const messageFromPayload = getErrorObjPayload<{ message?: string }>(errorObj)?.message;
           const messageFromError = errorObj && 'message' in errorObj && typeof errorObj.message === 'string' ? errorObj.message : undefined;
           const message = messageFromPayload || messageFromError || 'Something went wrong.';
-          return { error: message, payload: body };
+          return { status: 'error' as const, payload: body, error: message };
         });
 
       result.push(item);

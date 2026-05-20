@@ -41,6 +41,8 @@ export const tag3 = {
   },
 };
 
+import { PUBLIC_TAG_APPLICATION_ROW } from 'stubs/publicTagSubmissions';
+
 export const allSuccessResponses: Array<FormSubmitResultItem> = [
   address1,
   address2,
@@ -49,49 +51,58 @@ export const allSuccessResponses: Array<FormSubmitResultItem> = [
   address5,
 ]
   .map((address) => ([ tag1, tag2, tag3 ].map((tag) => ({
-    error: null,
+    status: 'ok' as const,
     payload: {
       ...baseFields,
       ...tag,
       address,
     },
+    submission: PUBLIC_TAG_APPLICATION_ROW,
   }))))
   .flat();
 
 export const mixedResponses: Array<FormSubmitResultItem> = [
   // address1
   {
-    error: null,
-    payload: { address: address1, ...tag1 },
+    status: 'ok' as const,
+    payload: { address: address1, ...tag1, ...baseFields },
+    submission: PUBLIC_TAG_APPLICATION_ROW,
   },
   {
+    status: 'error' as const,
+    payload: { address: address1, ...tag2, ...baseFields },
     error: 'Some error',
-    payload: { address: address1, ...tag2 },
   },
   {
+    status: 'error' as const,
+    payload: { address: address1, ...tag3, ...baseFields },
     error: 'Some error',
-    payload: { address: address1, ...tag3 },
   },
   // address2
   {
+    status: 'error' as const,
+    payload: { address: address2, ...tag2, ...baseFields },
     error: 'Some error',
-    payload: { address: address2, ...tag2 },
   },
   {
+    status: 'error' as const,
+    payload: { address: address2, ...tag3, ...baseFields },
     error: 'Some error',
-    payload: { address: address2, ...tag3 },
   },
   // address3
   {
+    status: 'error' as const,
+    payload: { address: address3, ...tag1, ...baseFields },
     error: 'Some error',
-    payload: { address: address3, ...tag1 },
   },
   {
+    status: 'error' as const,
+    payload: { address: address3, ...tag2, ...baseFields },
     error: 'Another nasty error',
-    payload: { address: address3, ...tag2 },
   },
   {
-    error: null,
-    payload: { address: address3, ...tag3 },
+    status: 'ok' as const,
+    payload: { address: address3, ...tag3, ...baseFields },
+    submission: PUBLIC_TAG_APPLICATION_ROW,
   },
-].map((item) => ({ ...item, payload: { ...item.payload, ...baseFields } }));
+];

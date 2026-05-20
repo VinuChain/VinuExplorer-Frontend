@@ -48,7 +48,7 @@ const PublicTagsSubmit = () => {
   const handleFormSubmitResult = React.useCallback(async(result: FormSubmitResult) => {
     setSubmitResult(result);
 
-    if (result.every((r) => r.error === null)) {
+    if (result.every((r) => r.status === 'ok')) {
       try {
         await queryClient.invalidateQueries({
           predicate: (q) => Array.isArray(q.queryKey) && q.queryKey[0] === 'admin:public_tag_applications_list',

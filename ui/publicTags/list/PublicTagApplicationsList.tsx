@@ -39,6 +39,10 @@ const PublicTagApplicationsList = () => {
     onFilterChange({ status });
   }, [ onFilterChange ]);
 
+  const handleRetry = React.useCallback(() => {
+    refetch();
+  }, [ refetch ]);
+
   const handleEdit = React.useCallback((item: PublicTagApplicationRow) => {
     setEditItem(item);
   }, []);
@@ -101,7 +105,7 @@ const PublicTagApplicationsList = () => {
         { content }
       </DataListDisplay>
       { isError && (
-        <Button variant="outline" size="sm" onClick={ refetch } mt={ 3 }>
+        <Button variant="outline" size="sm" onClick={ handleRetry } mt={ 3 }>
           Retry
         </Button>
       ) }

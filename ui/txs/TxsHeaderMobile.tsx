@@ -10,6 +10,7 @@ import ActionBar from 'ui/shared/ActionBar';
 import Pagination from 'ui/shared/pagination/Pagination';
 import Sort from 'ui/shared/sort/Sort';
 
+import TxsRefreshButton from './TxsRefreshButton';
 import { SORT_OPTIONS } from './useTxsSort';
 
 type Props = {
@@ -30,10 +31,6 @@ const TxsHeaderMobile = ({ filterComponent, sorting, setSorting, paginationProps
   const handleSortValueChange = React.useCallback(({ value }: { value: Array<string> }) => {
     setSorting?.(value[0] as TransactionsSortingValue);
   }, [ setSorting ]);
-
-  if (!filterComponent && !setSorting && !linkSlot && !showPagination) {
-    return null;
-  }
 
   return (
     <ActionBar className={ className }>
@@ -56,6 +53,7 @@ const TxsHeaderMobile = ({ filterComponent, sorting, setSorting, paginationProps
           size="xs"
           placeholder="Search by addresses, hash, method..."
         /> */ }
+        <TxsRefreshButton onClick={ paginationProps.resetPage } isLoading={ paginationProps.isLoading }/>
         { linkSlot }
       </HStack>
       { showPagination && <Pagination { ...paginationProps }/> }

@@ -61,7 +61,7 @@ const PublicTagApplicationsListItem = ({ item, isLoading, onEdit }: Props) => {
         <>
           <ListItemMobileGrid.Label isLoading={ isLoading }>&nbsp;</ListItemMobileGrid.Label>
           <ListItemMobileGrid.Value>
-            <button onClick={ handleEdit } style={{ cursor: 'pointer', textDecoration: 'underline' }}>Edit</button>
+            <button type="button" onClick={ handleEdit } style={{ cursor: 'pointer', textDecoration: 'underline' }}>Edit</button>
           </ListItemMobileGrid.Value>
         </>
       ) }

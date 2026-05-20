@@ -24,7 +24,9 @@ const PublicTagApplicationStatusBadge = ({ status, reason }: Props) => {
   if (status === 'rejected' && reason) {
     return (
       <Tooltip content={ reason }>
-        { badge }
+        <span tabIndex={ 0 } aria-label={ `Rejected: ${ reason }` } style={{ outline: 'none', display: 'inline-block' }}>
+          { badge }
+        </span>
       </Tooltip>
     );
   }

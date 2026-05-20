@@ -1,7 +1,7 @@
 import { Box, Text, VStack } from '@chakra-ui/react';
 import React from 'react';
 
-import type { PublicTagApplicationRow } from 'types/api/publicTagSubmissions';
+import type { PublicTagApplicationRow, PublicTagApplicationStatus } from 'types/api/publicTagSubmissions';
 
 import appConfig from 'configs/app';
 import { PUBLIC_TAG_APPLICATION_ROW } from 'stubs/publicTagSubmissions';
@@ -18,12 +18,12 @@ import PublicTagApplicationsTable from './PublicTagApplicationsTable';
 
 const PublicTagApplicationsList = () => {
   const [ editItem, setEditItem ] = React.useState<PublicTagApplicationRow | null>(null);
-  const [ statusFilter, setStatusFilter ] = React.useState<string | undefined>(undefined);
+  const [ statusFilter, setStatusFilter ] = React.useState<PublicTagApplicationStatus | undefined>(undefined);
 
   const { data, isError, isPlaceholderData, pagination, onFilterChange } = useQueryWithPages({
     resourceName: 'admin:public_tag_applications_list',
     pathParams: { chainId: appConfig.chain.id },
-    filters: statusFilter ? { status: statusFilter as 'pending' | 'approved' | 'rejected' } : undefined,
+    filters: statusFilter ? { status: statusFilter } : undefined,
     options: {
       placeholderData: generateListStub<'admin:public_tag_applications_list'>(
         PUBLIC_TAG_APPLICATION_ROW,
@@ -33,9 +33,9 @@ const PublicTagApplicationsList = () => {
     },
   });
 
-  const handleStatusChange = React.useCallback((status: string | undefined) => {
+  const handleStatusChange = React.useCallback((status: PublicTagApplicationStatus | undefined) => {
     setStatusFilter(status);
-    onFilterChange({ status: status as 'pending' | 'approved' | 'rejected' | undefined });
+    onFilterChange({ status });
   }, [ onFilterChange ]);
 
   const handleEdit = React.useCallback((item: PublicTagApplicationRow) => {

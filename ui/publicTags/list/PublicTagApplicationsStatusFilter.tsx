@@ -6,8 +6,8 @@ import type { PublicTagApplicationStatus } from 'types/api/publicTagSubmissions'
 import { Button } from 'toolkit/chakra/button';
 
 interface Props {
-  value?: string;
-  onChange: (value: string | undefined) => void;
+  value?: PublicTagApplicationStatus;
+  onChange: (value: PublicTagApplicationStatus | undefined) => void;
 }
 
 const STATUSES: Array<{ label: string; value: PublicTagApplicationStatus }> = [
@@ -18,8 +18,8 @@ const STATUSES: Array<{ label: string; value: PublicTagApplicationStatus }> = [
 
 interface StatusButtonProps {
   status: { label: string; value: PublicTagApplicationStatus };
-  activeValue?: string;
-  onChange: (value: string | undefined) => void;
+  activeValue?: PublicTagApplicationStatus;
+  onChange: (value: PublicTagApplicationStatus | undefined) => void;
 }
 
 const StatusButton = ({ status, activeValue, onChange }: StatusButtonProps) => {

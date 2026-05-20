@@ -83,7 +83,7 @@ const PublicTagApplicationEditModal = ({ item, open, onOpenChange }: Props) => {
               />
             </DialogBody>
             <DialogFooter>
-              <Button variant="outline" onClick={ handleClose }>Cancel</Button>
+              <Button type="button" variant="outline" onClick={ handleClose }>Cancel</Button>
               <Button
                 type="submit"
                 loading={ formApi.formState.isSubmitting }

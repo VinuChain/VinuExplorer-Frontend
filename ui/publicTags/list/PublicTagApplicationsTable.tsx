@@ -89,10 +89,8 @@ const PublicTagApplicationsTableItem = ({ item, isLoading, onEdit }: ItemProps) 
       </TableCell>
       { onEdit && (
         <TableCell verticalAlign="middle">
-          { item.status === 'pending' && (
-            <Skeleton loading={ isLoading }>
-              <button type="button" onClick={ handleEdit } style={{ cursor: 'pointer', textDecoration: 'underline' }}>Edit</button>
-            </Skeleton>
+          { !isLoading && item.status === 'pending' && (
+            <button type="button" onClick={ handleEdit } style={{ cursor: 'pointer', textDecoration: 'underline' }}>Edit</button>
           ) }
         </TableCell>
       ) }

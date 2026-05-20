@@ -1,9 +1,11 @@
 import { Box, Text, VStack } from '@chakra-ui/react';
+import { useRouter } from 'next/router';
 import React from 'react';
 
 import type { PublicTagApplicationRow, PublicTagApplicationStatus } from 'types/api/publicTagSubmissions';
 
 import appConfig from 'configs/app';
+import getQueryParamString from 'lib/router/getQueryParamString';
 import { PUBLIC_TAG_APPLICATION_ROW } from 'stubs/publicTagSubmissions';
 import { generateListStub } from 'stubs/utils';
 import { Button } from 'toolkit/chakra/button';
@@ -17,9 +19,16 @@ import PublicTagApplicationsListItem from './PublicTagApplicationsListItem';
 import PublicTagApplicationsStatusFilter from './PublicTagApplicationsStatusFilter';
 import PublicTagApplicationsTable from './PublicTagApplicationsTable';
 
+const parseStatusParam = (s: string): PublicTagApplicationStatus | undefined => {
+  return s === 'pending' || s === 'approved' || s === 'rejected' ? s : undefined;
+};
+
 const PublicTagApplicationsList = () => {
+  const router = useRouter();
   const [ editItem, setEditItem ] = React.useState<PublicTagApplicationRow | null>(null);
-  const [ statusFilter, setStatusFilter ] = React.useState<PublicTagApplicationStatus | undefined>(undefined);
+  const [ statusFilter, setStatusFilter ] = React.useState<PublicTagApplicationStatus | undefined>(
+    () => parseStatusParam(getQueryParamString(router.query.status)),
+  );
 
   const { data, isError, isPlaceholderData, pagination, onFilterChange, refetch } = useQueryWithPages({
     resourceName: 'admin:public_tag_applications_list',
@@ -87,15 +96,18 @@ const PublicTagApplicationsList = () => {
     />
   );
 
-  const actionBar = (
+  const actionBar = pagination.isVisible ? (
     <StickyPaginationWithText
-      text={ filterElement }
+      text={ null }
       pagination={ pagination }
     />
-  );
+  ) : null;
 
   return (
     <>
+      <Box mb={ 4 }>
+        { filterElement }
+      </Box>
       <DataListDisplay
         isError={ isError }
         itemsNum={ data?.items.length }

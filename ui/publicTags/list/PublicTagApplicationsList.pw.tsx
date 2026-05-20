@@ -191,6 +191,33 @@ test('edit modal save error renders alert and keeps dialog open', async({ render
   await expect(page.getByText('Edit tag request')).toBeVisible();
 });
 
+test('edit modal PUT body wraps fields in submission envelope with tagType', async({ render, mockApiResponse, page }) => {
+  const items: Array<PublicTagApplicationRow> = [
+    { ...PUBLIC_TAG_APPLICATION_ROW, id: 1, status: 'pending', tag_name: 'Original Tag', tag_type: 'name' },
+  ];
+
+  await mockApiResponse('admin:public_tag_applications_list', { items, next_page_params: null }, pathParams);
+  await mockApiResponse('admin:public_tag_application_update', { ...PUBLIC_TAG_APPLICATION_ROW, tag_name: 'Updated Tag' },
+    { pathParams: { chainId, id: '1' } });
+
+  const component = await render(<PublicTagApplicationsList/>);
+  await expect(component.getByRole('button', { name: 'Edit' }).first()).toBeVisible();
+  await component.getByRole('button', { name: 'Edit' }).first().click();
+  await expect(page.getByText('Edit tag request')).toBeVisible();
+
+  const tagInput = page.locator('input[name="tag_name"]');
+  await tagInput.fill('Updated Tag');
+
+  const putPromise = page.waitForRequest((req) => req.method() === 'PUT', { timeout: 5000 });
+  await page.getByRole('button', { name: 'Save' }).click();
+  const putReq = await putPromise;
+
+  const body = putReq.postDataJSON() as { submission: { name: string; tagType: string; description: string } };
+  expect(body.submission.name).toBe('Updated Tag');
+  expect(body.submission.tagType).toBe('name');
+  expect('description' in body.submission).toBe(true);
+});
+
 test('clearing filter back to All fires request without status param', async({ render, mockApiResponse, page }) => {
   await mockApiResponse(
     'admin:public_tag_applications_list',

@@ -57,7 +57,7 @@ const PublicTagApplicationsListItem = ({ item, isLoading, onEdit }: Props) => {
         />
       </ListItemMobileGrid.Value>
 
-      { onEdit && item.status === 'pending' && (
+      { onEdit && !isLoading && item.status === 'pending' && (
         <>
           <ListItemMobileGrid.Label isLoading={ isLoading }>&nbsp;</ListItemMobileGrid.Label>
           <ListItemMobileGrid.Value>

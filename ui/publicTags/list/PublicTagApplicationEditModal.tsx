@@ -46,7 +46,13 @@ const PublicTagApplicationEditModal = ({ item, open, onOpenChange }: Props) => {
         pathParams: { chainId: appConfig.chain.id, id: String(item.id) },
         fetchParams: {
           method: 'PUT',
-          body: data as unknown as Record<string, unknown>,
+          body: {
+            submission: {
+              name: data.tag_name,
+              tagType: item.tag_type,
+              description: data.description,
+            },
+          } as unknown as Record<string, unknown>,
         },
       });
       await queryClient.invalidateQueries({
@@ -60,7 +66,7 @@ const PublicTagApplicationEditModal = ({ item, open, onOpenChange }: Props) => {
         'Failed to update tag request.';
       setError(msg);
     }
-  }, [ apiFetch, item.id, onOpenChange, queryClient ]);
+  }, [ apiFetch, item.id, item.tag_type, onOpenChange, queryClient ]);
 
   return (
     <DialogRoot open={ open } onOpenChange={ onOpenChange } size={{ lgDown: 'full', lg: 'md' }}>

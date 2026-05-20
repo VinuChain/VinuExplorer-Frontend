@@ -387,6 +387,44 @@ describe('if there are multiple pages', () => {
     );
   });
 
+  it('keeps tab and filter query params when reset is called on the first page', async() => {
+    mockUseRouter.mockReturnValue({
+      ...router,
+      pathname: '/txs',
+      query: {
+        tab: 'pending',
+        filter: 'validated',
+        foo: 'bar',
+      },
+    });
+
+    fetchMock.once(JSON.stringify(responses.page_1), responseInit);
+    fetchMock.once(JSON.stringify(responses.page_filtered), responseInit);
+
+    const { result } = renderHook(() => useQueryWithPages(params), { wrapper });
+    await waitForApiResponse();
+
+    await act(async() => {
+      result.current.pagination.resetPage();
+    });
+    await waitForApiResponse();
+
+    expect(result.current.data).toEqual(responses.page_filtered);
+    expect(mockRouterPush).toHaveBeenCalledTimes(1);
+    expect(mockRouterPush).toHaveBeenLastCalledWith(
+      {
+        pathname: '/txs',
+        query: {
+          tab: 'pending',
+          filter: 'validated',
+          foo: 'bar',
+        },
+      },
+      undefined,
+      { shallow: true },
+    );
+  });
+
   it('when navigates between pages can scroll to custom element', async() => {
     const scrollRef = {
       current: {

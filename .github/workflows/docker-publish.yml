@@ -40,14 +40,14 @@ jobs:
 
       - name: Trigger backend deployment
         if: success()
-        continue-on-error: true
         run: |
           if [ -z "$GH_TOKEN" ]; then
-            echo "BACKEND_DEPLOY_TOKEN secret not set — skipping backend trigger"
-            exit 0
+            echo "BACKEND_DEPLOY_TOKEN secret not set; cannot trigger backend deployment"
+            exit 1
           fi
           gh workflow run deploy.yml \
             --repo VinuChain/vinuexplorer-backend \
-            --ref master
+            --ref master \
+            -f frontend_image_tag="$SHORT_SHA"
         env:
           GH_TOKEN: ${{ secrets.BACKEND_DEPLOY_TOKEN }}

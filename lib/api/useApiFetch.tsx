@@ -6,13 +6,12 @@ import type { CsrfData } from 'types/client/account';
 import type { ExternalChainExtended } from 'types/externalChains';
 
 import isBodyAllowed from 'lib/api/isBodyAllowed';
-import isNeedProxy from 'lib/api/isNeedProxy';
 import { getResourceKey } from 'lib/api/useApiQuery';
 import * as cookies from 'lib/cookies';
 import type { Params as FetchParams } from 'lib/hooks/useFetch';
 import useFetch from 'lib/hooks/useFetch';
 
-import buildUrl from './buildUrl';
+import buildUrl, { shouldProxyResource } from './buildUrl';
 import getResourceParams from './getResourceParams';
 import type { ResourceName, ResourcePathParams } from './resources';
 
@@ -42,9 +41,11 @@ export default function useApiFetch() {
     const url = buildUrl(resourceName, pathParams, queryParams, undefined, chain);
     const withBody = isBodyAllowed(fetchParams?.method);
     const usesSessionAuth = apiName === 'general' || resource.sessionAuth;
+    const usesApiToken = [ 'admin', 'contractInfo' ].includes(apiName) && !resource.sessionAuth;
+    const usesProxy = shouldProxyResource(api.endpoint, resource);
     const headers = pickBy({
-      'x-endpoint': isNeedProxy() ? api.endpoint : undefined,
-      Authorization: [ 'admin', 'contractInfo' ].includes(apiName) ? apiToken : undefined,
+      'x-endpoint': usesProxy ? api.endpoint : undefined,
+      Authorization: usesApiToken ? apiToken : undefined,
       ...(usesSessionAuth ? {
         'api-v2-temp-token': apiTempToken,
         'show-scam-tokens': showScamTokens ? 'true' : undefined,

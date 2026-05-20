@@ -30,6 +30,17 @@ const PublicTagApplicationsList = () => {
     () => parseStatusParam(getQueryParamString(router.query.status)),
   );
 
+  // Statically optimized Next.js pages start with empty router.query and populate it
+  // once router.isReady flips to true. Re-sync statusFilter from the URL then, so deep
+  // links like ?status=approved are honored on the first fetch.
+  React.useEffect(() => {
+    if (!router.isReady) {
+      return;
+    }
+    const next = parseStatusParam(getQueryParamString(router.query.status));
+    setStatusFilter((current) => (current === next ? current : next));
+  }, [ router.isReady, router.query.status ]);
+
   const { data, isError, isPlaceholderData, pagination, onFilterChange, refetch } = useQueryWithPages({
     resourceName: 'admin:public_tag_applications_list',
     pathParams: { chainId: appConfig.chain.id },

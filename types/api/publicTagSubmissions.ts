@@ -18,7 +18,3 @@ export interface PublicTagApplicationsResponse {
   items: Array<PublicTagApplicationRow>;
   next_page_params: { items_count: number; page_number: number } | null;
 }
-
-export type AdminApiPaginationFilters = {
-  status?: PublicTagApplicationStatus;
-};

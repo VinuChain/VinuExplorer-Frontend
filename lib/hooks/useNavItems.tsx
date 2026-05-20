@@ -85,7 +85,7 @@ export default function useNavItems(): ReturnType {
        isActive: pathname === '/verified-contracts',
      };
     const nameLookup = config.features.nameServices.isEnabled ? {
-      text: 'Name services lookup',
+      text: 'VinuChain Name Service (VNS)',
       nextRoute: { pathname: '/name-services' as const },
       icon: 'name_services',
       isActive: pathname.startsWith('/name-services'),

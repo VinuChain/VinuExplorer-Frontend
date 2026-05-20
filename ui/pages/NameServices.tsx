@@ -19,7 +19,7 @@ const NameServices = () => {
   return (
     <>
       <PageTitle
-        title={ config.meta.seo.enhancedDataEnabled ? `${ config.chain.name } name services` : 'Name services lookup' }
+        title={ config.meta.seo.enhancedDataEnabled ? `${ config.chain.name } — VinuChain Name Service (VNS)` : 'VinuChain Name Service (VNS)' }
         withTextAd
       />
       <RoutedTabs tabs={ tabs }/>

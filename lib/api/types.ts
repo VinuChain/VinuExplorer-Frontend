@@ -9,4 +9,5 @@ export interface ApiResource {
   filterFields?: Array<string>;
   paginated?: boolean;
   headers?: RequestInit['headers'];
+  sessionAuth?: boolean;
 }

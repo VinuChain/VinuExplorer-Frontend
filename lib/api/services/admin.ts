@@ -7,16 +7,19 @@ export const ADMIN_API_RESOURCES = {
   public_tag_application: {
     path: '/api/v1/chains/:chainId/metadata-submissions/tag',
     pathParams: [ 'chainId' as const ],
+    sessionAuth: true,
   },
   public_tag_application_update: {
     path: '/api/v1/chains/:chainId/metadata-submissions/tag/:id',
     pathParams: [ 'chainId' as const, 'id' as const ],
+    sessionAuth: true,
   },
   public_tag_applications_list: {
     path: '/api/v1/chains/:chainId/metadata-submissions/tag',
     pathParams: [ 'chainId' as const ],
     filterFields: [ 'status' as const ],
     paginated: true,
+    sessionAuth: true,
   },
   token_info_applications_config: {
     path: '/api/v1/chains/:chainId/token-info-submissions/selectors',

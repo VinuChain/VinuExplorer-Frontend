@@ -126,7 +126,7 @@ export default function useQueryWithPages<Resource extends PaginatedResourceName
     },
     chain: selectedChain,
   });
-  const { data } = queryResult;
+  const { data, refetch } = queryResult;
   const nextPageParams = getNextPageParams(data);
 
   React.useEffect(() => {
@@ -190,13 +190,14 @@ export default function useQueryWithPages<Resource extends PaginatedResourceName
       setPage(1);
       setPageParams(INITIAL_PAGE_PARAMS);
       chainValue && setChainValue(chainValue);
+      page === 1 && !chainValue && refetch();
       window.setTimeout(() => {
         // FIXME after router is updated we still have inactive queries for previously visited page (e.g third), where we came from
         // so have to remove it but with some delay :)
         queryClient.removeQueries({ queryKey: [ resourceName ], type: 'inactive' });
       }, 100);
     });
-  }, [ queryClient, resourceName, router, scrollToTop ]);
+  }, [ page, queryClient, refetch, resourceName, router, scrollToTop ]);
 
   const onFilterChange = useCallback(<R extends PaginatedResourceName = Resource>(newFilters: PaginationFilters<R> | undefined) => {
     const { resource } = getResourceParams(resourceName, selectedChain);

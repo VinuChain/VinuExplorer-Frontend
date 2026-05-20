@@ -41,10 +41,11 @@ export default function useApiFetch() {
     const { api, apiName, resource } = getResourceParams(resourceName, chain);
     const url = buildUrl(resourceName, pathParams, queryParams, undefined, chain);
     const withBody = isBodyAllowed(fetchParams?.method);
+    const usesSessionAuth = apiName === 'general' || resource.sessionAuth;
     const headers = pickBy({
       'x-endpoint': isNeedProxy() ? api.endpoint : undefined,
       Authorization: [ 'admin', 'contractInfo' ].includes(apiName) ? apiToken : undefined,
-      ...(apiName === 'general' ? {
+      ...(usesSessionAuth ? {
         'api-v2-temp-token': apiTempToken,
         'show-scam-tokens': showScamTokens ? 'true' : undefined,
         'x-csrf-token': withBody && csrfToken ? csrfToken : undefined,
@@ -74,7 +75,7 @@ export default function useApiFetch() {
         // Considering all of the above, we use:
         //   -  The "same-origin" option for all core API requests
         //   -  The "omit" option for all other requests
-        credentials: apiName === 'general' ? 'same-origin' : 'omit',
+        credentials: usesSessionAuth ? 'same-origin' : 'omit',
         headers,
         ...(fetchParams ? omit(fetchParams, [ 'headers' ]) : {}),
       },

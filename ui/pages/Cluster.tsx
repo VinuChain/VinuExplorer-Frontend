@@ -3,24 +3,31 @@ import React from 'react';
 
 import useApiQuery from 'lib/api/useApiQuery';
 import getQueryParamString from 'lib/router/getQueryParamString';
+import { tryDecodeVnsName } from 'lib/vns/encodeVnsName';
+import { isValidClusterName } from 'lib/vns/isValidVnsName';
 import ClusterDetails from 'ui/cluster/ClusterDetails';
 import TextAd from 'ui/shared/ad/TextAd';
 import PageTitle from 'ui/shared/Page/PageTitle';
 
 const Cluster = () => {
   const router = useRouter();
-  const encodedClusterName = getQueryParamString(router.query.name);
-  const clusterName = decodeURIComponent(encodedClusterName || '');
+  const rawClusterName = getQueryParamString(router.query.name);
+  const decodedClusterName = tryDecodeVnsName(rawClusterName);
+  const isValid = isValidClusterName(decodedClusterName);
+  const clusterName = isValid ? decodedClusterName : '';
 
   const clusterQuery = useApiQuery('clusters:get_cluster_by_name', {
     queryParams: {
       input: JSON.stringify({ name: clusterName }),
     },
+    queryOptions: {
+      enabled: router.isReady && isValid,
+    },
   });
 
   const clusterData = clusterQuery.data?.result?.data;
 
-  const isLoading = clusterQuery.isLoading;
+  const isLoading = !router.isReady || clusterQuery.isLoading;
 
   return (
     <>

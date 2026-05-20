@@ -6,7 +6,6 @@ import type { PublicTagApplicationRow } from 'types/api/publicTagSubmissions';
 
 import appConfig from 'configs/app';
 import useApiFetch from 'lib/api/useApiFetch';
-import { getResourceKey } from 'lib/api/useApiQuery';
 import getErrorObj from 'lib/errors/getErrorObj';
 import { Button } from 'toolkit/chakra/button';
 import { DialogBody, DialogCloseTrigger, DialogContent, DialogFooter, DialogHeader, DialogRoot } from 'toolkit/chakra/dialog';
@@ -50,9 +49,7 @@ const PublicTagApplicationEditModal = ({ item, open, onOpenChange }: Props) => {
         },
       });
       await queryClient.invalidateQueries({
-        queryKey: getResourceKey('admin:public_tag_applications_list', {
-          pathParams: { chainId: appConfig.chain.id },
-        }),
+        predicate: (q) => Array.isArray(q.queryKey) && q.queryKey[0] === 'admin:public_tag_applications_list',
       });
       onOpenChange({ open: false });
     } catch (err: unknown) {

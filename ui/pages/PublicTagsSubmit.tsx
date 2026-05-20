@@ -7,12 +7,13 @@ import type { PublicTagType } from 'types/api/addressMetadata';
 import type { FormSubmitResult } from 'ui/publicTags/submit/types';
 
 import appConfig from 'configs/app';
-import useApiQuery, { getResourceKey } from 'lib/api/useApiQuery';
+import useApiQuery from 'lib/api/useApiQuery';
 import { ContentLoader } from 'toolkit/components/loaders/ContentLoader';
 import RoutedTabs from 'toolkit/components/RoutedTabs/RoutedTabs';
 import PublicTagApplicationsList from 'ui/publicTags/list/PublicTagApplicationsList';
 import PublicTagsSubmitForm from 'ui/publicTags/submit/PublicTagsSubmitForm';
 import PublicTagsSubmitResult from 'ui/publicTags/submit/PublicTagsSubmitResult';
+import AccountPageDescription from 'ui/shared/AccountPageDescription';
 import PageTitle from 'ui/shared/Page/PageTitle';
 import useProfileQuery from 'ui/snippets/auth/useProfileQuery';
 import useRedirectForInvalidAuthToken from 'ui/snippets/auth/useRedirectForInvalidAuthToken';
@@ -48,11 +49,11 @@ const PublicTagsSubmit = () => {
     setSubmitResult(result);
 
     if (result.every((r) => r.error === null)) {
-      await queryClient.invalidateQueries({
-        queryKey: getResourceKey('admin:public_tag_applications_list', {
-          pathParams: { chainId: appConfig.chain.id },
-        }),
-      });
+      try {
+        await queryClient.invalidateQueries({
+          predicate: (q) => Array.isArray(q.queryKey) && q.queryKey[0] === 'admin:public_tag_applications_list',
+        });
+      } catch { /* non-fatal — list query refetches on tab mount anyway */ }
       router.push(
         { pathname: '/public-tags/submit', query: { tab: 'my-requests' } },
         undefined,
@@ -89,6 +90,15 @@ const PublicTagsSubmit = () => {
       <>
         <PageTitle title="Request a public tag/label"/>
         <ContentLoader/>
+      </>
+    );
+  }
+
+  if (!profileQuery.data) {
+    return (
+      <>
+        <PageTitle title="Request a public tag/label"/>
+        <AccountPageDescription>Please sign in to submit a public tag/label request and see your prior submissions.</AccountPageDescription>
       </>
     );
   }

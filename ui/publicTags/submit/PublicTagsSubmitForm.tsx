@@ -7,6 +7,7 @@ import { useForm, FormProvider } from 'react-hook-form';
 import type { FormFields, FormSubmitResult } from './types';
 import type { UserInfo } from 'types/api/account';
 import type { PublicTagTypesResponse } from 'types/api/addressMetadata';
+import type { PublicTagApplicationRow } from 'types/api/publicTagSubmissions';
 
 import appConfig from 'configs/app';
 import useApiFetch from 'lib/api/useApiFetch';
@@ -66,7 +67,7 @@ const PublicTagsSubmitForm = ({ config, userInfo, onSubmitResult }: Props) => {
         throw new Error('ReCaptcha is not solved');
       }
 
-      const item = await apiFetch<'admin:public_tag_application', unknown, { message: string }>(
+      const item = await apiFetch<'admin:public_tag_application', PublicTagApplicationRow, { message: string }>(
         'admin:public_tag_application', {
           pathParams: { chainId: appConfig.chain.id },
           fetchParams: {
@@ -75,13 +76,16 @@ const PublicTagsSubmitForm = ({ config, userInfo, onSubmitResult }: Props) => {
             headers: { 'recaptcha-v2-response': token },
           },
         })
-        .then(() => ({ error: null, payload: body }))
+        .then((result) => {
+          const submission = result as PublicTagApplicationRow;
+          return { status: 'ok' as const, payload: body, submission };
+        })
         .catch((error: unknown) => {
           const errorObj = getErrorObj(error);
           const messageFromPayload = getErrorObjPayload<{ message?: string }>(errorObj)?.message;
           const messageFromError = errorObj && 'message' in errorObj && typeof errorObj.message === 'string' ? errorObj.message : undefined;
           const message = messageFromPayload || messageFromError || 'Something went wrong.';
-          return { error: message, payload: body };
+          return { status: 'error' as const, payload: body, error: message };
         });
 
       result.push(item);

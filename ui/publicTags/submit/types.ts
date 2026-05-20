@@ -1,4 +1,5 @@
 import type { AddressMetadataTagType } from 'types/api/addressMetadata';
+import type { PublicTagApplicationRow } from 'types/api/publicTagSubmissions';
 
 export interface FormFields {
   requesterName: string;
@@ -38,10 +39,9 @@ export interface SubmitRequestBody {
   };
 }
 
-export interface FormSubmitResultItem {
-  error: string | null;
-  payload: SubmitRequestBody;
-}
+export type FormSubmitResultItem =
+  { status: 'ok'; payload: SubmitRequestBody; submission: PublicTagApplicationRow } |
+  { status: 'error'; payload: SubmitRequestBody; error: string };
 
 export type FormSubmitResult = Array<FormSubmitResultItem>;
 

@@ -56,14 +56,15 @@ export function groupSubmitResult(data: FormSubmitResult | undefined): FormSubmi
 
   // group by error and address
   for (const item of data) {
-    const existingItem = _items.find(({ error, addresses }) => error === item.error && addresses.length === 1 && addresses[0] === item.payload.address);
+    const itemError = item.status === 'error' ? item.error : null;
+    const existingItem = _items.find(({ error, addresses }) => error === itemError && addresses.length === 1 && addresses[0] === item.payload.address);
     if (existingItem) {
       existingItem.tags.push({ name: item.payload.name, tagType: item.payload.tagType, meta: item.payload.meta });
       continue;
     }
 
     _items.push({
-      error: item.error,
+      error: itemError,
       addresses: [ item.payload.address ],
       tags: [ { name: item.payload.name, tagType: item.payload.tagType, meta: item.payload.meta } ],
     });

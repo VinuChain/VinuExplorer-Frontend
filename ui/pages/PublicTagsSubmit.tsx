@@ -1,15 +1,22 @@
+import { useQueryClient } from '@tanstack/react-query';
+import { useRouter } from 'next/router';
 import React from 'react';
 
+import type { TabItemRegular } from 'toolkit/components/AdaptiveTabs/types';
 import type { PublicTagType } from 'types/api/addressMetadata';
 import type { FormSubmitResult } from 'ui/publicTags/submit/types';
 
 import appConfig from 'configs/app';
 import useApiQuery from 'lib/api/useApiQuery';
 import { ContentLoader } from 'toolkit/components/loaders/ContentLoader';
+import RoutedTabs from 'toolkit/components/RoutedTabs/RoutedTabs';
+import PublicTagApplicationsList from 'ui/publicTags/list/PublicTagApplicationsList';
 import PublicTagsSubmitForm from 'ui/publicTags/submit/PublicTagsSubmitForm';
 import PublicTagsSubmitResult from 'ui/publicTags/submit/PublicTagsSubmitResult';
+import AccountPageDescription from 'ui/shared/AccountPageDescription';
 import PageTitle from 'ui/shared/Page/PageTitle';
 import useProfileQuery from 'ui/snippets/auth/useProfileQuery';
+import useRedirectForInvalidAuthToken from 'ui/snippets/auth/useRedirectForInvalidAuthToken';
 
 // Fallback tag types when the metadata service is not configured.
 const DEFAULT_TAG_TYPES: Array<PublicTagType> = [
@@ -27,18 +34,56 @@ const DEFAULT_TAG_TYPES: Array<PublicTagType> = [
 const PublicTagsSubmit = () => {
   const [ submitResult, setSubmitResult ] = React.useState<FormSubmitResult>();
 
+  const router = useRouter();
+  const queryClient = useQueryClient();
   const profileQuery = useProfileQuery();
+  useRedirectForInvalidAuthToken();
+
   const configQuery = useApiQuery('metadata:public_tag_types', {
     queryOptions: {
       enabled: !profileQuery.isLoading && appConfig.features.addressMetadata.isEnabled,
     },
   });
 
-  const handleFormSubmitResult = React.useCallback((result: FormSubmitResult) => {
+  const handleFormSubmitResult = React.useCallback(async(result: FormSubmitResult) => {
     setSubmitResult(result);
-  }, []);
+
+    if (result.every((r) => r.status === 'ok')) {
+      try {
+        await queryClient.invalidateQueries({
+          predicate: (q) => Array.isArray(q.queryKey) && q.queryKey[0] === 'admin:public_tag_applications_list',
+        });
+      } catch { /* non-fatal — list query refetches on tab mount anyway */ }
+      router.push(
+        { pathname: '/public-tags/submit', query: { tab: 'my-requests' } },
+        undefined,
+        { shallow: true },
+      );
+    }
+  }, [ queryClient, router ]);
 
   const tagTypes = configQuery.data?.tagTypes ?? DEFAULT_TAG_TYPES;
+
+  const tabs: Array<TabItemRegular> = React.useMemo(() => [
+    {
+      id: 'submit-tag',
+      title: 'Submit new tag',
+      component: submitResult ? (
+        <PublicTagsSubmitResult data={ submitResult }/>
+      ) : (
+        <PublicTagsSubmitForm
+          config={{ tagTypes }}
+          onSubmitResult={ handleFormSubmitResult }
+          userInfo={ profileQuery.data }
+        />
+      ),
+    },
+    {
+      id: 'my-requests',
+      title: 'My requests',
+      component: <PublicTagApplicationsList/>,
+    },
+  ], [ submitResult, tagTypes, handleFormSubmitResult, profileQuery.data ]);
 
   if (profileQuery.isLoading || (appConfig.features.addressMetadata.isEnabled && configQuery.isPending)) {
     return (
@@ -49,18 +94,22 @@ const PublicTagsSubmit = () => {
     );
   }
 
+  if (!profileQuery.data) {
+    return (
+      <>
+        <PageTitle title="Request a public tag/label"/>
+        <AccountPageDescription>Please sign in to submit a public tag/label request and see your prior submissions.</AccountPageDescription>
+      </>
+    );
+  }
+
   return (
     <>
       <PageTitle title="Request a public tag/label"/>
-      { submitResult ? (
-        <PublicTagsSubmitResult data={ submitResult }/>
-      ) : (
-        <PublicTagsSubmitForm
-          config={{ tagTypes }}
-          onSubmitResult={ handleFormSubmitResult }
-          userInfo={ profileQuery.data }
-        />
-      ) }
+      <RoutedTabs
+        tabs={ tabs }
+        defaultTabId="submit-tag"
+      />
     </>
   );
 };

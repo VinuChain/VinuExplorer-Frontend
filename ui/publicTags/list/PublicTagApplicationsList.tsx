@@ -96,15 +96,18 @@ const PublicTagApplicationsList = () => {
     />
   );
 
-  const actionBar = (
+  const actionBar = pagination.isVisible ? (
     <StickyPaginationWithText
-      text={ filterElement }
+      text={ null }
       pagination={ pagination }
     />
-  );
+  ) : null;
 
   return (
     <>
+      <Box mb={ 4 }>
+        { filterElement }
+      </Box>
       <DataListDisplay
         isError={ isError }
         itemsNum={ data?.items.length }

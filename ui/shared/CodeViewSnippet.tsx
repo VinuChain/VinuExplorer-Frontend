@@ -1,9 +1,17 @@
 import { Box, chakra, Flex } from '@chakra-ui/react';
+import dynamic from 'next/dynamic';
 import React from 'react';
 
 import { Skeleton } from 'toolkit/chakra/skeleton';
 import CopyToClipboard from 'ui/shared/CopyToClipboard';
-import CodeEditor from 'ui/shared/monaco/CodeEditor';
+
+// Monaco is ~500KB minified+gzipped and is only needed on contract code and
+// snippet-rendering pages. Lazy-load it so the rest of the explorer doesn't
+// pay for it on every page transition.
+const CodeEditor = dynamic(() => import('ui/shared/monaco/CodeEditor'), {
+  ssr: false,
+  loading: () => <Skeleton loading height="500px" w="100%"/>,
+});
 
 interface Props {
   data: string;

@@ -36,7 +36,9 @@ const moduleExports = {
   redirects,
   headers,
   output: 'standalone',
-  productionBrowserSourceMaps: true,
+  // Browser source maps are useful in development but ship MB-scale sourcemap
+  // files to every visitor in production. Disabling cuts asset bandwidth ~2-3x.
+  productionBrowserSourceMaps: process.env.NEXT_PUBLIC_ENABLE_BROWSER_SOURCEMAPS === 'true',
   serverExternalPackages: ["@opentelemetry/sdk-node", "@opentelemetry/auto-instrumentations-node"],
   experimental: {
     staleTimes: {

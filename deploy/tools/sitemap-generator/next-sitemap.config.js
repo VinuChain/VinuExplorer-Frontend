@@ -80,6 +80,20 @@ module.exports = {
   generateIndexSitemap: true,
   generateRobotsTxt: true,
   robotsTxtOptions: {
+    // SOURCE OF TRUTH for robots.txt — do not create a static public/robots.txt.
+    // next-sitemap writes public/robots.txt at container startup (entrypoint.sh →
+    // sitemap_generator.sh → yarn next-sitemap). Any static public/robots.txt
+    // would be overwritten at that point or, worse, take precedence if the
+    // container restarts without re-running the generator.
+    //
+    // The generated robots.txt automatically includes:
+    //   Sitemap: <siteUrl>/sitemap.xml   (pointing at the sitemap-index)
+    //   Host: <siteUrl>                  (Yandex canonical hint; harmless for Google)
+    //
+    // Per-env canonical hosts:
+    //   mainnet → https://mainnet.vinuexplorer.org
+    //   testnet → https://testnet.vinuexplorer.org
+    // Both resolve from NEXT_PUBLIC_APP_HOST set in the container environment.
     policies: [
       {
         userAgent: '*',
@@ -87,8 +101,8 @@ module.exports = {
         disallow: ['/auth/*', '/login', '/chakra', '/sprite', '/account/*', '/csv-export'],
       },
     ],
-    // additionalSitemaps is intentionally omitted — next-sitemap auto-populates
-    // the Sitemap: directive in robots.txt from the generated sitemap-index.
+    // additionalSitemaps intentionally omitted — next-sitemap auto-populates the
+    // Sitemap: directive from the sitemap-index it generates.
   },
   sourceDir: path.resolve(process.cwd(), '../../../.next'),
   outDir: path.resolve(process.cwd(), '../../../public'),

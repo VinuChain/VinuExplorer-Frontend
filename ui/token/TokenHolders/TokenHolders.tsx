@@ -4,6 +4,7 @@ import React, { useCallback, useMemo, useState } from 'react';
 import type { TokenInfo } from 'types/api/token';
 
 import useAddressesMetadata from 'lib/address/useAddressesMetadata';
+import getItemIndex from 'lib/getItemIndex';
 import useIsMobile from 'lib/hooks/useIsMobile';
 import useIsMounted from 'lib/hooks/useIsMounted';
 import { Button } from 'toolkit/chakra/button';
@@ -14,7 +15,8 @@ import DataListDisplay from 'ui/shared/DataListDisplay';
 import Pagination from 'ui/shared/pagination/Pagination';
 import type { QueryWithPagesResult } from 'ui/shared/pagination/useQueryWithPages';
 
-import TokenHoldersChart from './TokenHoldersChart';
+import type { ChartPeriod } from './TokenHoldersChart';
+import TokenHoldersChart, { DEFAULT_CHART_PERIOD } from './TokenHoldersChart';
 import TokenHoldersConcentration from './TokenHoldersConcentration';
 import TokenHoldersDistribution from './TokenHoldersDistribution';
 import TokenHoldersList from './TokenHoldersList';
@@ -24,6 +26,10 @@ import TokenHoldersTable from './TokenHoldersTable';
 type AnalyticsTab = 'chart' | 'distribution';
 
 const TABS_HEIGHT = 88;
+
+// `getItemIndex`' default page size — used here for the rank-offset math.
+// The backend `token_holders` endpoint pages at 50.
+const HOLDERS_PAGE_SIZE = 50;
 
 type Props = {
   token?: TokenInfo;
@@ -36,6 +42,10 @@ const TokenHolders = ({ holdersQuery, token, shouldRender = true, tabsHeight = T
   const isMobile = useIsMobile();
   const isMounted = useIsMounted();
   const [ activeChartTab, setActiveChartTab ] = useState<AnalyticsTab>('chart');
+  // Lifted up from TokenHoldersChart so the CSV-export link below shares the
+  // same selected period — otherwise the download window doesn't match what
+  // the user is looking at on screen.
+  const [ chartPeriod, setChartPeriod ] = useState<ChartPeriod>(DEFAULT_CHART_PERIOD);
 
   const handleSelectChartTab = useCallback(() => setActiveChartTab('chart'), []);
   const handleSelectDistributionTab = useCallback(() => setActiveChartTab('distribution'), []);
@@ -78,14 +88,18 @@ const TokenHolders = ({ holdersQuery, token, shouldRender = true, tabsHeight = T
   );
 
   const pageNumber = holdersQuery.pagination.page ?? 1;
-  const pageSize = enrichedItems?.length ?? 0;
-  const pageStartIndex = (pageNumber - 1) * pageSize;
+  // 0-based offset to the first row on this page. Derived from the fixed
+  // page size, NOT from `enrichedItems.length` — using the item count breaks
+  // ranks on the last (short) page (e.g. 5 items on page 3 would otherwise
+  // restart numbering from 11 instead of 101).
+  const pageStartIndex = getItemIndex(0, pageNumber, HOLDERS_PAGE_SIZE) - 1;
+  const loadedCount = pageStartIndex + (enrichedItems?.length ?? 0);
 
   const content = enrichedItems && token ? (
     <>
       <TokenHoldersConcentration hash={ token.address_hash }/>
       <TokenHoldersSummaryLine
-        loadedCount={ enrichedItems.length }
+        loadedCount={ loadedCount }
         totalCount={ token.holders_count ? Number(token.holders_count) : undefined }
       />
       <Box display={{ base: 'none', lg: 'block' }}>
@@ -131,12 +145,13 @@ const TokenHolders = ({ holdersQuery, token, shouldRender = true, tabsHeight = T
             />
             <AddressCsvExportLink
               address={ token.address_hash }
-              params={{ type: 'holder-chart', period: '30d' }}
+              params={{ type: 'holder-chart', period: chartPeriod }}
               isLoading={ holdersQuery.pagination.isLoading }
             />
           </Flex>
         </Flex>
-        { activeChartTab === 'chart' && <TokenHoldersChart hash={ token.address_hash }/> }
+        { activeChartTab === 'chart' &&
+          <TokenHoldersChart hash={ token.address_hash } period={ chartPeriod } onChangePeriod={ setChartPeriod }/> }
         { activeChartTab === 'distribution' && <TokenHoldersDistribution hash={ token.address_hash }/> }
       </Box>
     </>

@@ -17,8 +17,12 @@ type Props = {
   isLoading?: boolean;
 };
 
-const formatUsd = (amount: string, decimals: string, rate: string | null | undefined): string => {
-  if (!rate) return '-';
+const formatUsd = (amount: string, decimals: string | null | undefined, rate: string | null | undefined): string => {
+  // Without a rate OR without decimals we can't compute USD honestly — the
+  // raw `amount` is in token base-units, so a missing decimals would render
+  // a value off by ~1e18 from reality. Better to show '-' than to silently
+  // misprice.
+  if (!rate || !decimals) return '-';
   const tokens = new BigNumber(amount).div(new BigNumber(10).pow(decimals));
   const usd = tokens.times(rate);
   return '$' + usd.toFormat(2);
@@ -47,7 +51,7 @@ const TokenHoldersTableItem = ({ holder, token, rank, isLoading }: Props) => {
         <AssetValue amount={ holder.value } decimals={ token.decimals ?? '0' } loading={ isLoading }/>
       </TableCell>
       <TableCell verticalAlign="middle" isNumeric>
-        { formatUsd(holder.value, token.decimals ?? '18', token.exchange_rate) }
+        { formatUsd(holder.value, token.decimals, token.exchange_rate) }
       </TableCell>
       { token.total_supply && token.type !== 'ERC-404' && (
         <TableCell verticalAlign="middle" isNumeric>

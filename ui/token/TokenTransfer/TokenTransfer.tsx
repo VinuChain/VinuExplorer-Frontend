@@ -1,11 +1,12 @@
 import { Box } from '@chakra-ui/react';
 import type { UseQueryResult } from '@tanstack/react-query';
 import { useRouter } from 'next/router';
-import React from 'react';
+import React, { useMemo } from 'react';
 
 import type { SocketMessage } from 'lib/socket/types';
 import type { TokenInfo, TokenInstance } from 'types/api/token';
 
+import useAddressesMetadata from 'lib/address/useAddressesMetadata';
 import type { ResourceError } from 'lib/api/resources';
 import useGradualIncrement from 'lib/hooks/useGradualIncrement';
 import useIsMobile from 'lib/hooks/useIsMobile';
@@ -66,17 +67,36 @@ const TokenTransfer = ({ transfersQuery, tokenId, tokenQuery, tabsHeight = TABS_
     handler: handleNewTransfersMessage,
   });
 
+  const items = data?.items;
+
+  const hashesForMetadata = useMemo(
+    () => (items ?? [])
+      .flatMap((i) => [ i.from?.hash, i.to?.hash ])
+      .filter((h): h is string => Boolean(h)),
+    [ items ],
+  );
+  const { getMetadata } = useAddressesMetadata(hashesForMetadata);
+
+  const enrichedItems = useMemo(() => {
+    if (!items) return items;
+    return items.map((i) => ({
+      ...i,
+      from: i.from && { ...i.from, metadata: getMetadata(i.from.hash) ?? i.from.metadata },
+      to: i.to && { ...i.to, metadata: getMetadata(i.to.hash) ?? i.to.metadata },
+    }));
+  }, [ items, getMetadata ]);
+
   if (!isMounted || !shouldRender) {
     return null;
   }
 
   const isLoading = isPlaceholderData || isTokenPlaceholderData;
 
-  const content = data?.items && token ? (
+  const content = enrichedItems && token ? (
     <>
       <Box display={{ base: 'none', lg: 'block' }}>
         <TokenTransferTable
-          data={ data?.items }
+          data={ enrichedItems }
           top={ tabsHeight }
           showSocketInfo={ pagination.page === 1 }
           showSocketErrorAlert={ showSocketErrorAlert }
@@ -96,7 +116,7 @@ const TokenTransfer = ({ transfersQuery, tokenId, tokenQuery, tabsHeight = TABS_
             isLoading={ isLoading }
           />
         ) }
-        <TokenTransferList data={ data?.items } tokenId={ tokenId } instance={ tokenInstance } isLoading={ isLoading }/>
+        <TokenTransferList data={ enrichedItems } tokenId={ tokenId } instance={ tokenInstance } isLoading={ isLoading }/>
       </Box>
     </>
   ) : null;
@@ -111,7 +131,7 @@ const TokenTransfer = ({ transfersQuery, tokenId, tokenQuery, tabsHeight = TABS_
   return (
     <DataListDisplay
       isError={ isError || isTokenError }
-      itemsNum={ data?.items.length }
+      itemsNum={ enrichedItems?.length }
       emptyText="There are no token transfers."
       actionBar={ actionBar }
     >

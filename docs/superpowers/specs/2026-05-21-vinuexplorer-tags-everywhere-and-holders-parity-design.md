@@ -7,11 +7,12 @@
 
 ## Goal
 
-Three interlocking deliverables:
+Four interlocking deliverables:
 
 1. **Public tags display instead of the bare address everywhere** the address appears — token holders, transfer lists, recent tx tables, address-page subtables, search. The address remains hyperlinked: clicking the tag label navigates to `/address/<hash>` (already true today via `AddressEntity`'s wrapping `<Link>`).
 2. **Search matches against public tag names.** Typing a tag display name in the header search box (or hitting the results page) lands the user on the tagged address.
 3. **Token holders page reaches feature parity with BscScan's `/token/<hash>#balances`.** Adds Rank, separate Label column, USD Value, sortable headers, a concentration summary card (Top 5/10/100 %, whale count, Gini), a holder-count line chart, a value-distribution histogram, CSV exports for the new datasets, and a "Top N of M holders" summary line.
+4. **Per-label aggregation pages** — clicking any label badge (e.g. *Exchange*, *Meme*, *Liquidity Pool*) lands on `/accounts/label/<slug>`, a paginated list of every address carrying that label. The frontend page is already shipped (`pages/accounts/label/[slug].tsx` → `ui/pages/AccountsLabelSearch.tsx` → `AddressesLabelSearchTable`). The work is exclusively backend: implement the missing shim for `GET /api/v2/proxy/metadata/addresses?slug=<>&tag_type=<>` that the page already calls.
 
 ## Non-goals
 
@@ -53,13 +54,14 @@ None remaining. The conversation deliberately folded every initial out-of-scope 
                        ▼
 ┌──────────────── vinuexplorer-backend ─────────────────┐
 │                                                       │
-│  GET /api/v1/metadata           ── existing, no chg   │
-│  GET /api/v2/search/quick       ── (PR #1) +tag join  │
-│  GET /api/v2/tokens/<h>/holders ── (PR #1) +sort      │
-│  GET .../holders/distribution   ── (PR #1) NEW        │
-│  GET .../holders/chart          ── (PR #1) NEW        │
-│  GET .../holders/distribution/csv ── (PR #1) NEW      │
-│  GET .../holders/chart/csv      ── (PR #1) NEW        │
+│  GET /api/v1/metadata               ── existing, no chg │
+│  GET /api/v2/proxy/metadata/addresses ── (PR #1) NEW    │
+│  GET /api/v2/search/quick           ── (PR #1) +tag jn  │
+│  GET /api/v2/tokens/<h>/holders     ── (PR #1) +sort    │
+│  GET .../holders/distribution       ── (PR #1) NEW      │
+│  GET .../holders/chart              ── (PR #1) NEW      │
+│  GET .../holders/distribution/csv   ── (PR #1) NEW      │
+│  GET .../holders/chart/csv          ── (PR #1) NEW      │
 │                                                       │
 │  Oban workers (PR #1):                                │
 │   ── HolderCountAggregator  (daily, 00:05 UTC)        │
@@ -74,12 +76,12 @@ None remaining. The conversation deliberately folded every initial out-of-scope 
 
 Each PR is small enough to review in one sitting and ships independently to **testnet first, mainnet ≥48 h later** per existing rollout cadence.
 
-| PR  | Repo     | Title                                                                               |
-| --- | -------- | ----------------------------------------------------------------------------------- |
-| #1  | backend  | `feat(holders,search): tag-aware search + holder analytics endpoints`               |
-| #2  | frontend | `feat(metadata): batch tag fetch for list pages`                                    |
-| #3  | frontend | `feat(holders): Rank + Label + USD Value columns + sortable headers`                |
-| #4  | frontend | `feat(holders): concentration card, chart, distribution, tag-aware search`          |
+| PR  | Repo     | Title                                                                                 |
+| --- | -------- | ------------------------------------------------------------------------------------- |
+| #1  | backend  | `feat(holders,search,labels): tag-aware search + holder analytics + label-page shim`  |
+| #2  | frontend | `feat(metadata): batch tag fetch for list pages`                                      |
+| #3  | frontend | `feat(holders): Rank + Label + USD Value columns + sortable headers`                  |
+| #4  | frontend | `feat(holders): concentration card, chart, distribution, tag-aware search`            |
 
 Sequencing rationale:
 
@@ -91,6 +93,57 @@ Sequencing rationale:
 ## PR #1 — Backend (vinuexplorer-backend)
 
 Branch: `feat/holders-analytics-and-tag-search`
+
+### 1.0 Addresses-by-label shim endpoint
+
+**Route:** `get "/proxy/metadata/addresses", ProxyMetadataController, :addresses_by_label`
+**New controller:** `apps/block_scout_web/lib/block_scout_web/controllers/api/v2/proxy_metadata_controller.ex`
+
+Frontend already calls `GET /api/v2/proxy/metadata/addresses?slug=exchange&tag_type=protocol` from `ui/pages/AccountsLabelSearch.tsx`. The upstream Blockscout shape proxies to a separate Metadata microservice; we shim the same shape against our own `address_tags ⨝ address_to_tags ⨝ addresses` join, identical to PR #15's pattern for `/api/v1/metadata`.
+
+```elixir
+def addresses_by_label(conn, %{"slug" => slug, "tag_type" => tag_type} = params) do
+  paging = paging_params(params)  # standard Blockscout cursor pagination
+  result = AddressTagSearch.list_by_label(slug, tag_type, paging)
+  conn |> put_status(200) |> render(:addresses, %{items: result.items, next_page_params: result.next})
+end
+```
+
+**New context:** `apps/explorer/lib/explorer/chain/address_tag_search.ex`
+
+```sql
+SELECT a.hash, a.is_contract, a.is_verified, t.display_name AS tag_name, t.tag_type, t.meta
+FROM address_tags t
+JOIN address_to_tags a2t ON a2t.tag_id = t.id
+JOIN addresses a ON a.hash = a2t.address_hash
+WHERE t.slug = $1 AND t.tag_type = $2
+ORDER BY a.fetched_coin_balance DESC NULLS LAST, a.hash ASC
+LIMIT $3 OFFSET $4;
+```
+
+Response shape (matches frontend type `AddressesMetadataSearchResult`):
+
+```json
+{
+  "items": [
+    {
+      "hash": "0x...",
+      "is_contract": true,
+      "is_verified": true,
+      "metadata": {
+        "tags": [{ "name": "Exchange", "slug": "exchange", "tagType": "protocol", "meta": {...}, "ordinal": 0 }]
+      }
+    }
+  ],
+  "next_page_params": { "page_token": "..." }
+}
+```
+
+**Seed labels:** Document operator action — labels like *Exchange*, *Meme*, *Liquidity Pool* must exist in `address_tags` with the appropriate `slug` (`exchange` / `meme` / `liquidity-pool`) and `tag_type='protocol'` (or `'generic'`). Use the existing public-tag submission/approval flow or a one-shot Mix task `mix vinu.seed_labels --labels exchange,meme,liquidity-pool` that creates empty label rows; addresses get attached via the standard approval flow or by manual `INSERT INTO address_to_tags`.
+
+**Tests:**
+- `test/explorer/chain/address_tag_search_test.exs` — list-by-label returns matching addresses ordered by coin balance, paginates correctly, returns empty when slug unknown
+- `test/block_scout_web/controllers/api/v2/proxy_metadata_controller_test.exs` — 200 + shape match, 422 on missing slug or tag_type
 
 ### 1.1 Quick-search public-tag join
 

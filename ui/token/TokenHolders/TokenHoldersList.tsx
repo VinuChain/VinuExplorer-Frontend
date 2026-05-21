@@ -9,9 +9,10 @@ interface Props {
   data: Array<TokenHolder>;
   token: TokenInfo;
   isLoading?: boolean;
+  pageStartIndex?: number;
 }
 
-const TokenHoldersList = ({ data, token, isLoading }: Props) => {
+const TokenHoldersList = ({ data, token, isLoading, pageStartIndex = 0 }: Props) => {
   return (
     <Box>
       { data.map((item, index) => {
@@ -21,6 +22,7 @@ const TokenHoldersList = ({ data, token, isLoading }: Props) => {
             key={ item.address.hash + tokenId + (isLoading ? index : '') }
             token={ token }
             holder={ item }
+            rank={ pageStartIndex + index + 1 }
             isLoading={ isLoading }
           />
         );

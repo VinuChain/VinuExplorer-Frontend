@@ -1,6 +1,9 @@
 import { Box } from '@chakra-ui/react';
-import React from 'react';
+import React, { useMemo } from 'react';
 
+import type { InternalTransaction } from 'types/api/internalTransaction';
+
+import useAddressesMetadata from 'lib/address/useAddressesMetadata';
 import useIsMounted from 'lib/hooks/useIsMounted';
 import { apos } from 'toolkit/utils/htmlEntities';
 import InternalTxsList from 'ui/internalTxs/InternalTxsList';
@@ -23,17 +26,52 @@ const AddressInternalTxs = ({ shouldRender = true, isQueryEnabled = true }: Prop
   const { hash, query, filterValue, onFilterChange } = useAddressInternalTxsQuery({ enabled: isQueryEnabled });
   const { data, isPlaceholderData, isError, pagination } = query;
 
+  const items = data?.items;
+
+  const hashesForMetadata = useMemo(
+    () => (items ?? [])
+      .flatMap((i) => [ i.from?.hash, i.to?.hash, i.created_contract?.hash ])
+      .filter((h): h is string => Boolean(h)),
+    [ items ],
+  );
+  const { getMetadata } = useAddressesMetadata(hashesForMetadata);
+
+  const enrichedItems: Array<InternalTransaction> | undefined = useMemo(() => {
+    if (!items) return items;
+    return items.map((i): InternalTransaction => {
+      const base = {
+        ...i,
+        from: { ...i.from, metadata: getMetadata(i.from.hash) ?? i.from.metadata },
+      };
+      if (i.to) {
+        return {
+          ...base,
+          to: { ...i.to, metadata: getMetadata(i.to.hash) ?? i.to.metadata },
+          created_contract: null,
+        };
+      }
+      return {
+        ...base,
+        to: null,
+        created_contract: {
+          ...i.created_contract,
+          metadata: getMetadata(i.created_contract.hash) ?? i.created_contract.metadata,
+        },
+      };
+    });
+  }, [ items, getMetadata ]);
+
   if (!isMounted || !shouldRender) {
     return null;
   }
 
-  const content = data?.items ? (
+  const content = enrichedItems ? (
     <>
       <Box hideFrom="lg">
-        <InternalTxsList data={ data.items } currentAddress={ hash } isLoading={ isPlaceholderData }/>
+        <InternalTxsList data={ enrichedItems } currentAddress={ hash } isLoading={ isPlaceholderData }/>
       </Box>
       <Box hideBelow="lg">
-        <InternalTxsTable data={ data.items } currentAddress={ hash } isLoading={ isPlaceholderData }/>
+        <InternalTxsTable data={ enrichedItems } currentAddress={ hash } isLoading={ isPlaceholderData }/>
       </Box>
     </>
   ) : null ;
@@ -59,7 +97,7 @@ const AddressInternalTxs = ({ shouldRender = true, isQueryEnabled = true }: Prop
   return (
     <DataListDisplay
       isError={ isError }
-      itemsNum={ data?.items.length }
+      itemsNum={ enrichedItems?.length }
       filterProps={{ emptyFilteredText: `Couldn${ apos }t find any transaction that matches your query.`, hasActiveFilters: Boolean(filterValue) }}
       emptyText="There are no internal transactions for this address."
       actionBar={ actionBar }

@@ -21,6 +21,8 @@ import useReCaptcha from 'ui/shared/reCaptcha/useReCaptcha';
 
 import CsvExportFormField from './CsvExportFormField';
 
+const NO_DATE_RANGE_EXPORT_TYPES = new Set<NonNullable<CsvExportParams['type']>>([ 'holders', 'distribution', 'holder-chart' ]);
+
 interface Props {
   hash: string;
   resource: ResourceName;
@@ -28,9 +30,11 @@ interface Props {
   filterValue?: CsvExportParams['filterValue'] | null;
   fileNameTemplate: string;
   exportType: CsvExportParams['type'] | undefined;
+  period?: string | null;
 }
 
-const CsvExportForm = ({ hash, resource, filterType, filterValue, fileNameTemplate, exportType }: Props) => {
+const CsvExportForm = ({ hash, resource, filterType, filterValue, fileNameTemplate, exportType, period }: Props) => {
+  const hasDateRange = exportType !== undefined && !NO_DATE_RANGE_EXPORT_TYPES.has(exportType);
   const formApi = useForm<FormFields>({
     mode: 'onBlur',
     defaultValues: {
@@ -47,10 +51,11 @@ const CsvExportForm = ({ hash, resource, filterType, filterValue, fileNameTempla
   const apiFetchFactory = React.useCallback((data: FormFields) => {
     return async(recaptchaToken?: string) => {
       const url = buildUrl(resource, { hash } as never, {
-        from_period: exportType !== 'holders' ? dayjs(data.from).toISOString() : null,
-        to_period: exportType !== 'holders' ? dayjs(data.to).toISOString() : null,
+        from_period: hasDateRange ? dayjs(data.from).toISOString() : null,
+        to_period: hasDateRange ? dayjs(data.to).toISOString() : null,
         filter_type: filterType,
         filter_value: filterValue,
+        period: exportType === 'holder-chart' && period ? period : null,
         recaptcha_response: recaptchaToken,
       }, undefined, multichainContext?.chain);
 
@@ -72,7 +77,7 @@ const CsvExportForm = ({ hash, resource, filterType, filterValue, fileNameTempla
 
       return response;
     };
-  }, [ resource, hash, exportType, filterType, filterValue, multichainContext?.chain ]);
+  }, [ resource, hash, hasDateRange, exportType, filterType, filterValue, period, multichainContext?.chain ]);
 
   const onFormSubmit: SubmitHandler<FormFields> = React.useCallback(async(data) => {
     try {
@@ -80,8 +85,9 @@ const CsvExportForm = ({ hash, resource, filterType, filterValue, fileNameTempla
       const chainText = multichainContext?.chain ? `${ multichainContext.chain.name.replace(' ', '-') }_` : '';
 
       const blob = await response.blob();
-      const fileName = exportType === 'holders' ?
-        `${ chainText }${ fileNameTemplate }_${ hash }.csv` :
+      const fileName = !hasDateRange ?
+        // token-scoped exports (holders / distribution / holder-chart) include the period suffix when set
+        `${ chainText }${ fileNameTemplate }_${ hash }${ exportType === 'holder-chart' && period ? '_' + period : '' }.csv` :
         // eslint-disable-next-line max-len
         `${ chainText }${ fileNameTemplate }_${ hash }_${ data.from }_${ data.to }${ filterType && filterValue ? '_with_filter_type_' + filterType + '_value_' + filterValue : '' }.csv`;
       downloadBlob(blob, fileName);
@@ -93,7 +99,7 @@ const CsvExportForm = ({ hash, resource, filterType, filterValue, fileNameTempla
       });
     }
 
-  }, [ recaptcha, apiFetchFactory, multichainContext?.chain, exportType, fileNameTemplate, hash, filterType, filterValue ]);
+  }, [ recaptcha, apiFetchFactory, multichainContext?.chain, hasDateRange, exportType, fileNameTemplate, hash, period, filterType, filterValue ]);
 
   if (!chainConfig.services.reCaptchaV2.siteKey) {
     return (
@@ -111,8 +117,8 @@ const CsvExportForm = ({ hash, resource, filterType, filterValue, fileNameTempla
         onSubmit={ handleSubmit(onFormSubmit) }
       >
         <Flex columnGap={ 5 } rowGap={ 3 } flexDir={{ base: 'column', lg: 'row' }} alignItems={{ base: 'flex-start', lg: 'center' }} flexWrap="wrap">
-          { exportType !== 'holders' && <CsvExportFormField name="from" formApi={ formApi }/> }
-          { exportType !== 'holders' && <CsvExportFormField name="to" formApi={ formApi }/> }
+          { hasDateRange && <CsvExportFormField name="from" formApi={ formApi }/> }
+          { hasDateRange && <CsvExportFormField name="to" formApi={ formApi }/> }
         </Flex>
         <ReCaptcha { ...recaptcha }/>
         <Button

@@ -60,12 +60,24 @@ const EXPORT_TYPES: Record<CsvExportParams['type'], ExportTypeEntity> = {
     resource: 'general:token_csv_export_holders',
     fileNameTemplate: 'holders',
   },
+  distribution: {
+    text: 'holders distribution',
+    resource: 'general:token_csv_export_distribution',
+    fileNameTemplate: 'holders_distribution',
+  },
+  'holder-chart': {
+    text: 'holder count history',
+    resource: 'general:token_csv_export_holder_chart',
+    fileNameTemplate: 'holder_chart',
+  },
   'epoch-rewards': {
     text: 'epoch rewards',
     resource: 'general:address_csv_export_celo_election_rewards',
     fileNameTemplate: 'epoch_rewards',
   },
 };
+
+const TOKEN_SCOPED_EXPORT_TYPES = new Set<CsvExportParams['type']>([ 'holders', 'distribution', 'holder-chart' ]);
 
 const isCorrectExportType = (type: string): type is CsvExportParams['type'] => Object.keys(EXPORT_TYPES).includes(type);
 
@@ -79,6 +91,7 @@ const CsvExport = () => {
   const exportType = isCorrectExportType(exportTypeParam) ? EXPORT_TYPES[exportTypeParam] : null;
   const filterTypeFromQuery = router.query.filterType?.toString() || null;
   const filterValueFromQuery = router.query.filterValue?.toString();
+  const periodFromQuery = router.query.period?.toString() || null;
 
   const addressQuery = useApiQuery('general:address', {
     pathParams: { hash: addressHash },
@@ -87,10 +100,12 @@ const CsvExport = () => {
     },
   });
 
+  const isTokenScopedExport = isCorrectExportType(exportTypeParam) && TOKEN_SCOPED_EXPORT_TYPES.has(exportTypeParam);
+
   const tokenQuery = useApiQuery('general:token', {
     pathParams: { hash: addressHash },
     queryOptions: {
-      enabled: Boolean(addressHash) && exportTypeParam === 'holders',
+      enabled: Boolean(addressHash) && isTokenScopedExport,
     },
   });
 
@@ -100,7 +115,7 @@ const CsvExport = () => {
     },
   });
 
-  const isLoading = addressQuery.isPending || configQuery.isPending || (exportTypeParam === 'holders' && tokenQuery.isPending);
+  const isLoading = addressQuery.isPending || configQuery.isPending || (isTokenScopedExport && tokenQuery.isPending);
 
   throwOnAbsentParamError(addressHash);
   throwOnAbsentParamError(exportType);
@@ -137,6 +152,7 @@ const CsvExport = () => {
         filterType={ filterType }
         filterValue={ filterValue }
         fileNameTemplate={ exportType.fileNameTemplate }
+        period={ periodFromQuery }
       />
     );
   })();
@@ -156,7 +172,10 @@ const CsvExport = () => {
 
     const limit = (configQuery.data?.limit || 10_000).toLocaleString(undefined, { maximumFractionDigits: 3, notation: 'compact' });
 
-    if (exportTypeParam === 'holders' && tokenQuery.data) {
+    if (isTokenScopedExport && tokenQuery.data) {
+      const holdersTail = exportTypeParam === 'holders' ?
+        <span>Exports are limited to the top { limit } holders by amount held.</span> :
+        null;
       return (
         <Flex mb={ 10 } whiteSpace="pre-wrap" flexWrap="wrap">
           <span>Export { exportType.text } for token </span>
@@ -170,7 +189,7 @@ const CsvExport = () => {
           />
           { chainInfo }
           <span> to CSV file. </span>
-          <span>Exports are limited to the top { limit } holders by amount held.</span>
+          { holdersTail }
         </Flex>
       );
     }

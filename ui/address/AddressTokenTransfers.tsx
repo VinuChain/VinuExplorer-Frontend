@@ -1,7 +1,8 @@
 import { Box, Flex } from '@chakra-ui/react';
 import { useRouter } from 'next/router';
-import React from 'react';
+import React, { useMemo } from 'react';
 
+import useAddressesMetadata from 'lib/address/useAddressesMetadata';
 import useIsMounted from 'lib/hooks/useIsMounted';
 import getQueryParamString from 'lib/router/getQueryParamString';
 import { apos } from 'toolkit/utils/htmlEntities';
@@ -42,18 +43,37 @@ const AddressTokenTransfers = ({ overloadCount, shouldRender = true, isQueryEnab
     enabled: isQueryEnabled && pagination.page === 1,
   });
 
+  const items = data?.items;
+
+  const hashesForMetadata = useMemo(
+    () => (items ?? [])
+      .flatMap((i) => [ i.from?.hash, i.to?.hash ])
+      .filter((h): h is string => Boolean(h)),
+    [ items ],
+  );
+  const { getMetadata } = useAddressesMetadata(hashesForMetadata);
+
+  const enrichedItems = useMemo(() => {
+    if (!items) return items;
+    return items.map((i) => ({
+      ...i,
+      from: i.from && { ...i.from, metadata: getMetadata(i.from.hash) ?? i.from.metadata },
+      to: i.to && { ...i.to, metadata: getMetadata(i.to.hash) ?? i.to.metadata },
+    }));
+  }, [ items, getMetadata ]);
+
   if (!isMounted || !shouldRender) {
     return null;
   }
 
   const numActiveFilters = (filters.type?.length || 0) + (filters.filter ? 1 : 0);
-  const isActionBarHidden = !numActiveFilters && !data?.items.length && !currentAddress;
+  const isActionBarHidden = !numActiveFilters && !enrichedItems?.length && !currentAddress;
 
-  const content = data?.items ? (
+  const content = enrichedItems ? (
     <>
       <Box hideBelow="lg">
         <TokenTransferTable
-          data={ data?.items }
+          data={ enrichedItems }
           baseAddress={ currentAddress }
           showTxInfo
           top={ isActionBarHidden ? 0 : ACTION_BAR_HEIGHT_DESKTOP }
@@ -74,7 +94,7 @@ const AddressTokenTransfers = ({ overloadCount, shouldRender = true, isQueryEnab
           />
         ) }
         <TokenTransferList
-          data={ data?.items }
+          data={ enrichedItems }
           baseAddress={ currentAddress }
           showTxInfo
           enableTimeIncrement
@@ -115,7 +135,7 @@ const AddressTokenTransfers = ({ overloadCount, shouldRender = true, isQueryEnab
   return (
     <DataListDisplay
       isError={ isError }
-      itemsNum={ data?.items?.length }
+      itemsNum={ enrichedItems?.length }
       emptyText="There are no token transfers."
       filterProps={{
         emptyFilteredText: `Couldn${ apos }t find any token transfer that matches your query.`,

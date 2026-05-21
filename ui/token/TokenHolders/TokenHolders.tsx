@@ -1,8 +1,9 @@
 import { Box } from '@chakra-ui/react';
-import React from 'react';
+import React, { useMemo } from 'react';
 
 import type { TokenInfo } from 'types/api/token';
 
+import useAddressesMetadata from 'lib/address/useAddressesMetadata';
 import useIsMobile from 'lib/hooks/useIsMobile';
 import useIsMounted from 'lib/hooks/useIsMounted';
 import AddressCsvExportLink from 'ui/address/AddressCsvExportLink';
@@ -28,6 +29,22 @@ const TokenHolders = ({ holdersQuery, token, shouldRender = true, tabsHeight = T
   const isMobile = useIsMobile();
   const isMounted = useIsMounted();
 
+  const items = holdersQuery.data?.items;
+
+  const hashesForMetadata = useMemo(
+    () => (items ?? []).map((i) => i.address.hash),
+    [ items ],
+  );
+  const { getMetadata } = useAddressesMetadata(hashesForMetadata);
+
+  const enrichedItems = useMemo(() => {
+    if (!items) return items;
+    return items.map((i) => ({
+      ...i,
+      address: { ...i.address, metadata: getMetadata(i.address.hash) ?? i.address.metadata },
+    }));
+  }, [ items, getMetadata ]);
+
   if (!isMounted || !shouldRender) {
     return null;
   }
@@ -49,13 +66,11 @@ const TokenHolders = ({ holdersQuery, token, shouldRender = true, tabsHeight = T
     </ActionBar>
   );
 
-  const items = holdersQuery.data?.items;
-
-  const content = items && token ? (
+  const content = enrichedItems && token ? (
     <>
       <Box display={{ base: 'none', lg: 'block' }}>
         <TokenHoldersTable
-          data={ items }
+          data={ enrichedItems }
           token={ token }
           top={ tabsHeight }
           isLoading={ holdersQuery.isPlaceholderData }
@@ -63,7 +78,7 @@ const TokenHolders = ({ holdersQuery, token, shouldRender = true, tabsHeight = T
       </Box>
       <Box display={{ base: 'block', lg: 'none' }}>
         <TokenHoldersList
-          data={ items }
+          data={ enrichedItems }
           token={ token }
           isLoading={ holdersQuery.isPlaceholderData }
         />
@@ -74,7 +89,7 @@ const TokenHolders = ({ holdersQuery, token, shouldRender = true, tabsHeight = T
   return (
     <DataListDisplay
       isError={ holdersQuery.isError }
-      itemsNum={ holdersQuery.data?.items.length }
+      itemsNum={ enrichedItems?.length }
       emptyText="There are no holders for this token."
       actionBar={ actionBar }
     >

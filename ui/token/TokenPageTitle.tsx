@@ -29,6 +29,7 @@ import TokenSocialLinks from './TokenSocialLinks';
 import TokenVerifiedInfo from './TokenVerifiedInfo';
 
 const PREDEFINED_TAG_PRIORITY = 100;
+const PUBLIC_TAG_PRIORITY = 1_100;
 
 interface Props {
   tokenQuery: UseQueryResult<TokenInfo, ResourceError<unknown>>;
@@ -74,7 +75,9 @@ const TokenPageTitle = ({ tokenQuery, addressQuery, verifiedInfoQuery, hash }: P
       verifiedInfoQuery.data?.projectSector ?
         { slug: verifiedInfoQuery.data.projectSector, name: verifiedInfoQuery.data.projectSector, tagType: 'custom' as const, ordinal: -30 } :
         undefined,
-      ...(addressMetadataQuery.data?.addresses?.[hash.toLowerCase()]?.tags.filter(tag => tag.tagType !== 'note') || []),
+      ...(addressMetadataQuery.data?.addresses?.[hash.toLowerCase()]?.tags
+        .filter((tag) => tag.tagType !== 'note')
+        .map((tag) => ({ ...tag, ordinal: PUBLIC_TAG_PRIORITY + Math.max(tag.ordinal ?? 0, 0) })) || []),
     ].filter(Boolean).sort(sortEntityTags);
   }, [
     addressMetadataQuery.data?.addresses,

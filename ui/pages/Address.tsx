@@ -65,6 +65,7 @@ import PageTitle from 'ui/shared/Page/PageTitle';
 
 const TOKEN_TABS = [ 'tokens_erc20', 'tokens_nfts', 'tokens_nfts_collection', 'tokens_nfts_list' ];
 const PREDEFINED_TAG_PRIORITY = 100;
+const PUBLIC_TAG_PRIORITY = 1_100;
 
 const txInterpretation = config.features.txInterpretation;
 const addressProfileAPIFeature = config.features.addressProfileAPI;
@@ -330,7 +331,6 @@ const AddressPageContent = () => {
 
   const tags: Array<EntityTag> = React.useMemo(() => {
     return [
-      ...(addressQuery.data?.public_tags?.map((tag) => ({ slug: tag.label, name: tag.display_name, tagType: 'custom' as const, ordinal: -1 })) || []),
       addressQuery.data?.celo?.account ? {
         slug: 'celo-account',
         name: 'Celo account',
@@ -372,7 +372,9 @@ const AddressPageContent = () => {
         { slug: 'mud', name: 'MUD World', tagType: 'custom' as const, ordinal: PREDEFINED_TAG_PRIORITY } :
         undefined,
       ...formatUserTags(addressQuery.data),
-      ...(addressMetadataQuery.data?.addresses?.[hash.toLowerCase()]?.tags.filter(tag => tag.tagType !== 'note') || []),
+      ...(addressMetadataQuery.data?.addresses?.[hash.toLowerCase()]?.tags
+        .filter((tag) => tag.tagType !== 'note')
+        .map((tag) => ({ ...tag, ordinal: PUBLIC_TAG_PRIORITY + Math.max(tag.ordinal ?? 0, 0) })) || []),
       !addressQuery.data?.is_contract && xScoreFeature.isEnabled && xStarQuery.data?.data.level ?
         {
           slug: 'xstar',

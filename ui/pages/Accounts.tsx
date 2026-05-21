@@ -2,6 +2,9 @@ import { Box } from '@chakra-ui/react';
 import BigNumber from 'bignumber.js';
 import React from 'react';
 
+import type { AddressesItem } from 'types/api/addresses';
+
+import useAddressesMetadata from 'lib/address/useAddressesMetadata';
 import getItemIndex from 'lib/getItemIndex';
 import { TOP_ADDRESS } from 'stubs/address';
 import { generateListStub } from 'stubs/utils';
@@ -43,19 +46,46 @@ const Accounts = () => {
     return BigNumber(data?.total_supply || '0');
   }, [ data?.total_supply ]);
 
-  const content = data?.items ? (
+  // /api/v2/addresses does not preload public_tags on the listing endpoint,
+  // so batch-fetch them via /api/v1/metadata and merge into each row.
+  const hashesForMetadata = React.useMemo(
+    () => (data?.items ?? []).map(i => i.hash),
+    [ data?.items ],
+  );
+  const { getMetadata } = useAddressesMetadata(hashesForMetadata);
+
+  const enrichedItems: Array<AddressesItem> | undefined = React.useMemo(() => {
+    if (!data?.items) return undefined;
+    return data.items.map(item => {
+      const meta = getMetadata(item.hash);
+      if (!meta?.tags?.length) return item;
+      const derivedPublicTags = meta.tags.map(tag => ({
+        address_hash: item.hash,
+        display_name: tag.name,
+        label: tag.slug || tag.name,
+        meta: tag.meta ?? null,
+        tag_type: tag.tagType ?? null,
+      }));
+      const existing = item.public_tags ?? [];
+      const existingLabels = new Set(existing.map(t => t.label));
+      const merged = [ ...existing, ...derivedPublicTags.filter(t => !existingLabels.has(t.label)) ];
+      return { ...item, public_tags: merged } as AddressesItem;
+    });
+  }, [ data?.items, getMetadata ]);
+
+  const content = enrichedItems ? (
     <>
       <Box hideBelow="lg">
         <AddressesTable
           top={ pagination.isVisible ? ACTION_BAR_HEIGHT_DESKTOP : 0 }
-          items={ data.items }
+          items={ enrichedItems }
           totalSupply={ totalSupply }
           pageStartIndex={ pageStartIndex }
           isLoading={ isPlaceholderData }
         />
       </Box>
       <Box hideFrom="lg">
-        { data.items.map((item, index) => {
+        { enrichedItems.map((item, index) => {
           return (
             <AddressesListItem
               key={ item.hash + (isPlaceholderData ? index : '') }

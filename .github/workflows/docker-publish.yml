@@ -8,6 +8,14 @@ permissions:
   contents: read
   packages: write
 
+# Serialise concurrent main pushes so we don't waste GHCR cache slots and
+# don't fire two backend deploys racing for the same RPC boxes. Each push
+# still produces its own immutable :<short-sha> tag — only the build queue
+# is serialised.
+concurrency:
+  group: docker-publish-${{ github.workflow }}
+  cancel-in-progress: false
+
 jobs:
   build-and-push:
     name: Build and push
@@ -18,6 +26,9 @@ jobs:
 
       - name: Set SHORT_SHA
         run: echo "SHORT_SHA=$(echo $GITHUB_SHA | cut -c1-8)" >> $GITHUB_ENV
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
 
       - name: Log in to GHCR
         uses: docker/login-action@v4
@@ -37,6 +48,10 @@ jobs:
           build-args: |
             GIT_COMMIT_SHA=${{ env.SHORT_SHA }}
             GIT_TAG=${{ github.ref_name }}
+          # GHA layer cache cuts incremental builds from ~22 min to ~5-8 min
+          # by reusing the npm-install + next-build layers across runs.
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
 
       - name: Trigger backend deployment
         if: success()

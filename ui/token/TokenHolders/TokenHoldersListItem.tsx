@@ -19,9 +19,13 @@ interface Props {
 
 const TokenHoldersListItem = ({ holder, token, rank, isLoading }: Props) => {
   const labelTags = (holder.address.metadata?.tags ?? []).filter(t => t.tagType === 'protocol' || t.tagType === 'generic');
+  // Matches the desktop renderer (TokenHoldersTableItem.formatUsd): without a
+  // rate OR without decimals we can't compute USD honestly — the raw `amount`
+  // is in token base-units, so a missing decimals would render a value off by
+  // ~1e18 from reality. Show '-' instead of silently mispricing.
   const usd = (() => {
-    if (!token.exchange_rate) return '-';
-    const v = new BigNumber(holder.value).div(new BigNumber(10).pow(token.decimals ?? '18')).times(token.exchange_rate);
+    if (!token.exchange_rate || !token.decimals) return '-';
+    const v = new BigNumber(holder.value).div(new BigNumber(10).pow(token.decimals)).times(token.exchange_rate);
     return '$' + v.toFormat(2);
   })();
 

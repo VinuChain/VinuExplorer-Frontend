@@ -1,11 +1,12 @@
-import { Box } from '@chakra-ui/react';
-import React, { useMemo } from 'react';
+import { Box, Flex } from '@chakra-ui/react';
+import React, { useCallback, useMemo, useState } from 'react';
 
 import type { TokenInfo } from 'types/api/token';
 
 import useAddressesMetadata from 'lib/address/useAddressesMetadata';
 import useIsMobile from 'lib/hooks/useIsMobile';
 import useIsMounted from 'lib/hooks/useIsMounted';
+import { Button } from 'toolkit/chakra/button';
 import AddressCsvExportLink from 'ui/address/AddressCsvExportLink';
 import ActionBar from 'ui/shared/ActionBar';
 import DataFetchAlert from 'ui/shared/DataFetchAlert';
@@ -13,9 +14,14 @@ import DataListDisplay from 'ui/shared/DataListDisplay';
 import Pagination from 'ui/shared/pagination/Pagination';
 import type { QueryWithPagesResult } from 'ui/shared/pagination/useQueryWithPages';
 
+import TokenHoldersChart from './TokenHoldersChart';
+import TokenHoldersConcentration from './TokenHoldersConcentration';
+import TokenHoldersDistribution from './TokenHoldersDistribution';
 import TokenHoldersList from './TokenHoldersList';
 import TokenHoldersSummaryLine from './TokenHoldersSummaryLine';
 import TokenHoldersTable from './TokenHoldersTable';
+
+type AnalyticsTab = 'chart' | 'distribution';
 
 const TABS_HEIGHT = 88;
 
@@ -29,6 +35,10 @@ type Props = {
 const TokenHolders = ({ holdersQuery, token, shouldRender = true, tabsHeight = TABS_HEIGHT }: Props) => {
   const isMobile = useIsMobile();
   const isMounted = useIsMounted();
+  const [ activeChartTab, setActiveChartTab ] = useState<AnalyticsTab>('chart');
+
+  const handleSelectChartTab = useCallback(() => setActiveChartTab('chart'), []);
+  const handleSelectDistributionTab = useCallback(() => setActiveChartTab('distribution'), []);
 
   const items = holdersQuery.data?.items;
 
@@ -73,6 +83,7 @@ const TokenHolders = ({ holdersQuery, token, shouldRender = true, tabsHeight = T
 
   const content = enrichedItems && token ? (
     <>
+      <TokenHoldersConcentration hash={ token.address_hash }/>
       <TokenHoldersSummaryLine
         loadedCount={ enrichedItems.length }
         totalCount={ token.holders_count ? Number(token.holders_count) : undefined }
@@ -93,6 +104,28 @@ const TokenHolders = ({ holdersQuery, token, shouldRender = true, tabsHeight = T
           isLoading={ holdersQuery.isPlaceholderData }
           pageStartIndex={ pageStartIndex }
         />
+      </Box>
+      <Box mt={ 8 }>
+        <Flex gap={ 2 } mb={ 3 } borderBottomWidth="1px" borderColor="border.divider">
+          <Button
+            size="sm"
+            variant={ activeChartTab === 'chart' ? 'solid' : 'ghost' }
+            onClick={ handleSelectChartTab }
+            aria-pressed={ activeChartTab === 'chart' }
+          >
+            Holder count over time
+          </Button>
+          <Button
+            size="sm"
+            variant={ activeChartTab === 'distribution' ? 'solid' : 'ghost' }
+            onClick={ handleSelectDistributionTab }
+            aria-pressed={ activeChartTab === 'distribution' }
+          >
+            Value distribution
+          </Button>
+        </Flex>
+        { activeChartTab === 'chart' && <TokenHoldersChart hash={ token.address_hash }/> }
+        { activeChartTab === 'distribution' && <TokenHoldersDistribution hash={ token.address_hash }/> }
       </Box>
     </>
   ) : null;

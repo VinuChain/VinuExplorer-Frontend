@@ -1,11 +1,12 @@
 import { Box } from '@chakra-ui/react';
-import React from 'react';
+import React, { useMemo } from 'react';
 
 import type { TxsSocketType } from './socket/types';
 import type { AddressFromToFilter } from 'types/api/address';
 import type { Transaction, TransactionsSortingField, TransactionsSortingValue } from 'types/api/transaction';
 import type { PaginationParams } from 'ui/shared/pagination/types';
 
+import useAddressesMetadata from 'lib/address/useAddressesMetadata';
 import useIsMobile from 'lib/hooks/useIsMobile';
 import { apos } from 'toolkit/utils/htmlEntities';
 import AddressCsvExportLink from 'ui/address/AddressCsvExportLink';
@@ -64,9 +65,30 @@ const TxsContent = ({
     setSorting?.(value);
   }, [ sort, setSorting ]);
 
-  const translationQuery = useDescribeTxs(items, currentAddress, isPlaceholderData);
+  const hashesForMetadata = useMemo(
+    () => (items ?? [])
+      .flatMap((i) => [ i.from?.hash, i.to?.hash, i.created_contract?.hash ])
+      .filter((h): h is string => Boolean(h)),
+    [ items ],
+  );
+  const { getMetadata } = useAddressesMetadata(hashesForMetadata);
 
-  const content = items && items.length > 0 ? (
+  const enrichedItems: Array<Transaction> | undefined = useMemo(() => {
+    if (!items) return items;
+    return items.map((i) => ({
+      ...i,
+      from: i.from && { ...i.from, metadata: getMetadata(i.from.hash) ?? i.from.metadata },
+      to: i.to && { ...i.to, metadata: getMetadata(i.to.hash) ?? i.to.metadata },
+      created_contract: i.created_contract && {
+        ...i.created_contract,
+        metadata: getMetadata(i.created_contract.hash) ?? i.created_contract.metadata,
+      },
+    }));
+  }, [ items, getMetadata ]);
+
+  const translationQuery = useDescribeTxs(enrichedItems, currentAddress, isPlaceholderData);
+
+  const content = enrichedItems && enrichedItems.length > 0 ? (
     <>
       <Box hideFrom="lg">
         <TxsList
@@ -75,13 +97,13 @@ const TxsContent = ({
           isLoading={ isPlaceholderData }
           enableTimeIncrement={ enableTimeIncrement }
           currentAddress={ currentAddress }
-          items={ items }
+          items={ enrichedItems }
           translationQuery={ translationQuery }
         />
       </Box>
       <Box hideBelow="lg">
         <TxsTable
-          txs={ items }
+          txs={ enrichedItems }
           sort={ sort }
           onSortToggle={ setSorting ? onSortToggle : undefined }
           showBlockInfo={ showBlockInfo }
@@ -119,7 +141,7 @@ const TxsContent = ({
   return (
     <DataListDisplay
       isError={ isError }
-      itemsNum={ items?.length }
+      itemsNum={ enrichedItems?.length }
       emptyText="There are no transactions."
       actionBar={ actionBar }
       filterProps={{

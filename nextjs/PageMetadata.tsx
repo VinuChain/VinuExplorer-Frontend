@@ -14,7 +14,7 @@ interface Props<Pathname extends Route['pathname']> {
 }
 
 const PageMetadata = <Pathname extends Route['pathname']>(props: Props<Pathname>) => {
-  const { title, description, opengraph, canonical } = metadata.generate(props, props.apiData);
+  const { title, description, opengraph, canonical, siteJsonLd } = metadata.generate(props, props.apiData);
 
   return (
     <Head>
@@ -37,6 +37,16 @@ const PageMetadata = <Pathname extends Route['pathname']>(props: Props<Pathname>
 
       { /* Prevent auto zoom in inputs on mobile */ }
       <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1"/>
+
+      { /* JSON-LD structured data — rendered SSR so crawlers see it in the initial HTML */ }
+      { siteJsonLd?.map((schema, index) => (
+        <script
+          key={ `ld-json-${ index }` }
+          type="application/ld+json"
+
+          dangerouslySetInnerHTML={{ __html: JSON.stringify(schema) }}
+        />
+      )) }
     </Head>
   );
 };

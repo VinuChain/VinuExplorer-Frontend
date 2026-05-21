@@ -9,6 +9,7 @@ import { currencyUnits } from 'lib/units';
 
 import compileValue from './compileValue';
 import generateProductSchema from './generateProductSchema';
+import generateSiteSchema from './generateSiteSchema';
 import getCanonicalUrl from './getCanonicalUrl';
 import getPageOgType from './getPageOgType';
 import * as templates from './templates';
@@ -31,6 +32,7 @@ export default function generate<Pathname extends Route['pathname']>(route: Rout
 
   const pageOgType = getPageOgType(route.pathname);
   const jsonLd = generateProductSchema(route, apiData);
+  const siteJsonLd = generateSiteSchema(route.pathname);
 
   return {
     title: title,
@@ -42,5 +44,6 @@ export default function generate<Pathname extends Route['pathname']>(route: Rout
     },
     canonical: getCanonicalUrl(route.pathname),
     jsonLd,
+    siteJsonLd,
   };
 }

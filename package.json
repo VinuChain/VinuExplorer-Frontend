@@ -34,6 +34,7 @@
     "test:pw:detect-affected": "node ./deploy/tools/affected-tests/index.js",
     "test:vitest": "vitest",
     "favicon:generate:dev": "./tools/scripts/favicon-generator.dev.sh",
+    "og-image:generate": "node --no-warnings ./deploy/scripts/og_image_generator.js",
     "og-image:generate:dev": "./tools/scripts/og-image-generator.dev.sh",
     "sitemap:generate:dev": "./tools/scripts/sitemap-generator.dev.sh",
     "monitoring:prometheus:local": "docker run --name blockscout_prometheus -d -p 127.0.0.1:9090:9090 -v $(pwd)/prometheus.yml:/etc/prometheus/prometheus.yml prom/prometheus",

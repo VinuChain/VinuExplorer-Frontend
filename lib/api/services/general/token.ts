@@ -24,7 +24,7 @@ export const GENERAL_API_TOKEN_RESOURCES = {
   token_holders: {
     path: '/api/v2/tokens/:hash/holders',
     pathParams: [ 'hash' as const ],
-    filterFields: [],
+    filterFields: [ 'sort' as const, 'order' as const ],
     paginated: true,
   },
   token_transfers: {

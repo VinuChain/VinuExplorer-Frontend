@@ -1,20 +1,25 @@
 import { Box, Flex, Text } from '@chakra-ui/react';
-import React, { useCallback, useState } from 'react';
+import React, { useCallback } from 'react';
 
 import useApiQuery from 'lib/api/useApiQuery';
 import { Button } from 'toolkit/chakra/button';
 
+export const CHART_PERIODS = [ '24h', '7d', '30d', '90d' ] as const;
+export type ChartPeriod = typeof CHART_PERIODS[number];
+export const DEFAULT_CHART_PERIOD: ChartPeriod = '30d';
+
 interface Props {
   hash: string;
+  // `period` + `onChangePeriod` are lifted into TokenHolders so the
+  // sibling CSV-export link can mirror the selected window.
+  period: ChartPeriod;
+  onChangePeriod: (period: ChartPeriod) => void;
 }
 
-const PERIODS = [ '24h', '7d', '30d', '90d' ] as const;
-type Period = typeof PERIODS[number];
-
 interface PeriodButtonProps {
-  period: Period;
+  period: ChartPeriod;
   isActive: boolean;
-  onSelect: (period: Period) => void;
+  onSelect: (period: ChartPeriod) => void;
 }
 
 const PeriodButton = ({ period, isActive, onSelect }: PeriodButtonProps) => {
@@ -31,8 +36,7 @@ const PeriodButton = ({ period, isActive, onSelect }: PeriodButtonProps) => {
   );
 };
 
-const TokenHoldersChart = ({ hash }: Props) => {
-  const [ period, setPeriod ] = useState<Period>('30d');
+const TokenHoldersChart = ({ hash, period, onChangePeriod }: Props) => {
   const query = useApiQuery('general:token_holders_chart', {
     pathParams: { hash },
     queryParams: { period },
@@ -41,8 +45,8 @@ const TokenHoldersChart = ({ hash }: Props) => {
   return (
     <Box>
       <Flex gap={ 2 } mb={ 3 }>
-        { PERIODS.map((p) => (
-          <PeriodButton key={ p } period={ p } isActive={ period === p } onSelect={ setPeriod }/>
+        { CHART_PERIODS.map((p) => (
+          <PeriodButton key={ p } period={ p } isActive={ period === p } onSelect={ onChangePeriod }/>
         )) }
       </Flex>
       { query.isError && <Text color="text.secondary">Holder count history is being computed.</Text> }

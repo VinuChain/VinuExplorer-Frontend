@@ -8,13 +8,19 @@ permissions:
   contents: read
   packages: write
 
-# Serialise concurrent main pushes so we don't waste GHCR cache slots and
-# don't fire two backend deploys racing for the same RPC boxes. Each push
-# still produces its own immutable :<short-sha> tag — only the build queue
-# is serialised.
-concurrency:
-  group: docker-publish-${{ github.workflow }}
-  cancel-in-progress: false
+# No workflow-level `concurrency:` block here.
+#
+# GH Actions concurrency keeps at most ONE pending run per group: when run A
+# is in-progress and run B is pending, a third push lands and B is silently
+# cancelled before it ever starts. That violates the "every push produces
+# its own immutable :<short-sha> tag" promise and skips the backend deploy
+# trigger for the cancelled commit's image.
+#
+# Serialisation where it actually matters (the RPC-box deploy) is handled
+# by vinuexplorer-backend/.github/workflows/deploy.yml's own concurrency
+# block with cancel-in-progress:false. Letting these builds run in parallel
+# here is safe — GHA layer cache supports concurrent writes, and the SHORT
+# SHA tag is per-commit so there's no race on the artifact name.
 
 jobs:
   build-and-push:

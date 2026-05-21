@@ -13,14 +13,35 @@ const SearchBarSuggestLabel = ({ data, isMobile, searchTerm, addressFormat }: It
   const icon = <IconSvg name="publictags_slim" boxSize={ 5 } color="icon.primary"/>;
   const hash = data.filecoin_robust_address || (addressFormat === 'bech32' ? toBech32Address(data.address_hash) : data.address_hash);
 
-  const name = (
+  const meta = data.metadata;
+  const hasBadgeStyling = Boolean(meta?.bgColor || meta?.textColor);
+
+  const nameInner = <span dangerouslySetInnerHTML={{ __html: highlightText(data.name, searchTerm) }}/>;
+  const name = hasBadgeStyling ? (
+    <Text
+      as="span"
+      display="inline-block"
+      px={ 2 }
+      py="2px"
+      borderRadius="sm"
+      bg={ meta?.bgColor || 'gray.200' }
+      color={ meta?.textColor || 'inherit' }
+      fontWeight={ 600 }
+      fontSize="xs"
+      overflow="hidden"
+      whiteSpace="nowrap"
+      textOverflow="ellipsis"
+    >
+      { nameInner }
+    </Text>
+  ) : (
     <Text
       fontWeight={ 700 }
       overflow="hidden"
       whiteSpace="nowrap"
       textOverflow="ellipsis"
     >
-      <span dangerouslySetInnerHTML={{ __html: highlightText(data.name, searchTerm) }}/>
+      { nameInner }
     </Text>
   );
 

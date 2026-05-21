@@ -102,6 +102,10 @@ export interface SearchResultLabel {
   name: string;
   is_smart_contract_verified: boolean;
   url?: string; // not used by the frontend, we build the url ourselves
+  // Enriched by backend (vinuexplorer-backend feat/tag-aware-search-and-holder-analytics)
+  tag_label?: string;
+  tag_type?: string;
+  metadata?: AddressMetadataTagApi['meta'] | null;
 }
 
 export interface SearchResultBlock {

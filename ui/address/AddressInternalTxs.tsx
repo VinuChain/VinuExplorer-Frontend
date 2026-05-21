@@ -1,6 +1,8 @@
 import { Box } from '@chakra-ui/react';
 import React, { useMemo } from 'react';
 
+import type { InternalTransaction } from 'types/api/internalTransaction';
+
 import useAddressesMetadata from 'lib/address/useAddressesMetadata';
 import useIsMounted from 'lib/hooks/useIsMounted';
 import { apos } from 'toolkit/utils/htmlEntities';
@@ -34,17 +36,29 @@ const AddressInternalTxs = ({ shouldRender = true, isQueryEnabled = true }: Prop
   );
   const { getMetadata } = useAddressesMetadata(hashesForMetadata);
 
-  const enrichedItems = useMemo(() => {
+  const enrichedItems: Array<InternalTransaction> | undefined = useMemo(() => {
     if (!items) return items;
-    return items.map((i) => ({
-      ...i,
-      from: i.from && { ...i.from, metadata: getMetadata(i.from.hash) ?? i.from.metadata },
-      to: i.to && { ...i.to, metadata: getMetadata(i.to.hash) ?? i.to.metadata },
-      created_contract: i.created_contract && {
-        ...i.created_contract,
-        metadata: getMetadata(i.created_contract.hash) ?? i.created_contract.metadata,
-      },
-    }));
+    return items.map((i): InternalTransaction => {
+      const base = {
+        ...i,
+        from: { ...i.from, metadata: getMetadata(i.from.hash) ?? i.from.metadata },
+      };
+      if (i.to) {
+        return {
+          ...base,
+          to: { ...i.to, metadata: getMetadata(i.to.hash) ?? i.to.metadata },
+          created_contract: null,
+        };
+      }
+      return {
+        ...base,
+        to: null,
+        created_contract: {
+          ...i.created_contract,
+          metadata: getMetadata(i.created_contract.hash) ?? i.created_contract.metadata,
+        },
+      };
+    });
   }, [ items, getMetadata ]);
 
   if (!isMounted || !shouldRender) {

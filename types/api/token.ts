@@ -57,6 +57,34 @@ export type TokenHoldersPagination = {
   value: string;
 };
 
+export interface TokenHoldersDistributionBucket {
+  label: string;
+  min_usd: number;
+  max_usd: number | null;
+  holder_count: number;
+  sum_usd: string;
+}
+
+export interface TokenHoldersDistribution {
+  total_holders: number;
+  total_value: string | null;
+  top5_percentage: number | null;
+  top10_percentage: number | null;
+  top100_percentage: number | null;
+  whale_holders_count: number;
+  gini_coefficient: number | null;
+  value_buckets: Array<TokenHoldersDistributionBucket>;
+}
+
+export interface TokenHoldersChartPoint {
+  day: string;
+  holder_count: number;
+}
+
+export interface TokenHoldersChart {
+  items: Array<TokenHoldersChartPoint>;
+}
+
 export type ThumbnailSize = '60x60' | '250x250' | '500x500' | 'original';
 
 export interface TokenInstance {

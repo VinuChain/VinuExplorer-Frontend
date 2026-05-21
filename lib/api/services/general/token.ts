@@ -3,6 +3,8 @@ import type {
   TokenCounters,
   TokenInfo,
   TokenHolders,
+  TokenHoldersChart,
+  TokenHoldersDistribution,
   TokenInventoryResponse,
   TokenInstance,
   TokenInstanceTransfersCount,
@@ -26,6 +28,24 @@ export const GENERAL_API_TOKEN_RESOURCES = {
     pathParams: [ 'hash' as const ],
     filterFields: [ 'sort' as const, 'order' as const ],
     paginated: true,
+  },
+  token_holders_distribution: {
+    path: '/api/v2/tokens/:hash/holders/distribution',
+    pathParams: [ 'hash' as const ],
+  },
+  token_holders_chart: {
+    path: '/api/v2/tokens/:hash/holders/chart',
+    pathParams: [ 'hash' as const ],
+    filterFields: [ 'period' as const ],
+  },
+  token_csv_export_distribution: {
+    path: '/api/v2/tokens/:hash/holders/distribution/csv',
+    pathParams: [ 'hash' as const ],
+  },
+  token_csv_export_holder_chart: {
+    path: '/api/v2/tokens/:hash/holders/chart/csv',
+    pathParams: [ 'hash' as const ],
+    filterFields: [ 'period' as const ],
   },
   token_transfers: {
     path: '/api/v2/tokens/:hash/transfers',
@@ -97,6 +117,8 @@ R extends 'general:token' ? TokenInfo :
 R extends 'general:token_counters' ? TokenCounters :
 R extends 'general:token_transfers' ? TokenTransferResponse :
 R extends 'general:token_holders' ? TokenHolders :
+R extends 'general:token_holders_distribution' ? TokenHoldersDistribution :
+R extends 'general:token_holders_chart' ? TokenHoldersChart :
 R extends 'general:token_instance' ? TokenInstance :
 R extends 'general:token_instance_transfers_count' ? TokenInstanceTransfersCount :
 R extends 'general:token_instance_transfers' ? TokenInstanceTransferResponse :

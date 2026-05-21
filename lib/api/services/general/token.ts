@@ -5,6 +5,7 @@ import type {
   TokenHolders,
   TokenHoldersChart,
   TokenHoldersDistribution,
+  TokenHoldersFilters,
   TokenInventoryResponse,
   TokenInstance,
   TokenInstanceTransfersCount,
@@ -133,6 +134,7 @@ never;
 /* eslint-disable @stylistic/indent */
 export type GeneralApiTokenPaginationFilters<R extends GeneralApiTokenResourceName> =
 R extends 'general:token_transfers' ? TokenTransferFilters :
+R extends 'general:token_holders' ? TokenHoldersFilters :
 R extends 'general:token_inventory' ? TokenInventoryFilters :
 R extends 'general:tokens' ? TokensFilters :
 R extends 'general:tokens_bridged' ? TokensBridgedFilters :

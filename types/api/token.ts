@@ -140,3 +140,11 @@ export type TokenVerifiedInfo = Omit<TokenInfoApplication, 'id' | 'status'>;
 export type TokenInventoryFilters = {
   holder_address_hash?: string;
 };
+
+export type TokenHoldersSortField = 'value';
+export type TokenHoldersSortOrder = 'asc' | 'desc';
+
+export type TokenHoldersFilters = {
+  sort?: TokenHoldersSortField;
+  order?: TokenHoldersSortOrder;
+};

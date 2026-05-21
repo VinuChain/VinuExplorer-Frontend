@@ -14,6 +14,7 @@ import Pagination from 'ui/shared/pagination/Pagination';
 import type { QueryWithPagesResult } from 'ui/shared/pagination/useQueryWithPages';
 
 import TokenHoldersList from './TokenHoldersList';
+import TokenHoldersSummaryLine from './TokenHoldersSummaryLine';
 import TokenHoldersTable from './TokenHoldersTable';
 
 const TABS_HEIGHT = 88;
@@ -72,6 +73,10 @@ const TokenHolders = ({ holdersQuery, token, shouldRender = true, tabsHeight = T
 
   const content = enrichedItems && token ? (
     <>
+      <TokenHoldersSummaryLine
+        loadedCount={ enrichedItems.length }
+        totalCount={ token.holders_count ? Number(token.holders_count) : undefined }
+      />
       <Box display={{ base: 'none', lg: 'block' }}>
         <TokenHoldersTable
           data={ enrichedItems }

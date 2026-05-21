@@ -112,7 +112,7 @@ const TokenInstanceContent = () => {
       {
         id: 'holders',
         title: 'Holders',
-        component: <TokenHolders holdersQuery={ holdersQuery } token={ tokenQuery.data } shouldRender={ !isLoading } tabsHeight={ 80 }/>,
+        component: <TokenHolders holdersQuery={ holdersQuery } token={ tokenQuery.data } pageSize={ 10 } shouldRender={ !isLoading } tabsHeight={ 80 }/>,
       } :
       undefined,
     { id: 'metadata', title: 'Metadata', component: (

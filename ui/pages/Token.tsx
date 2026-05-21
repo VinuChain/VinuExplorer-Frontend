@@ -200,7 +200,7 @@ const TokenPageContent = () => {
     {
       id: 'holders',
       title: 'Holders',
-      component: <TokenHolders token={ tokenQuery.data } holdersQuery={ holdersQuery } shouldRender={ !isLoading }/>,
+      component: <TokenHolders token={ tokenQuery.data } holdersQuery={ holdersQuery } pageSize={ 50 } shouldRender={ !isLoading }/>,
     },
     addressQuery.data?.is_contract ? {
       id: 'contract',

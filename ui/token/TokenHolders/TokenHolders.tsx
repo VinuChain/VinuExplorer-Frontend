@@ -27,18 +27,19 @@ type AnalyticsTab = 'chart' | 'distribution';
 
 const TABS_HEIGHT = 88;
 
-// `getItemIndex`' default page size — used here for the rank-offset math.
-// The backend `token_holders` endpoint pages at 50.
-const HOLDERS_PAGE_SIZE = 50;
-
 type Props = {
   token?: TokenInfo;
   holdersQuery: QueryWithPagesResult<'general:token_holders'>;
+  // Fixed page size of the backing API resource. Token holders use 50/page;
+  // token-instance holders use 10/page. Required so the rank-offset math
+  // works on every consumer — hard-coding 50 here would mis-number ranks on
+  // the token-instance route (page 2 would start at 51 instead of 11).
+  pageSize: number;
   shouldRender?: boolean;
   tabsHeight?: number;
 };
 
-const TokenHolders = ({ holdersQuery, token, shouldRender = true, tabsHeight = TABS_HEIGHT }: Props) => {
+const TokenHolders = ({ holdersQuery, token, pageSize, shouldRender = true, tabsHeight = TABS_HEIGHT }: Props) => {
   const isMobile = useIsMobile();
   const isMounted = useIsMounted();
   const [ activeChartTab, setActiveChartTab ] = useState<AnalyticsTab>('chart');
@@ -88,11 +89,11 @@ const TokenHolders = ({ holdersQuery, token, shouldRender = true, tabsHeight = T
   );
 
   const pageNumber = holdersQuery.pagination.page ?? 1;
-  // 0-based offset to the first row on this page. Derived from the fixed
-  // page size, NOT from `enrichedItems.length` — using the item count breaks
-  // ranks on the last (short) page (e.g. 5 items on page 3 would otherwise
-  // restart numbering from 11 instead of 101).
-  const pageStartIndex = getItemIndex(0, pageNumber, HOLDERS_PAGE_SIZE) - 1;
+  // 0-based offset to the first row on this page. Derived from the
+  // resource's fixed `pageSize`, NOT from `enrichedItems.length` — using the
+  // item count breaks ranks on the last (short) page (e.g. 5 items on page 3
+  // would otherwise restart numbering from 11 instead of 101).
+  const pageStartIndex = getItemIndex(0, pageNumber, pageSize) - 1;
   const loadedCount = pageStartIndex + (enrichedItems?.length ?? 0);
 
   const content = enrichedItems && token ? (

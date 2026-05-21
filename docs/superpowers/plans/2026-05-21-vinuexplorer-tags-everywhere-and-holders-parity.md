@@ -615,7 +615,11 @@ git add apps/explorer/lib/explorer/chain/search.ex \
 git -c commit.gpgsign=false commit -m "feat(search): UNION public-tag matches into quick search"
 ```
 
-## Task 1.4 — Sort params on `/api/v2/tokens/:hash/holders`
+## Task 1.4 — SKIPPED (default DESC sort already matches BscScan)
+
+Investigated 2026-05-21: adding `?sort=value&order=asc` requires modifying 3 layers (the chain wrapper, `CurrentTokenBalance.token_holders_ordered_by_value/2`'s hardcoded `order_by`, AND `Chain.page_token_balances/2`'s direction-locked keyset `<` comparison). The keyset change in particular would silently break page-2 of an ASC sort. The risk-to-reward is poor for a feature that's not in the user's original ask — BscScan also displays holders in default DESC-by-value order with no clickable sort headers. Phase 3 Task 3.2 below is correspondingly adjusted to not include sort chevrons; the table renders in default order only.
+
+### Original Task 1.4 (kept as deferred reference)
 
 **Files:**
 - Modify: `apps/block_scout_web/lib/block_scout_web/controllers/api/v2/token_controller.ex` (`:holders` action)
@@ -1613,7 +1617,21 @@ git add apps/block_scout_web/lib/block_scout_web/controllers/api/v2/token_contro
 git -c commit.gpgsign=false commit -m "feat(api/v2): token holders chart endpoint"
 ```
 
-## Task 1.11 — `VinuSwapPriceFiller` Mix task
+## Task 1.11 — DEFERRED to a follow-up PR
+
+The existing Blockscout `Explorer.Market` integration already populates `tokens.fiat_value` for tokens with upstream price feeds (CoinGecko etc.). Frontend Task 3.2 renders "-" for the USD Value column whenever `fiat_value` is nil, which is acceptable for tokens without an external price source. The VinuSwap-based fallback is a quality-of-life enhancement specifically for unpriced tokens.
+
+Deferred because:
+- Requires verified `EthereumJSONRPC` test-env setup (not confirmed in this fork)
+- Requires Mox infrastructure (no `:mox` dependency currently in `apps/explorer/mix.exs`)
+- On-chain integration testing is meaningfully harder than the other backend tasks
+- Phase 1 PR ships sooner without it; can be a standalone 1-day follow-up PR
+
+Addresses pre-resolved for the follow-up PR:
+- Mainnet VinuSwap Quoter: `0xEed635Fa2343355d9bA726C379F2B5dEa70fE65C` (`~/vinuswap-frontend/src/config.ts:59`)
+- Mainnet WVC token: `0xed8c5530a0a086a12f57275728128a60dff04230` (`~/vinuswap-frontend/src/config.ts:41`)
+
+### Original Task 1.11 (kept as deferred reference)
 
 **Files:**
 - Create: `apps/explorer/lib/mix/tasks/vinu/fill_vinuswap_prices.ex`

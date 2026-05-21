@@ -5,6 +5,12 @@
     "module": "CommonJS",
     "moduleResolution": "node",
     "outDir": "./build",
+    // This sub-project pins typescript@5.1 in its own package.json, so the
+    // root's "6.0" deprecation-silence value is unknown to it (TS 5.x only
+    // accepts "5.0"). Override here so the Docker build's
+    // `yarn compile_config` step keeps working after the root upgraded to
+    // TypeScript 6.0.3.
+    "ignoreDeprecations": "5.0",
     "paths": {
       "nextjs-routes": ["./nextjs/nextjs-routes.d.ts"],
     }

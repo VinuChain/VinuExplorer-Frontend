@@ -11,6 +11,14 @@ export interface AddressTag {
   label: string;
   display_name: string;
   address_hash: string;
+  tag_type?: string | null;
+  meta?: {
+    bgColor?: string;
+    textColor?: string;
+    tagUrl?: string;
+    tagIcon?: string;
+    tooltipDescription?: string;
+  } | null;
 }
 
 export interface WatchlistName {

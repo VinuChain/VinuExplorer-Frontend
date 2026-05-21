@@ -165,9 +165,13 @@ const TokenPageContent = () => {
     },
   });
 
+  const holdersOrderQuery = getQueryParamString(router.query.order);
+  const holdersOrder: 'asc' | 'desc' = holdersOrderQuery === 'asc' ? 'asc' : 'desc';
+
   const holdersQuery = useQueryWithPages({
     resourceName: 'general:token_holders',
     pathParams: { hash: hashString },
+    filters: { sort: 'value', order: holdersOrder },
     scrollRef,
     options: {
       enabled: Boolean(hashString && tab === 'holders' && hasData),

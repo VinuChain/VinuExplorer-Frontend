@@ -66,6 +66,10 @@ const TokenHolders = ({ holdersQuery, token, shouldRender = true, tabsHeight = T
     </ActionBar>
   );
 
+  const pageNumber = holdersQuery.pagination.page ?? 1;
+  const pageSize = enrichedItems?.length ?? 0;
+  const pageStartIndex = (pageNumber - 1) * pageSize;
+
   const content = enrichedItems && token ? (
     <>
       <Box display={{ base: 'none', lg: 'block' }}>
@@ -74,6 +78,7 @@ const TokenHolders = ({ holdersQuery, token, shouldRender = true, tabsHeight = T
           token={ token }
           top={ tabsHeight }
           isLoading={ holdersQuery.isPlaceholderData }
+          pageStartIndex={ pageStartIndex }
         />
       </Box>
       <Box display={{ base: 'block', lg: 'none' }}>
@@ -81,6 +86,7 @@ const TokenHolders = ({ holdersQuery, token, shouldRender = true, tabsHeight = T
           data={ enrichedItems }
           token={ token }
           isLoading={ holdersQuery.isPlaceholderData }
+          pageStartIndex={ pageStartIndex }
         />
       </Box>
     </>

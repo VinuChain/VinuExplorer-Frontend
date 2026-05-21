@@ -106,7 +106,7 @@ const TokenHolders = ({ holdersQuery, token, shouldRender = true, tabsHeight = T
         />
       </Box>
       <Box mt={ 8 }>
-        <Flex gap={ 2 } mb={ 3 } borderBottomWidth="1px" borderColor="border.divider">
+        <Flex gap={ 2 } mb={ 3 } borderBottomWidth="1px" borderColor="border.divider" alignItems="center" flexWrap="wrap">
           <Button
             size="sm"
             variant={ activeChartTab === 'chart' ? 'solid' : 'ghost' }
@@ -123,6 +123,18 @@ const TokenHolders = ({ holdersQuery, token, shouldRender = true, tabsHeight = T
           >
             Value distribution
           </Button>
+          <Flex ml="auto" gap={ 2 } alignItems="center">
+            <AddressCsvExportLink
+              address={ token.address_hash }
+              params={{ type: 'distribution' }}
+              isLoading={ holdersQuery.pagination.isLoading }
+            />
+            <AddressCsvExportLink
+              address={ token.address_hash }
+              params={{ type: 'holder-chart', period: '30d' }}
+              isLoading={ holdersQuery.pagination.isLoading }
+            />
+          </Flex>
         </Flex>
         { activeChartTab === 'chart' && <TokenHoldersChart hash={ token.address_hash }/> }
         { activeChartTab === 'distribution' && <TokenHoldersDistribution hash={ token.address_hash }/> }

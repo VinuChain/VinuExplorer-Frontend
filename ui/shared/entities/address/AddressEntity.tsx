@@ -127,6 +127,18 @@ const Icon = (props: IconProps) => {
             borderRadius="full"
             objectFit="cover"
             flexShrink={ 0 }
+            // Tag icons come from user submissions and can rot
+            // (host moves, hotlink protection, expired CDN, etc.).
+            // Without a fallback the local Image wrapper renders
+            // nothing on error, dropping the address's only visual
+            // identifier in dense list views. Fall through to the
+            // generative identicon so the row still has SOMETHING.
+            fallback={ (
+              <AddressIdenticon
+                size={ iconBoxPx }
+                hash={ getDisplayedAddress(props.address) }
+              />
+            ) }
           />
         ) : (
           <AddressIdenticon

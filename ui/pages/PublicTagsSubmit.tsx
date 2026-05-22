@@ -29,6 +29,14 @@ const DEFAULT_TAG_TYPES: Array<PublicTagType> = [
   { id: 'meme', type: 'meme', description: 'Meme token or community project tag' },
   { id: 'exchange', type: 'exchange', description: 'Exchange address tag' },
   { id: 'liquidity_pool', type: 'liquidity_pool', description: 'Liquidity pool contract tag' },
+  // Keep in lockstep with vinuexplorer-backend
+  // Explorer.Account.PublicTagSubmission.TagTypes — the metadata
+  // service may be down or disabled at boot, in which case this
+  // fallback is the *only* source of allowed tag_types. Missing an
+  // entry here silently drops the matching curated dropdown option
+  // (PublicTagsSubmitFieldTagType intersects ALLOWED_CATEGORY_TYPES
+  // against the resolved tagTypes).
+  { id: 'defi', type: 'defi', description: 'DeFi protocol address tag' },
 ];
 
 const PublicTagsSubmit = () => {

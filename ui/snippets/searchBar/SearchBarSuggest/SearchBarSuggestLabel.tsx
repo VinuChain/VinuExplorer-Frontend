@@ -6,15 +6,37 @@ import type { SearchResultLabel } from 'types/api/search';
 
 import { toBech32Address } from 'lib/address/bech32';
 import highlightText from 'lib/highlightText';
+import { Image } from 'toolkit/chakra/image';
 import HashStringShortenDynamic from 'ui/shared/HashStringShortenDynamic';
 import IconSvg from 'ui/shared/IconSvg';
 
 const SearchBarSuggestLabel = ({ data, isMobile, searchTerm, addressFormat }: ItemsProps<SearchResultLabel>) => {
-  const icon = <IconSvg name="publictags_slim" boxSize={ 5 } color="icon.primary"/>;
+  const meta = data.metadata;
   const hash = data.filecoin_robust_address || (addressFormat === 'bech32' ? toBech32Address(data.address_hash) : data.address_hash);
 
-  const meta = data.metadata;
-  const hasBadgeStyling = Boolean(meta?.bgColor || meta?.textColor);
+  // Prefer the tag's uploaded logo over the generic publictags glyph
+  // — matches the same swap AddressEntity.Icon does for the row view.
+  const icon = meta?.tagIcon ? (
+    <Image
+      src={ meta.tagIcon }
+      alt={ `${ data.name } icon` }
+      boxSize="20px"
+      borderRadius="full"
+      objectFit="cover"
+      flexShrink={ 0 }
+    />
+  ) : (
+    <IconSvg name="publictags_slim" boxSize={ 5 } color="icon.primary"/>
+  );
+
+  // Only render a badge backdrop when BOTH bgColor and textColor are
+  // supplied. The previous code rendered a hard-coded gray.200 bg as
+  // a fallback when only one color was set, which read as a
+  // washed-out "negative" pill (especially for tags that uploaded
+  // only a textColor) and didn't adapt to dark mode. With this guard
+  // a single-color payload falls back to plain text using the
+  // submitter's textColor as a tint when present.
+  const hasBadgeStyling = Boolean(meta?.bgColor && meta?.textColor);
 
   const nameInner = <span dangerouslySetInnerHTML={{ __html: highlightText(data.name, searchTerm) }}/>;
   const name = hasBadgeStyling ? (
@@ -24,8 +46,8 @@ const SearchBarSuggestLabel = ({ data, isMobile, searchTerm, addressFormat }: It
       px={ 2 }
       py="2px"
       borderRadius="sm"
-      bg={ meta?.bgColor || 'gray.200' }
-      color={ meta?.textColor || 'inherit' }
+      bg={ meta?.bgColor }
+      color={ meta?.textColor }
       fontWeight={ 600 }
       fontSize="xs"
       overflow="hidden"
@@ -37,6 +59,7 @@ const SearchBarSuggestLabel = ({ data, isMobile, searchTerm, addressFormat }: It
   ) : (
     <Text
       fontWeight={ 700 }
+      color={ meta?.textColor || undefined }
       overflow="hidden"
       whiteSpace="nowrap"
       textOverflow="ellipsis"

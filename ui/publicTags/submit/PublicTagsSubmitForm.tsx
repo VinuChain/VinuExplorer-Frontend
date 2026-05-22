@@ -146,11 +146,15 @@ const PublicTagsSubmitForm = ({ config, userInfo, onSubmitResult }: Props) => {
             />
           </GridItem>
           { showAddressSource && (
-            <GridItem colSpan={{ base: 1, lg: 3 }}>
+            <GridItem colSpan={{ base: 1, lg: 3 }} minW={ 0 }>
+              <chakra.div fontSize="sm" fontWeight={ 500 } mb={ 2 }>
+                Where did you discover this address?
+              </chakra.div>
               <FormFieldText<FormFields>
                 name="addressSource"
-                placeholder="Where did you discover this address? (optional — paste a link or describe)"
+                placeholder="Optional — paste a link or describe"
                 rules={{ maxLength: 500 }}
+                floating={ false }
               />
             </GridItem>
           ) }

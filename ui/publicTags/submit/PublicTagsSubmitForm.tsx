@@ -157,13 +157,16 @@ const PublicTagsSubmitForm = ({ config, userInfo, onSubmitResult }: Props) => {
             />
           </GridItem>
           { showAddressSource && (
-            <GridItem colSpan={{ base: 1, lg: 3 }} minW={ 0 }>
-              <FormFieldText<FormFields>
-                name="addressSource"
-                placeholder="Where did you discover this address? (optional — paste a link or describe)"
-                rules={{ maxLength: 500 }}
-              />
-            </GridItem>
+            <>
+              <GridItem colSpan={{ base: 1, lg: 2 }} minW={ 0 }>
+                <FormFieldText<FormFields>
+                  name="addressSource"
+                  placeholder="Where did you discover this address? (optional — paste a link or describe)"
+                  rules={{ maxLength: 500 }}
+                />
+              </GridItem>
+              { !isMobile && <div/> }
+            </>
           ) }
           <PublicTagsSubmitFieldAddresses/>
           <PublicTagsSubmitFieldTags tagTypes={ config?.tagTypes }/>

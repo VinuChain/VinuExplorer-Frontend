@@ -138,6 +138,14 @@ const Transactions = () => {
     }
   })();
 
+  // See ui/txs/TxsHeaderMobile.tsx for the rationale: a soft refetch via
+  // pagination.resetPage leaves SocketNewItemsNotice in a broken state where
+  // the "N more transactions have come in" banner vanishes and never
+  // reappears. A hard reload re-mounts the socket hook cleanly.
+  const handleRefresh = React.useCallback(() => {
+    window.location.reload();
+  }, []);
+
   const rightSlot = (() => {
     if (isMobile) {
       return null;
@@ -147,7 +155,7 @@ const Transactions = () => {
 
     return (
       <Flex alignItems="center" gap={ 6 }>
-        <TxsRefreshButton onClick={ pagination.resetPage } isLoading={ pagination.isLoading }/>
+        <TxsRefreshButton onClick={ handleRefresh } isLoading={ pagination.isLoading }/>
         { isAdvancedFilterEnabled && <AdvancedFilterLink/> }
         { pagination.isVisible && <Pagination my={ 1 } { ...pagination }/> }
       </Flex>

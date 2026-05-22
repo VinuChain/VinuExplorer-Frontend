@@ -29,7 +29,7 @@ const PublicTagsSubmitResult = ({ data }: Props) => {
 
   const hasErrors = groupedData.items.some((item) => item.error !== null);
   const companyWebsite = makePrettyLink(groupedData.companyWebsite);
-  const startOverButtonQuery = hasErrors ? pickBy({
+  const editButtonQuery = hasErrors ? pickBy({
     requesterName: groupedData.requesterName,
     requesterEmail: groupedData.requesterEmail,
     companyName: groupedData.companyName,
@@ -71,9 +71,9 @@ const PublicTagsSubmitResult = ({ data }: Props) => {
 
       <Flex flexDir={{ base: 'column', lg: 'row' }} columnGap={ 6 } mt={ 8 } rowGap={ 3 }>
         { hasErrors && (
-          <Link href={ route({ pathname: '/public-tags/submit', query: startOverButtonQuery }) } asChild>
+          <Link href={ route({ pathname: '/public-tags/submit', query: editButtonQuery }) } asChild>
             <Button variant="outline" w={{ base: '100%', lg: 'auto' }}>
-              Start over
+              Edit
             </Button>
           </Link>
         ) }

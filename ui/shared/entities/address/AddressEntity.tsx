@@ -1,5 +1,5 @@
 import { Box, Flex, chakra, VStack } from '@chakra-ui/react';
-import React, { useLayoutEffect, useRef, useState } from 'react';
+import React from 'react';
 
 import type { AddressParam } from 'types/api/addressParams';
 
@@ -12,6 +12,7 @@ import { Image } from 'toolkit/chakra/image';
 import { Skeleton } from 'toolkit/chakra/skeleton';
 import { Tooltip } from 'toolkit/chakra/tooltip';
 import * as EntityBase from 'ui/shared/entities/base/components';
+import FittedTagName from 'ui/shared/EntityTags/FittedTagName';
 import { getTagName } from 'ui/shared/EntityTags/utils';
 import getChainTooltipText from 'ui/shared/externalChains/getChainTooltipText';
 import type { IconName } from 'ui/shared/IconSvg';
@@ -152,74 +153,6 @@ const Icon = (props: IconProps) => {
     </Tooltip>
   );
 };
-
-// Shrink-to-fit text renderer for replaced-address names. Long tag
-// labels (e.g. "VIR Ecosystem Wallet" inside a narrow holders table
-// column) would otherwise truncate with an ellipsis, losing the
-// brand-identity context. ResizeObserver + width measurement lets us
-// scale the text down via transform when the natural width exceeds
-// the parent slot — preserving full legibility for moderate sizes
-// (clamped at 0.7) before fall-back to ellipsis on extreme cases.
-const FITTED_MIN_SCALE = 0.7;
-
-const FittedTagName = React.memo(({ text }: { text: string }) => {
-  const wrapperRef = useRef<HTMLSpanElement | null>(null);
-  const innerRef = useRef<HTMLSpanElement | null>(null);
-  const [ scale, setScale ] = useState<number>(1);
-
-  useLayoutEffect(() => {
-    const wrapper = wrapperRef.current;
-    const inner = innerRef.current;
-    if (!wrapper || !inner) return;
-
-    const measure = () => {
-      const containerWidth = wrapper.clientWidth;
-      const textWidth = inner.scrollWidth;
-      if (containerWidth <= 0 || textWidth <= 0) return;
-      const next = textWidth > containerWidth ?
-        Math.max(FITTED_MIN_SCALE, containerWidth / textWidth) :
-        1;
-      setScale((prev) => (Math.abs(prev - next) > 0.005 ? next : prev));
-    };
-
-    measure();
-    const ro = new ResizeObserver(measure);
-    ro.observe(wrapper);
-    ro.observe(inner);
-    return () => ro.disconnect();
-  }, [ text ]);
-
-  // Once scaled below the floor, still trim with ellipsis so super-
-  // long pathological names don't visually overflow the row.
-  const willOverflow = scale <= FITTED_MIN_SCALE;
-
-  return (
-    <Box
-      as="span"
-      ref={ wrapperRef }
-      display="block"
-      overflow="hidden"
-      minW={ 0 }
-      lineHeight="1.25"
-    >
-      <Box
-        as="span"
-        ref={ innerRef }
-        display="inline-block"
-        transform={ scale < 1 ? `scale(${ scale })` : undefined }
-        transformOrigin="left center"
-        whiteSpace="nowrap"
-        overflow={ willOverflow ? 'hidden' : 'visible' }
-        textOverflow={ willOverflow ? 'ellipsis' : 'clip' }
-        maxW={ willOverflow ? '100%' : undefined }
-      >
-        { text }
-      </Box>
-    </Box>
-  );
-});
-
-FittedTagName.displayName = 'FittedTagName';
 
 export type ContentProps = Omit<EntityBase.ContentBaseProps, 'text'> & Pick<EntityProps, 'address'> & { altHash?: string };
 

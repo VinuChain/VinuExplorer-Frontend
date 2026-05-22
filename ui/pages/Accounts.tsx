@@ -47,12 +47,15 @@ const Accounts = () => {
   }, [ data?.total_supply ]);
 
   // /api/v2/addresses does not preload metadata.tags on the listing endpoint,
-  // so batch-fetch them via /api/v1/metadata and merge into item.metadata so
-  // the row components can render styled EntityTag badges (with bgColor /
-  // textColor / icon from each tag's meta payload) the same way the
-  // TokenHolders page does. `name`-type tags are stripped because
-  // AddressEntity would otherwise replace the hex hash with the tag's name —
-  // the /accounts list should keep showing the raw address.
+  // so batch-fetch them via /api/v1/metadata and merge into item.metadata.
+  // Two semantic kinds flow through, both surfaced by AddressEntity:
+  //   * `tagType === 'name'`   → "Tag" — replaces the hex hash with the name
+  //                              (e.g. "VIR Ecosystem Wallet" shown instead
+  //                              of 0x4A1B...). Hover tooltip keeps the hash.
+  //   * other `tagType` values → "Label" — rendered as a styled EntityTag
+  //                              badge alongside the hash (e.g. "Exchange",
+  //                              "Liquidity Pool"). Uses each tag's `meta`
+  //                              payload for bgColor / textColor / icon.
   const hashesForMetadata = React.useMemo(
     () => (data?.items ?? []).map(i => i.hash),
     [ data?.items ],
@@ -63,11 +66,11 @@ const Accounts = () => {
     if (!data?.items) return undefined;
     return data.items.map(item => {
       const meta = getMetadata(item.hash);
-      const labelTags = (meta?.tags ?? []).filter(t => t.tagType !== 'name');
-      if (!labelTags.length) return item;
-      const existing = (item.metadata?.tags ?? []).filter(t => t.tagType !== 'name');
+      const fetchedTags = meta?.tags ?? [];
+      if (!fetchedTags.length) return item;
+      const existing = item.metadata?.tags ?? [];
       const existingSlugs = new Set(existing.map(t => t.slug));
-      const mergedTags = [ ...existing, ...labelTags.filter(t => !existingSlugs.has(t.slug)) ];
+      const mergedTags = [ ...existing, ...fetchedTags.filter(t => !existingSlugs.has(t.slug)) ];
       return {
         ...item,
         metadata: {

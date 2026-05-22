@@ -17,6 +17,7 @@ import useIsMobile from 'lib/hooks/useIsMobile';
 import { Button } from 'toolkit/chakra/button';
 import { Heading } from 'toolkit/chakra/heading';
 import { FormFieldEmail } from 'toolkit/components/forms/fields/FormFieldEmail';
+import { FormFieldRadio } from 'toolkit/components/forms/fields/FormFieldRadio';
 import { FormFieldText } from 'toolkit/components/forms/fields/FormFieldText';
 import { FormFieldUrl } from 'toolkit/components/forms/fields/FormFieldUrl';
 import { Hint } from 'toolkit/components/Hint/Hint';
@@ -127,6 +128,26 @@ const PublicTagsSubmitForm = ({ config, userInfo, onSubmitResult }: Props) => {
               Public tags/labels
               <Hint label="Submit a public tag proposal for our moderation team to review"/>
             </Heading>
+          </GridItem>
+          <GridItem colSpan={{ base: 1, lg: 3 }}>
+            <chakra.div fontSize="sm" fontWeight={ 500 } mb={ 2 }>
+              Do you own this address? <chakra.span color="red.500">*</chakra.span>
+            </chakra.div>
+            <FormFieldRadio<FormFields, 'ownership'>
+              name="ownership"
+              rules={{ required: 'Please answer the ownership question' }}
+              options={ [
+                { value: 'owner', label: 'This is my personal/project address' },
+                { value: 'not_owner', label: 'This is not my address' },
+              ] }
+            />
+          </GridItem>
+          <GridItem colSpan={{ base: 1, lg: 3 }}>
+            <FormFieldText<FormFields>
+              name="addressSource"
+              placeholder="Where did you discover this address? (optional — paste a link or describe)"
+              rules={{ maxLength: 500 }}
+            />
           </GridItem>
           <PublicTagsSubmitFieldAddresses/>
           <PublicTagsSubmitFieldTags tagTypes={ config?.tagTypes }/>

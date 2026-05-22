@@ -28,7 +28,7 @@ const AddressesTableItem = ({
 }: Props) => {
 
   const addressBalance = BigNumber(item.coin_balance || 0).div(BigNumber(10 ** config.chain.currency.decimals));
-  const labelTags = (item.metadata?.tags ?? []).filter(t => t.tagType !== 'name');
+  const labelTags = (item.metadata?.tags ?? []).filter(t => t.tagType !== 'name' && t.tagType !== 'generic');
 
   return (
     <TableRow>

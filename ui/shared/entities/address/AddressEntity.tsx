@@ -1,5 +1,5 @@
 import { Box, Flex, chakra, VStack } from '@chakra-ui/react';
-import React from 'react';
+import React, { useLayoutEffect, useRef, useState } from 'react';
 
 import type { AddressParam } from 'types/api/addressParams';
 
@@ -101,6 +101,16 @@ const Icon = (props: IconProps) => {
     return props.hint;
   })();
 
+  // Prefer a public-tag's uploaded `tagIcon` over the generative
+  // identicon when present — same logic AddressEntity.Content uses to
+  // pick the name. Falling back to the identicon when no tag image is
+  // available keeps the existing visual for un-curated addresses.
+  const nameTag =
+    props.address.metadata?.tags?.find((tag) => tag.tagType === 'name' && tag.name) ??
+    props.address.metadata?.tags?.find((tag) => Boolean(tag.name));
+  const nameTagIcon = nameTag?.meta?.tagIcon;
+  const iconBoxPx = props.size ?? (props.variant === 'heading' ? 30 : 20);
+
   return (
     <Tooltip
       content={ label }
@@ -109,10 +119,21 @@ const Icon = (props: IconProps) => {
       positioning={ shield ? { offset: { mainAxis: 8 } } : undefined }
     >
       <Flex marginRight={ styles.marginRight } position="relative">
-        <AddressIdenticon
-          size={ props.size ?? (props.variant === 'heading' ? 30 : 20) }
-          hash={ getDisplayedAddress(props.address) }
-        />
+        { nameTagIcon ? (
+          <Image
+            src={ nameTagIcon }
+            alt={ `${ nameTag?.name ?? 'address' } icon` }
+            boxSize={ `${ iconBoxPx }px` }
+            borderRadius="full"
+            objectFit="cover"
+            flexShrink={ 0 }
+          />
+        ) : (
+          <AddressIdenticon
+            size={ iconBoxPx }
+            hash={ getDisplayedAddress(props.address) }
+          />
+        ) }
         { shield && <EntityBase.IconShield { ...shield }/> }
         { isDelegatedAddress && <AddressIconDelegated isVerified={ Boolean(props.address.is_verified) }/> }
       </Flex>
@@ -120,14 +141,93 @@ const Icon = (props: IconProps) => {
   );
 };
 
+// Shrink-to-fit text renderer for replaced-address names. Long tag
+// labels (e.g. "VIR Ecosystem Wallet" inside a narrow holders table
+// column) would otherwise truncate with an ellipsis, losing the
+// brand-identity context. ResizeObserver + width measurement lets us
+// scale the text down via transform when the natural width exceeds
+// the parent slot — preserving full legibility for moderate sizes
+// (clamped at 0.7) before fall-back to ellipsis on extreme cases.
+const FITTED_MIN_SCALE = 0.7;
+
+const FittedTagName = React.memo(({ text }: { text: string }) => {
+  const wrapperRef = useRef<HTMLSpanElement | null>(null);
+  const innerRef = useRef<HTMLSpanElement | null>(null);
+  const [ scale, setScale ] = useState<number>(1);
+
+  useLayoutEffect(() => {
+    const wrapper = wrapperRef.current;
+    const inner = innerRef.current;
+    if (!wrapper || !inner) return;
+
+    const measure = () => {
+      const containerWidth = wrapper.clientWidth;
+      const textWidth = inner.scrollWidth;
+      if (containerWidth <= 0 || textWidth <= 0) return;
+      const next = textWidth > containerWidth ?
+        Math.max(FITTED_MIN_SCALE, containerWidth / textWidth) :
+        1;
+      setScale((prev) => (Math.abs(prev - next) > 0.005 ? next : prev));
+    };
+
+    measure();
+    const ro = new ResizeObserver(measure);
+    ro.observe(wrapper);
+    ro.observe(inner);
+    return () => ro.disconnect();
+  }, [ text ]);
+
+  // Once scaled below the floor, still trim with ellipsis so super-
+  // long pathological names don't visually overflow the row.
+  const willOverflow = scale <= FITTED_MIN_SCALE;
+
+  return (
+    <Box
+      as="span"
+      ref={ wrapperRef }
+      display="block"
+      overflow="hidden"
+      minW={ 0 }
+      lineHeight="1.25"
+    >
+      <Box
+        as="span"
+        ref={ innerRef }
+        display="inline-block"
+        transform={ scale < 1 ? `scale(${ scale })` : undefined }
+        transformOrigin="left center"
+        whiteSpace="nowrap"
+        overflow={ willOverflow ? 'hidden' : 'visible' }
+        textOverflow={ willOverflow ? 'ellipsis' : 'clip' }
+        maxW={ willOverflow ? '100%' : undefined }
+      >
+        { text }
+      </Box>
+    </Box>
+  );
+});
+
+FittedTagName.displayName = 'FittedTagName';
+
 export type ContentProps = Omit<EntityBase.ContentBaseProps, 'text'> & Pick<EntityProps, 'address'> & { altHash?: string };
 
 const Content = chakra((props: ContentProps) => {
   const displayedAddress = getDisplayedAddress(props.address, props.altHash);
-  const nameTagData = props.address.metadata?.tags.find(tag => tag.tagType === 'name' && tag.name);
+  // Pick the tag that will REPLACE the hex hash. Preference order:
+  //   1. an explicit `tagType === 'name'` tag (legacy Blockscout shape)
+  //   2. any tag carrying a display name (the new VinuExplorer model —
+  //      every /public-tags/submit submission stores its Tag name in
+  //      `display_name` regardless of the chosen Category Label, so all
+  //      submitted tags replace the address).
+  // The category badge column (TokenHoldersTableItem / AddressesTableItem)
+  // continues to filter tagType !== 'name' to render the Label, so a
+  // submission with category=exchange + name="Coinbase Hot Wallet"
+  // surfaces BOTH the replaced name and an "Exchange" badge.
+  const tags = props.address.metadata?.tags;
+  const nameTagData = tags?.find(tag => tag.tagType === 'name' && tag.name) ??
+    tags?.find(tag => Boolean(tag.name));
   const nameTag = nameTagData ? getTagName(nameTagData, props.address.hash) : undefined;
   const nameText = nameTag || props.address.ens_domain_name || props.address.name;
-  const nameTagIcon = nameTagData?.meta?.tagIcon;
 
   const isProxy = props.address.implementations && props.address.implementations.length > 0 && props.address.proxy_type !== 'eip7702';
 
@@ -156,18 +256,7 @@ const Content = chakra((props: ContentProps) => {
         disabled={ props.noTooltip }
       >
         <Skeleton loading={ props.isLoading } overflow="hidden" { ...styles }>
-          <Flex alignItems="center" gap={ 1.5 } overflow="hidden" minW={ 0 }>
-            { nameTagIcon && (
-              <Image
-                boxSize="14px"
-                src={ nameTagIcon }
-                alt={ `${ nameText } icon` }
-                flexShrink={ 0 }
-                borderRadius="sm"
-              />
-            ) }
-            <Box overflow="hidden" textOverflow="ellipsis" whiteSpace="nowrap">{ nameText }</Box>
-          </Flex>
+          <FittedTagName text={ nameText }/>
         </Skeleton>
       </Tooltip>
     );

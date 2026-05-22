@@ -18,7 +18,11 @@ interface Props {
 }
 
 const TokenHoldersListItem = ({ holder, token, rank, isLoading }: Props) => {
-  const labelTags = (holder.address.metadata?.tags ?? []).filter(t => t.tagType === 'protocol' || t.tagType === 'generic');
+  // See TokenHoldersTableItem — render every non-name tag as a Label
+  // badge so the "Category Label" submitted via /public-tags/submit
+  // (generic, meme, exchange, liquidity_pool, defi, protocol) all
+  // surface on mobile. Name-type tags handled by AddressEntity.
+  const labelTags = (holder.address.metadata?.tags ?? []).filter(t => t.tagType !== 'name' && t.tagType !== 'generic');
   // Matches the desktop renderer (TokenHoldersTableItem.formatUsd): without a
   // rate OR without decimals we can't compute USD honestly — the raw `amount`
   // is in token base-units, so a missing decimals would render a value off by

@@ -11,6 +11,8 @@ export const baseFields = {
   requesterEmail: 'jonh.doe@duck.me',
   companyName: 'DuckDuckMe',
   companyWebsite: 'https://duck.me',
+  ownership: 'owner' as const,
+  addressSource: undefined,
   description: 'Quack quack',
 };
 

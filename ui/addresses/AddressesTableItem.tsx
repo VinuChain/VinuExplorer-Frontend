@@ -1,4 +1,3 @@
-import { Flex } from '@chakra-ui/react';
 import BigNumber from 'bignumber.js';
 import React from 'react';
 
@@ -38,22 +37,24 @@ const AddressesTableItem = ({
         </Skeleton>
       </TableCell>
       <TableCell>
-        <Flex alignItems="center" columnGap={ 2 } rowGap={ 2 } flexWrap="wrap">
-          <AddressEntity
-            address={ item }
+        <AddressEntity
+          address={ item }
+          isLoading={ isLoading }
+          fontWeight={ 700 }
+          my="2px"
+        />
+      </TableCell>
+      <TableCell verticalAlign="middle">
+        { labelTags.map(tag => (
+          <EntityTag
+            key={ tag.slug }
+            data={ tag }
+            addressHash={ item.hash }
             isLoading={ isLoading }
-            fontWeight={ 700 }
-            my="2px"
+            mr={ 1 }
+            mb={ 1 }
           />
-          { labelTags.map(tag => (
-            <EntityTag
-              key={ tag.slug }
-              data={ tag }
-              addressHash={ item.hash }
-              isLoading={ isLoading }
-            />
-          )) }
-        </Flex>
+        )) }
       </TableCell>
       <TableCell isNumeric>
         <SimpleValue

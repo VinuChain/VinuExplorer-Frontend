@@ -48,14 +48,9 @@ const Accounts = () => {
 
   // /api/v2/addresses does not preload metadata.tags on the listing endpoint,
   // so batch-fetch them via /api/v1/metadata and merge into item.metadata.
-  // Two semantic kinds flow through, both surfaced by AddressEntity:
-  //   * `tagType === 'name'`   → "Tag" — replaces the hex hash with the name
-  //                              (e.g. "VIR Ecosystem Wallet" shown instead
-  //                              of 0x4A1B...). Hover tooltip keeps the hash.
-  //   * other `tagType` values → "Label" — rendered as a styled EntityTag
-  //                              badge alongside the hash (e.g. "Exchange",
-  //                              "Liquidity Pool"). Uses each tag's `meta`
-  //                              payload for bgColor / textColor / icon.
+  // `tagType === 'name'` tags are consumed by AddressEntity (replace the hex
+  // hash with the name); other tag types are rendered as EntityTag badges in
+  // the dedicated Label column.
   const hashesForMetadata = React.useMemo(
     () => (data?.items ?? []).map(i => i.hash),
     [ data?.items ],

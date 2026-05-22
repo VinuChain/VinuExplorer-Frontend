@@ -24,7 +24,8 @@ const AddressesTable = ({ items, totalSupply, pageStartIndex, top, isLoading }: 
       <TableHeaderSticky top={ top }>
         <TableRow>
           <TableColumnHeader width="64px">Rank</TableColumnHeader>
-          <TableColumnHeader width={ hasPercentage ? '50%' : '60%' }>Address</TableColumnHeader>
+          <TableColumnHeader width={ hasPercentage ? '35%' : '45%' }>Address</TableColumnHeader>
+          <TableColumnHeader width="180px">Label</TableColumnHeader>
           <TableColumnHeader width={ hasPercentage ? '20%' : '25%' } isNumeric>{ `Balance ${ currencyUnits.ether }` }</TableColumnHeader>
           { hasPercentage && <TableColumnHeader width="15%" isNumeric>Percentage</TableColumnHeader> }
           <TableColumnHeader width="15%" isNumeric>Txn count</TableColumnHeader>

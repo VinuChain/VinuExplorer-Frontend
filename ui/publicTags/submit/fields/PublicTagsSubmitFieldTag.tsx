@@ -67,7 +67,7 @@ const PublicTagsSubmitFieldTag = ({ index, isDisabled, errors, onAddClick, onRem
           <GridItem colSpan={{ base: 1, lg: 2 }}>
             <FormFieldUrl<FormFields>
               name={ `tags.${ index }.url` }
-              placeholder="Label URL"
+              placeholder="Tag URL"
             />
           </GridItem>
           <FormFieldColor<FormFields>
@@ -86,7 +86,7 @@ const PublicTagsSubmitFieldTag = ({ index, isDisabled, errors, onAddClick, onRem
           <GridItem colSpan={{ base: 1, lg: 4 }}>
             <FormFieldText<FormFields>
               name={ `tags.${ index }.tooltipDescription` }
-              placeholder="Label description (max 80 characters)"
+              placeholder="Tag description (max 80 characters)"
               maxH="160px"
               rules={{ maxLength: 80 }}
               asComponent="Textarea"

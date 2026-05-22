@@ -29,7 +29,17 @@ const formatUsd = (amount: string, decimals: string | null | undefined, rate: st
 };
 
 const TokenHoldersTableItem = ({ holder, token, rank, isLoading }: Props) => {
-  const labelTags = (holder.address.metadata?.tags ?? []).filter(t => t.tagType === 'protocol' || t.tagType === 'generic');
+  // Render every meaningful non-name tag as a Label badge — covers
+  // the curated "Category Label" dropdown on /public-tags/submit
+  // (meme, exchange, liquidity_pool, defi, protocol) plus legacy
+  // Blockscout types (information, classifier, note) without an
+  // explicit allow-list. Two tag types are excluded here:
+  //   * `name`    — handled by AddressEntity (replaces the hex hash).
+  //   * `generic` — too vague to render as a badge per product
+  //                 guidance ("General" is the default option in the
+  //                 submit dropdown and offers no signal once the Tag
+  //                 itself has surfaced via AddressEntity).
+  const labelTags = (holder.address.metadata?.tags ?? []).filter(t => t.tagType !== 'name' && t.tagType !== 'generic');
 
   return (
     <TableRow>

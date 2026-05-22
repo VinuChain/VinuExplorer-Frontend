@@ -22,7 +22,7 @@ const PublicTagsSubmitFieldTagIcon = ({ index }: Props) => {
     <Flex columnGap={ 3 }>
       <FormFieldUrl<FormFields>
         name={ `tags.${ index }.iconUrl` }
-        placeholder="Label icon URL"
+        placeholder="Tag icon URL"
         { ...imageField.input }
       />
       <PublicTagsSubmitFieldTagIconPreview url={ imageField.preview.src } isInvalid={ imageField.preview.isInvalid }>

@@ -27,6 +27,8 @@ export function convertFormDataToRequestsBody(data: FormFields): Array<SubmitReq
           tagUrl: tag.url,
           tagIcon: tag.iconUrl,
           tooltipDescription: tag.tooltipDescription,
+          ownerStatement: data.ownership,
+          addressSource: data.addressSource,
         }, Boolean),
       });
     }
@@ -107,7 +109,11 @@ export function getFormDefaultValues(query: Route['query'], userInfo: UserInfo |
     requesterEmail: getQueryParamString(query?.requesterEmail) || userInfo?.email || undefined,
     companyName: getQueryParamString(query?.companyName),
     companyWebsite: getQueryParamString(query?.companyWebsite),
-    tags: [ { name: '', type: [ 'name' as const ] } ],
+    // 'generic' is the first item in the curated Category Label
+    // dropdown (PublicTagsSubmitFieldTagType.ALLOWED_CATEGORY_TYPES) —
+    // any name-tag default would be rejected at validation since
+    // 'name' is no longer offered to submitters.
+    tags: [ { name: '', type: [ 'generic' as const ] } ],
   };
 }
 

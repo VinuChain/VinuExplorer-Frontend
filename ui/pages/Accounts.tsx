@@ -46,8 +46,13 @@ const Accounts = () => {
     return BigNumber(data?.total_supply || '0');
   }, [ data?.total_supply ]);
 
-  // /api/v2/addresses does not preload public_tags on the listing endpoint,
-  // so batch-fetch them via /api/v1/metadata and merge into each row.
+  // /api/v2/addresses does not preload metadata.tags on the listing endpoint,
+  // so batch-fetch them via /api/v1/metadata and merge into item.metadata so
+  // the row components can render styled EntityTag badges (with bgColor /
+  // textColor / icon from each tag's meta payload) the same way the
+  // TokenHolders page does. `name`-type tags are stripped because
+  // AddressEntity would otherwise replace the hex hash with the tag's name —
+  // the /accounts list should keep showing the raw address.
   const hashesForMetadata = React.useMemo(
     () => (data?.items ?? []).map(i => i.hash),
     [ data?.items ],
@@ -58,18 +63,18 @@ const Accounts = () => {
     if (!data?.items) return undefined;
     return data.items.map(item => {
       const meta = getMetadata(item.hash);
-      if (!meta?.tags?.length) return item;
-      const derivedPublicTags = meta.tags.map(tag => ({
-        address_hash: item.hash,
-        display_name: tag.name,
-        label: tag.slug || tag.name,
-        meta: tag.meta ?? null,
-        tag_type: tag.tagType ?? null,
-      }));
-      const existing = item.public_tags ?? [];
-      const existingLabels = new Set(existing.map(t => t.label));
-      const merged = [ ...existing, ...derivedPublicTags.filter(t => !existingLabels.has(t.label)) ];
-      return { ...item, public_tags: merged } as AddressesItem;
+      const labelTags = (meta?.tags ?? []).filter(t => t.tagType !== 'name');
+      if (!labelTags.length) return item;
+      const existing = (item.metadata?.tags ?? []).filter(t => t.tagType !== 'name');
+      const existingSlugs = new Set(existing.map(t => t.slug));
+      const mergedTags = [ ...existing, ...labelTags.filter(t => !existingSlugs.has(t.slug)) ];
+      return {
+        ...item,
+        metadata: {
+          reputation: item.metadata?.reputation ?? meta?.reputation ?? null,
+          tags: mergedTags,
+        },
+      };
     });
   }, [ data?.items, getMetadata ]);
 

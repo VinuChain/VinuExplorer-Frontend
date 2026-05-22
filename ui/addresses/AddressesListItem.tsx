@@ -7,9 +7,9 @@ import type { AddressesItem } from 'types/api/addresses';
 import config from 'configs/app';
 import { currencyUnits } from 'lib/units';
 import { Skeleton } from 'toolkit/chakra/skeleton';
-import { Tag } from 'toolkit/chakra/tag';
 import { ZERO } from 'toolkit/utils/consts';
 import AddressEntity from 'ui/shared/entities/address/AddressEntity';
+import EntityTag from 'ui/shared/EntityTags/EntityTag';
 import ListItemMobile from 'ui/shared/ListItemMobile/ListItemMobile';
 
 type Props = {
@@ -27,6 +27,7 @@ const AddressesListItem = ({
 }: Props) => {
 
   const addressBalance = BigNumber(item.coin_balance || 0).div(BigNumber(10 ** config.chain.currency.decimals));
+  const labelTags = (item.metadata?.tags ?? []).filter(t => t.tagType !== 'name');
 
   return (
     <ListItemMobile rowGap={ 3 }>
@@ -42,9 +43,18 @@ const AddressesListItem = ({
           <span>{ index }</span>
         </Skeleton>
       </Flex>
-      { item.public_tags !== null && item.public_tags.length > 0 && item.public_tags.map(tag => (
-        <Tag key={ tag.label } loading={ isLoading } truncated>{ tag.display_name }</Tag>
-      )) }
+      { labelTags.length > 0 && (
+        <Flex columnGap={ 2 } rowGap={ 2 } flexWrap="wrap" maxW="100%">
+          { labelTags.map(tag => (
+            <EntityTag
+              key={ tag.slug }
+              data={ tag }
+              addressHash={ item.hash }
+              isLoading={ isLoading }
+            />
+          )) }
+        </Flex>
+      ) }
       <HStack gap={ 3 } maxW="100%" alignItems="flex-start">
         <Skeleton loading={ isLoading } fontSize="sm" fontWeight={ 500 } flexShrink={ 0 }>{ `Balance ${ currencyUnits.ether }` }</Skeleton>
         <Skeleton loading={ isLoading } fontSize="sm" color="text.secondary" minW="0" whiteSpace="pre-wrap">

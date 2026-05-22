@@ -7,8 +7,8 @@ import type { AddressesItem } from 'types/api/addresses';
 import config from 'configs/app';
 import { Skeleton } from 'toolkit/chakra/skeleton';
 import { TableCell, TableRow } from 'toolkit/chakra/table';
-import { Tag } from 'toolkit/chakra/tag';
 import AddressEntity from 'ui/shared/entities/address/AddressEntity';
+import EntityTag from 'ui/shared/EntityTags/EntityTag';
 import SimpleValue from 'ui/shared/value/SimpleValue';
 
 type Props = {
@@ -28,6 +28,7 @@ const AddressesTableItem = ({
 }: Props) => {
 
   const addressBalance = BigNumber(item.coin_balance || 0).div(BigNumber(10 ** config.chain.currency.decimals));
+  const labelTags = (item.metadata?.tags ?? []).filter(t => t.tagType !== 'name');
 
   return (
     <TableRow>
@@ -37,16 +38,21 @@ const AddressesTableItem = ({
         </Skeleton>
       </TableCell>
       <TableCell>
-        <Flex alignItems="center" columnGap={ 2 }>
+        <Flex alignItems="center" columnGap={ 2 } rowGap={ 2 } flexWrap="wrap">
           <AddressEntity
             address={ item }
             isLoading={ isLoading }
             fontWeight={ 700 }
             my="2px"
           />
-          { item.public_tags && item.public_tags.length ? item.public_tags.map(tag => (
-            <Tag key={ tag.label } loading={ isLoading } truncated>{ tag.display_name }</Tag>
-          )) : null }
+          { labelTags.map(tag => (
+            <EntityTag
+              key={ tag.slug }
+              data={ tag }
+              addressHash={ item.hash }
+              isLoading={ isLoading }
+            />
+          )) }
         </Flex>
       </TableCell>
       <TableCell isNumeric>

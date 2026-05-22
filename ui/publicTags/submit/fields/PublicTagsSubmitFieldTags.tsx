@@ -24,7 +24,13 @@ const PublicTagsSubmitFieldTags = ({ tagTypes }: Props) => {
   const handleAddFieldClick = React.useCallback((index: number) => {
     insert(index + 1, {
       name: '',
-      type: [ 'name' ],
+      // Match getFormDefaultValues — the curated Category Label
+      // dropdown only offers six values and 'name' is not one of
+      // them. Leaving the default at 'name' silently bypassed the
+      // restriction for every added row (FormFieldSelect doesn't
+      // re-validate against the collection on mount), letting an
+      // out-of-policy tag_type reach the backend.
+      type: [ 'generic' ],
       url: undefined,
       iconUrl: undefined,
       bgColor: undefined,

@@ -16,6 +16,10 @@ const SearchBarSuggestLabel = ({ data, isMobile, searchTerm, addressFormat }: It
 
   // Prefer the tag's uploaded logo over the generic publictags glyph
   // — matches the same swap AddressEntity.Icon does for the row view.
+  // Pass the glyph as `fallback` so broken / expired / CORS-blocked
+  // tag-icon URLs degrade to the previous visual instead of leaving
+  // the suggest row with a blank icon slot.
+  const tagIconGlyphFallback = <IconSvg name="publictags_slim" boxSize={ 5 } color="icon.primary"/>;
   const icon = meta?.tagIcon ? (
     <Image
       src={ meta.tagIcon }
@@ -24,10 +28,9 @@ const SearchBarSuggestLabel = ({ data, isMobile, searchTerm, addressFormat }: It
       borderRadius="full"
       objectFit="cover"
       flexShrink={ 0 }
+      fallback={ tagIconGlyphFallback }
     />
-  ) : (
-    <IconSvg name="publictags_slim" boxSize={ 5 } color="icon.primary"/>
-  );
+  ) : tagIconGlyphFallback;
 
   // Only render a badge backdrop when BOTH bgColor and textColor are
   // supplied. The previous code rendered a hard-coded gray.200 bg as

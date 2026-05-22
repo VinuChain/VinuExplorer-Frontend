@@ -45,6 +45,9 @@ const PublicTagsSubmitForm = ({ config, userInfo, onSubmitResult }: Props) => {
     defaultValues: getFormDefaultValues(router.query, userInfo),
   });
 
+  const ownership = formApi.watch('ownership');
+  const showAddressSource = ownership === 'not_owner';
+
   React.useEffect(() => {
     if (
       router.query.addresses ||
@@ -142,13 +145,15 @@ const PublicTagsSubmitForm = ({ config, userInfo, onSubmitResult }: Props) => {
               ] }
             />
           </GridItem>
-          <GridItem colSpan={{ base: 1, lg: 3 }}>
-            <FormFieldText<FormFields>
-              name="addressSource"
-              placeholder="Where did you discover this address? (optional — paste a link or describe)"
-              rules={{ maxLength: 500 }}
-            />
-          </GridItem>
+          { showAddressSource && (
+            <GridItem colSpan={{ base: 1, lg: 3 }}>
+              <FormFieldText<FormFields>
+                name="addressSource"
+                placeholder="Where did you discover this address? (optional — paste a link or describe)"
+                rules={{ maxLength: 500 }}
+              />
+            </GridItem>
+          ) }
           <PublicTagsSubmitFieldAddresses/>
           <PublicTagsSubmitFieldTags tagTypes={ config?.tagTypes }/>
           <GridItem colSpan={{ base: 1, lg: 2 }}>

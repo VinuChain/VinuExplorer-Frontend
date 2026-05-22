@@ -19,7 +19,7 @@ export function getTagLinkParams(data: EntityTag, multichainContext?: TMultichai
     };
   }
 
-  if (data.tagType === 'generic' || data.tagType === 'protocol') {
+  if (data.tagType === 'generic' || data.tagType === 'protocol' || data.tagType === 'project') {
     return {
       type: 'internal',
       href: route({ pathname: '/accounts/label/[slug]', query: { slug: data.slug, tagType: data.tagType, tagName: data.name } }, multichainContext),

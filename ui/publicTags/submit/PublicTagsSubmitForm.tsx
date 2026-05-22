@@ -48,6 +48,17 @@ const PublicTagsSubmitForm = ({ config, userInfo, onSubmitResult }: Props) => {
   const ownership = formApi.watch('ownership');
   const showAddressSource = ownership === 'not_owner';
 
+  // React Hook Form retains values for unmounted fields by default
+  // (shouldUnregister=false). Without this, a user who selects
+  // "not owner", types into addressSource, then switches back to
+  // "owner" would silently submit the hidden value as moderator
+  // metadata even though the UI implies it has been excluded.
+  React.useEffect(() => {
+    if (!showAddressSource) {
+      formApi.unregister('addressSource');
+    }
+  }, [ showAddressSource, formApi ]);
+
   React.useEffect(() => {
     if (
       router.query.addresses ||
@@ -147,14 +158,10 @@ const PublicTagsSubmitForm = ({ config, userInfo, onSubmitResult }: Props) => {
           </GridItem>
           { showAddressSource && (
             <GridItem colSpan={{ base: 1, lg: 3 }} minW={ 0 }>
-              <chakra.div fontSize="sm" fontWeight={ 500 } mb={ 2 }>
-                Where did you discover this address?
-              </chakra.div>
               <FormFieldText<FormFields>
                 name="addressSource"
-                placeholder="Optional — paste a link or describe"
+                placeholder="Where did you discover this address? (optional — paste a link or describe)"
                 rules={{ maxLength: 500 }}
-                floating={ false }
               />
             </GridItem>
           ) }

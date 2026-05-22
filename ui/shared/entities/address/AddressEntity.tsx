@@ -8,6 +8,7 @@ import { route } from 'nextjs/routes';
 import { toBech32Address } from 'lib/address/bech32';
 import { useAddressHighlightContext } from 'lib/contexts/addressHighlight';
 import { useSettingsContext } from 'lib/contexts/settings';
+import { Image } from 'toolkit/chakra/image';
 import { Skeleton } from 'toolkit/chakra/skeleton';
 import { Tooltip } from 'toolkit/chakra/tooltip';
 import * as EntityBase from 'ui/shared/entities/base/components';
@@ -123,15 +124,10 @@ export type ContentProps = Omit<EntityBase.ContentBaseProps, 'text'> & Pick<Enti
 
 const Content = chakra((props: ContentProps) => {
   const displayedAddress = getDisplayedAddress(props.address, props.altHash);
-  const nameTag = (() => {
-    const tagData = props.address.metadata?.tags.find(tag => tag.tagType === 'name');
-    if (!tagData || !tagData.name) {
-      return;
-    }
-
-    return getTagName(tagData, props.address.hash);
-  })();
+  const nameTagData = props.address.metadata?.tags.find(tag => tag.tagType === 'name' && tag.name);
+  const nameTag = nameTagData ? getTagName(nameTagData, props.address.hash) : undefined;
   const nameText = nameTag || props.address.ens_domain_name || props.address.name;
+  const nameTagIcon = nameTagData?.meta?.tagIcon;
 
   const isProxy = props.address.implementations && props.address.implementations.length > 0 && props.address.proxy_type !== 'eip7702';
 
@@ -159,8 +155,19 @@ const Content = chakra((props: ContentProps) => {
         interactive={ props.tooltipInteractive }
         disabled={ props.noTooltip }
       >
-        <Skeleton loading={ props.isLoading } overflow="hidden" textOverflow="ellipsis" whiteSpace="nowrap" { ...styles }>
-          { nameText }
+        <Skeleton loading={ props.isLoading } overflow="hidden" { ...styles }>
+          <Flex alignItems="center" gap={ 1.5 } overflow="hidden" minW={ 0 }>
+            { nameTagIcon && (
+              <Image
+                boxSize="14px"
+                src={ nameTagIcon }
+                alt={ `${ nameText } icon` }
+                flexShrink={ 0 }
+                borderRadius="sm"
+              />
+            ) }
+            <Box overflow="hidden" textOverflow="ellipsis" whiteSpace="nowrap">{ nameText }</Box>
+          </Flex>
         </Skeleton>
       </Tooltip>
     );

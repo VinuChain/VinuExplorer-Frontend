@@ -11,6 +11,7 @@ import { Tag } from 'toolkit/chakra/tag';
 
 import EntityTagIcon from './EntityTagIcon';
 import EntityTagTooltip from './EntityTagTooltip';
+import FittedTagName from './FittedTagName';
 import { getTagName, getTagLinkParams } from './utils';
 
 interface Props extends HTMLChakraProps<'span'> {
@@ -65,13 +66,12 @@ const EntityTag = ({ data, addressHash, isLoading, noLink, ...rest }: Props) => 
           bg={ data.meta?.bgColor }
           color={ data.meta?.textColor }
           startElement={ <EntityTagIcon data={ data }/> }
-          truncated
           endElement={ linkParams?.type === 'external' ? <LinkExternalIcon color={ iconColor }/> : null }
           endElementProps={ linkParams?.type === 'external' ? { ml: -1 } : undefined }
           _hover={ hasLink ? { opacity: 0.76 } : undefined }
           variant={ hasLink ? 'clickable' : 'subtle' }
         >
-          { text }
+          <FittedTagName text={ text }/>
         </Tag>
       </Link>
     </EntityTagTooltip>

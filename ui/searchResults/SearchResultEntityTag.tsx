@@ -6,6 +6,7 @@ import highlightText from 'lib/highlightText';
 import type { TagProps } from 'toolkit/chakra/tag';
 import { Tag } from 'toolkit/chakra/tag';
 import EntityTagIcon from 'ui/shared/EntityTags/EntityTagIcon';
+import FittedTagName from 'ui/shared/EntityTags/FittedTagName';
 import { getTagName } from 'ui/shared/EntityTags/utils';
 
 interface Props extends TagProps {
@@ -22,7 +23,7 @@ const SearchResultEntityTag = ({ metadata, searchTerm, addressHash, ...rest }: P
       { ...rest }
       startElement={ <EntityTagIcon data={ metadata } ignoreColor/> }
     >
-      <span dangerouslySetInnerHTML={{ __html: highlightText(name, searchTerm) }}/>
+      <FittedTagName text={ name } html={ highlightText(name, searchTerm) }/>
     </Tag>
   );
 };

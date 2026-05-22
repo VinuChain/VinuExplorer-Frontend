@@ -12,6 +12,7 @@ export type AddressMetadataTagType =
   'information' |
   'note' |
   'protocol' |
+  'smart_contract' |
   'meme' |
   'exchange' |
   'liquidity_pool' |

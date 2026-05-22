@@ -51,6 +51,14 @@ const FittedTagName = React.memo(({ text, html }: Props) => {
     { dangerouslySetInnerHTML: { __html: html } } :
     {};
 
+  // When `text` is provided and the inner content has been clamped
+  // at FITTED_MIN_SCALE — meaning the label is being ellipsized —
+  // expose the full label via the native `title` attribute as an
+  // accessibility fallback. `EntityTagTooltip` only renders a tooltip
+  // when popover metadata is present, so without this users had no
+  // way to read the full tag name in extreme overflow cases.
+  const fullTextTitle = !html && willOverflow && text ? text : undefined;
+
   return (
     <Box
       as="span"
@@ -59,6 +67,7 @@ const FittedTagName = React.memo(({ text, html }: Props) => {
       overflow="hidden"
       minW={ 0 }
       lineHeight="1.25"
+      title={ fullTextTitle }
     >
       <Box
         as="span"

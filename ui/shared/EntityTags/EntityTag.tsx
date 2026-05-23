@@ -32,7 +32,7 @@ interface Props extends HTMLChakraProps<'span'> {
 const EntityTag = ({ data, addressHash, isLoading, noLink, renderMode = 'category', ...rest }: Props) => {
   const multichainContext = useMultichainContext();
 
-  const linkParams = !noLink ? getTagLinkParams(data, multichainContext) : undefined;
+  const linkParams = !noLink ? getTagLinkParams(data, multichainContext, renderMode) : undefined;
   const hasLink = Boolean(linkParams);
   const iconColor = data.meta?.textColor ?? 'icon.secondary';
 

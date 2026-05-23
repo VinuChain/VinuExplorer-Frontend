@@ -136,8 +136,7 @@ const AddressForm: React.FC<Props> = ({ data, onSuccess, setAlertVisible, isAdd,
         />
         <FormFieldText<Inputs>
           name="tag"
-          placeholder="Private tag (max 35 characters)"
-          required
+          placeholder="Private tag (optional, max 35 characters)"
           rules={{
             maxLength: TAG_MAX_LENGTH,
           }}

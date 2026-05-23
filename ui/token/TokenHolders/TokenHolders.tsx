@@ -98,29 +98,7 @@ const TokenHolders = ({ holdersQuery, token, pageSize, shouldRender = true, tabs
 
   const content = enrichedItems && token ? (
     <>
-      <TokenHoldersConcentration hash={ token.address_hash }/>
-      <TokenHoldersSummaryLine
-        loadedCount={ loadedCount }
-        totalCount={ token.holders_count ? Number(token.holders_count) : undefined }
-      />
-      <Box display={{ base: 'none', lg: 'block' }}>
-        <TokenHoldersTable
-          data={ enrichedItems }
-          token={ token }
-          top={ tabsHeight }
-          isLoading={ holdersQuery.isPlaceholderData }
-          pageStartIndex={ pageStartIndex }
-        />
-      </Box>
-      <Box display={{ base: 'block', lg: 'none' }}>
-        <TokenHoldersList
-          data={ enrichedItems }
-          token={ token }
-          isLoading={ holdersQuery.isPlaceholderData }
-          pageStartIndex={ pageStartIndex }
-        />
-      </Box>
-      <Box mt={ 8 }>
+      <Box mb={ 8 }>
         <Flex gap={ 2 } mb={ 3 } borderBottomWidth="1px" borderColor="border.divider" alignItems="center" flexWrap="wrap">
           <Button
             size="sm"
@@ -154,6 +132,28 @@ const TokenHolders = ({ holdersQuery, token, pageSize, shouldRender = true, tabs
         { activeChartTab === 'chart' &&
           <TokenHoldersChart hash={ token.address_hash } period={ chartPeriod } onChangePeriod={ setChartPeriod }/> }
         { activeChartTab === 'distribution' && <TokenHoldersDistribution hash={ token.address_hash }/> }
+      </Box>
+      <TokenHoldersConcentration hash={ token.address_hash }/>
+      <TokenHoldersSummaryLine
+        loadedCount={ loadedCount }
+        totalCount={ token.holders_count ? Number(token.holders_count) : undefined }
+      />
+      <Box display={{ base: 'none', lg: 'block' }}>
+        <TokenHoldersTable
+          data={ enrichedItems }
+          token={ token }
+          top={ tabsHeight }
+          isLoading={ holdersQuery.isPlaceholderData }
+          pageStartIndex={ pageStartIndex }
+        />
+      </Box>
+      <Box display={{ base: 'block', lg: 'none' }}>
+        <TokenHoldersList
+          data={ enrichedItems }
+          token={ token }
+          isLoading={ holdersQuery.isPlaceholderData }
+          pageStartIndex={ pageStartIndex }
+        />
       </Box>
     </>
   ) : null;

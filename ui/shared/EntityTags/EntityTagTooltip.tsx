@@ -9,18 +9,29 @@ import { Link } from 'toolkit/chakra/link';
 import { Tooltip } from 'toolkit/chakra/tooltip';
 import { makePrettyLink } from 'toolkit/utils/url';
 
+import { isCategoryTagType } from './utils';
+
 interface Props {
   data: EntityTag;
   children: React.ReactNode;
 }
 
 const EntityTagTooltip = ({ data, children }: Props) => {
+  // Category-type tags display the category as their badge text and
+  // hijack meta.tagUrl for the category-browse click. The tooltip is
+  // where the SPECIFIC tag name + the deep-link survive.
+  const isCategory = isCategoryTagType(data.tagType);
+  const categoryName = isCategory ? data.name : undefined;
+  const categoryDeepLink = isCategory ? makePrettyLink(data.meta?.tagUrl) : undefined;
+
   const hasPopover = Boolean(
     data.meta?.tooltipIcon ||
     data.meta?.tooltipTitle ||
     data.meta?.tooltipDescription ||
     data.meta?.tooltipUrl ||
-    data.meta?.tooltipAttribution,
+    data.meta?.tooltipAttribution ||
+    categoryName ||
+    categoryDeepLink,
   );
 
   const link = makePrettyLink(data.meta?.tooltipUrl);
@@ -45,6 +56,18 @@ const EntityTagTooltip = ({ data, children }: Props) => {
     });
   }, [ data.meta?.tooltipUrl, data.slug ]);
 
+  const handleCategoryDeepLinkClick = React.useCallback(() => {
+    if (!data.meta?.tagUrl) {
+      return;
+    }
+
+    mixpanel.logEvent(mixpanel.EventTypes.PAGE_WIDGET, {
+      Type: 'Address tag',
+      Info: data.slug,
+      URL: data.meta.tagUrl,
+    });
+  }, [ data.meta?.tagUrl, data.slug ]);
+
   if (!hasPopover) {
     // eslint-disable-next-line react/jsx-no-useless-fragment
     return <>{ children }</>;
@@ -53,6 +76,7 @@ const EntityTagTooltip = ({ data, children }: Props) => {
   const content = (
     <Box className="dark">
       <Flex textStyle="sm" flexDir="column" rowGap={ 2 } textAlign="left" _empty={{ display: 'none' }}>
+        { categoryName && <chakra.span fontWeight="600">{ categoryName }</chakra.span> }
         { (data.meta?.tooltipIcon || data.meta?.tooltipTitle) && (
           <Flex columnGap={ 3 } alignItems="center">
             { data.meta?.tooltipIcon && <Image src={ data.meta.tooltipIcon } boxSize="30px" alt={ `${ data.name } tag logo` }/> }
@@ -61,10 +85,22 @@ const EntityTagTooltip = ({ data, children }: Props) => {
         ) }
         { data.meta?.tooltipDescription && <chakra.span>{ data.meta.tooltipDescription }</chakra.span> }
         { link && <Link external href={ link.href } onClick={ handleLinkClick }>{ link.domain }</Link> }
+        { categoryDeepLink && (
+          <Link external href={ categoryDeepLink.href } onClick={ handleCategoryDeepLinkClick }>
+            Open { categoryDeepLink.domain }
+          </Link>
+        ) }
       </Flex>
       { attribution ? (
         <>
-          { (data.meta?.tooltipIcon || data.meta?.tooltipTitle || data.meta?.tooltipDescription || link) && <Separator mt={ 2 } mb={ 1 }/> }
+          { (
+            data.meta?.tooltipIcon ||
+            data.meta?.tooltipTitle ||
+            data.meta?.tooltipDescription ||
+            link ||
+            categoryDeepLink ||
+            categoryName
+          ) && <Separator mt={ 2 } mb={ 1 }/> }
           <Flex alignItems="center" color="text.secondary" textStyle="xs">
             <chakra.span mr={ 2 }>Source:</chakra.span>
             { data.meta?.tooltipAttributionIcon && <Image src={ data.meta.tooltipAttributionIcon } boxSize={ 4 } mr={ 1 } zIndex={ 1 }/> }

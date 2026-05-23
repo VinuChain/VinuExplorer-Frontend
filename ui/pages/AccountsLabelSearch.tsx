@@ -13,6 +13,7 @@ import AddressesLabelSearchTable from 'ui/addressesLabelSearch/AddressesLabelSea
 import { ACTION_BAR_HEIGHT_DESKTOP } from 'ui/shared/ActionBar';
 import DataListDisplay from 'ui/shared/DataListDisplay';
 import EntityTag from 'ui/shared/EntityTags/EntityTag';
+import { CATEGORY_BROWSE_SLUG } from 'ui/shared/EntityTags/utils';
 import PageTitle from 'ui/shared/Page/PageTitle';
 import useQueryWithPages from 'ui/shared/pagination/useQueryWithPages';
 import StickyPaginationWithText from 'ui/shared/StickyPaginationWithText';
@@ -24,10 +25,15 @@ const AccountsLabelSearch = () => {
   const tagType = getQueryParamString(router.query.tagType);
   const tagName = getQueryParamString(router.query.tagName);
 
+  // Sentinel slug means "browse every address of this category" — the
+  // backend's category-only branch keys off tag_type alone, so drop
+  // slug from the filter when we're in category-browse mode.
+  const isCategoryBrowse = slug === CATEGORY_BROWSE_SLUG;
+
   const { isError, isPlaceholderData, data, pagination } = useQueryWithPages({
     resourceName: 'general:addresses_metadata_search',
     filters: {
-      slug,
+      slug: isCategoryBrowse ? undefined : slug,
       tag_type: tagType,
     },
     options: {
@@ -74,6 +80,14 @@ const AccountsLabelSearch = () => {
     const tagData: TEntityTag = {
       tagType: tagType as EntityTagType,
       slug,
+      // tagName is already the human display string (the category
+      // label "Liquidity Pool" in category-browse mode, or the
+      // submitted tag name in specific-tag mode). Force renderMode
+      // 'name' below so EntityTag uses this verbatim rather than
+      // replacing it with the category label of the synthetic
+      // tagType — without the override the badge would always read
+      // "Liquidity Pool" even when the user navigated to a specific
+      // exchange tag.
       name: tagName || slug,
       ordinal: 0,
     };
@@ -87,7 +101,7 @@ const AccountsLabelSearch = () => {
           </chakra.span>{ ' ' }
           matching result{ num > 1 ? 's' : '' } for
         </Skeleton>
-        <EntityTag data={ tagData } isLoading={ isPlaceholderData } noLink/>
+        <EntityTag data={ tagData } isLoading={ isPlaceholderData } noLink renderMode="name"/>
       </Flex>
     );
   })();

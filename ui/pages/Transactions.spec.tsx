@@ -10,21 +10,15 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import Transactions from './Transactions';
 
 const {
+  mockReload,
   mockUseIsMobile,
   mockUseQueryWithPages,
   mockUseRouter,
-  resetBlobTxs,
-  resetPending,
-  resetValidated,
-  resetWatchlist,
 } = vi.hoisted(() => ({
+  mockReload: vi.fn(),
   mockUseIsMobile: vi.fn(),
   mockUseQueryWithPages: vi.fn(),
   mockUseRouter: vi.fn(),
-  resetBlobTxs: vi.fn(),
-  resetPending: vi.fn(),
-  resetValidated: vi.fn(),
-  resetWatchlist: vi.fn(),
 }));
 
 vi.mock('@chakra-ui/react', () => ({
@@ -81,12 +75,12 @@ vi.mock('ui/txs/TxsRefreshButton', () => ({
   ),
 }));
 
-function getPagination(resetPage: () => void): PaginationParams {
+function getPagination(): PaginationParams {
   return {
     page: 1,
     onNextPageClick: vi.fn(),
     onPrevPageClick: vi.fn(),
-    resetPage,
+    resetPage: vi.fn(),
     hasPages: false,
     hasNextPage: false,
     canGoBackwards: false,
@@ -95,53 +89,55 @@ function getPagination(resetPage: () => void): PaginationParams {
   };
 }
 
-function getQuery(resetPage: () => void) {
+function getQuery() {
   return {
-    pagination: getPagination(resetPage),
+    pagination: getPagination(),
   };
 }
 
 describe('Transactions refresh button', () => {
+  // `window.location.reload` is non-configurable in jsdom; replace the
+  // entire `location` with a stub object so we can spy on `reload` calls
+  // without `Object.defineProperty` complaining about it being read-only.
+  const originalLocation = window.location;
+
   beforeEach(() => {
     vi.clearAllMocks();
     mockUseIsMobile.mockReturnValue(false);
     mockUseRouter.mockReturnValue({ query: {} });
-    mockUseQueryWithPages.mockImplementation(({ resourceName }: { resourceName: string }) => {
-      switch (resourceName) {
-        case 'general:txs_pending':
-          return getQuery(resetPending);
-        case 'general:txs_with_blobs':
-          return getQuery(resetBlobTxs);
-        case 'general:txs_watchlist':
-          return getQuery(resetWatchlist);
-        default:
-          return getQuery(resetValidated);
-      }
+    mockUseQueryWithPages.mockImplementation(() => getQuery());
+
+    Object.defineProperty(window, 'location', {
+      configurable: true,
+      writable: true,
+      value: { ...originalLocation, reload: mockReload },
     });
   });
 
   afterEach(() => {
     cleanup();
+    Object.defineProperty(window, 'location', {
+      configurable: true,
+      writable: true,
+      value: originalLocation,
+    });
   });
 
-  it('refreshes the validated transactions tab by default', () => {
+  it('hard-reloads the page from the default validated tab', () => {
     render(<Transactions/>);
 
     fireEvent.click(screen.getByRole('button', { name: 'Refresh transactions' }));
 
-    expect(resetValidated).toHaveBeenCalledTimes(1);
-    expect(resetPending).not.toHaveBeenCalled();
-    expect(resetWatchlist).not.toHaveBeenCalled();
+    expect(mockReload).toHaveBeenCalledTimes(1);
   });
 
-  it('refreshes the active transaction tab', () => {
+  it('hard-reloads the page from the pending tab', () => {
     mockUseRouter.mockReturnValue({ query: { tab: 'pending' } });
 
     render(<Transactions/>);
 
     fireEvent.click(screen.getByRole('button', { name: 'Refresh transactions' }));
 
-    expect(resetPending).toHaveBeenCalledTimes(1);
-    expect(resetValidated).not.toHaveBeenCalled();
+    expect(mockReload).toHaveBeenCalledTimes(1);
   });
 });

@@ -1,3 +1,4 @@
+import { Text } from '@chakra-ui/react';
 import { useMutation } from '@tanstack/react-query';
 import React, { useCallback, useState } from 'react';
 
@@ -77,7 +78,9 @@ const WatchListTableItem = ({ item, isLoading, onEditClick, onDeleteClick, hasEm
     <TableRow alignItems="top" key={ item.address_hash }>
       <TableCell><WatchListAddressItem item={ item } isLoading={ isLoading }/></TableCell>
       <TableCell>
-        <Tag loading={ isLoading } truncated>{ item.name }</Tag>
+        { item.name ?
+          <Tag loading={ isLoading } truncated>{ item.name }</Tag> :
+          <Text textStyle="sm" color="text.secondary">—</Text> }
       </TableCell>
       <TableCell>
         <Skeleton loading={ isLoading } display="inline-block">

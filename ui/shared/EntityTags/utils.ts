@@ -36,7 +36,11 @@ export function isCategoryTagType(tagType: EntityTagType): boolean {
   return tagType in CATEGORY_LABELS;
 }
 
-export function getTagLinkParams(data: EntityTag, multichainContext?: TMultichainContext | null): { type: 'external' | 'internal'; href: string } | undefined {
+export function getTagLinkParams(
+  data: EntityTag,
+  multichainContext?: TMultichainContext | null,
+  renderMode: 'name' | 'category' = 'category',
+): { type: 'external' | 'internal'; href: string } | undefined {
   if (data.meta?.warpcastHandle) {
     return {
       type: 'external',
@@ -44,10 +48,12 @@ export function getTagLinkParams(data: EntityTag, multichainContext?: TMultichai
     };
   }
 
-  // Category-type badges always browse the category, overriding any
-  // tagUrl deep-link the submitter set (the deep-link survives in the
-  // tooltip's "Open ↗" affordance via EntityTagTooltip).
-  if (isCategoryTagType(data.tagType)) {
+  // Category-mode badges browse the entire tag_type. EntityTags expands
+  // a category-type tag with a name into two chips — Tag (renderMode
+  // 'name') and Label (renderMode 'category') — so only the Label chip
+  // takes this branch. The Tag chip falls through to identity routing
+  // (meta.tagUrl > specific-slug page) below.
+  if (renderMode === 'category' && isCategoryTagType(data.tagType)) {
     return {
       type: 'internal',
       href: route(
@@ -67,7 +73,13 @@ export function getTagLinkParams(data: EntityTag, multichainContext?: TMultichai
     };
   }
 
-  if (data.tagType === 'generic' || data.tagType === 'protocol' || data.tagType === 'project' || data.tagType === 'burn') {
+  if (
+    data.tagType === 'generic' ||
+    data.tagType === 'protocol' ||
+    data.tagType === 'project' ||
+    data.tagType === 'burn' ||
+    isCategoryTagType(data.tagType)
+  ) {
     return {
       type: 'internal',
       href: route({ pathname: '/accounts/label/[slug]', query: { slug: data.slug, tagType: data.tagType, tagName: data.name } }, multichainContext),

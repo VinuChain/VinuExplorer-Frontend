@@ -78,4 +78,22 @@ describe('getTagLinkParams', () => {
     const tag: EntityTag = { slug: 'mystery', name: 'Mystery', tagType: 'classifier', ordinal: 0 };
     expect(getTagLinkParams(tag)).toBeUndefined();
   });
+
+  describe('renderMode="name" on a category-type tag', () => {
+    it('honors meta.tagUrl as an external link (Tag chip is identity, not browse)', () => {
+      const link = getTagLinkParams(baseTag, undefined, 'name');
+      expect(link?.type).toBe('external');
+      expect(link?.href).toContain('vinuswap.org');
+    });
+
+    it('falls back to the specific-slug page when no tagUrl is set', () => {
+      const tag: EntityTag = { ...baseTag, meta: undefined };
+      const link = getTagLinkParams(tag, undefined, 'name');
+      expect(link?.type).toBe('internal');
+      expect(link?.href).toContain('/accounts/label/vir-vin-lp');
+      expect(link?.href).toContain('tagType=liquidity_pool');
+      // Must NOT be the category-browse sentinel.
+      expect(link?.href).not.toContain(`slug=${ CATEGORY_BROWSE_SLUG }`);
+    });
+  });
 });

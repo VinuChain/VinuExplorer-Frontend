@@ -18,6 +18,10 @@ export interface AddressesMetadataSearchResult {
 }
 
 export interface AddressesMetadataSearchFilters {
-  slug: string;
+  // Optional — when omitted the backend's category-only branch
+  // filters by tag_type alone (see AddressTagSearch.list_by_type/2).
+  // The frontend sends `undefined` from AccountsLabelSearch when the
+  // route's slug path-param is the CATEGORY_BROWSE_SLUG sentinel.
+  slug?: string;
   tag_type: string;
 }

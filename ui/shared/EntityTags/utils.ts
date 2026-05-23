@@ -1,14 +1,62 @@
-import type { EntityTag } from './types';
+import type { EntityTag, EntityTagType } from './types';
 
 import { route } from 'nextjs/routes';
 
 import type { TMultichainContext } from 'lib/contexts/multichain';
+
+// Sentinel slug used by the /accounts/label/[slug] route to mean
+// "browse every address that carries a tag of this type, regardless
+// of the specific tag label". AccountsLabelSearch detects this value
+// and drops the `slug` filter from the API call so the backend uses
+// its category-only `list_by_type` branch. Underscore-prefixed so it
+// cannot collide with a user-submitted tag label.
+export const CATEGORY_BROWSE_SLUG = '_category';
+
+// "Category-only" tag types — types whose value-add as a Label badge
+// is to communicate WHAT KIND of entity an address is, not the tag's
+// specific name. The specific name typically duplicates the
+// address-name already shown by AddressEntity in the adjacent cell
+// (e.g., a "VIR/VIN LP" liquidity_pool tag drives both the address
+// title and would otherwise render as a redundant "VIR/VIN LP"
+// badge). For these types the badge displays the human category
+// label and clicking browses every address of the same type.
+const CATEGORY_LABELS: Partial<Record<EntityTagType, string>> = {
+  liquidity_pool: 'Liquidity Pool',
+  exchange: 'Exchange',
+  defi: 'DeFi',
+  meme: 'Meme',
+  smart_contract: 'Smart Contract',
+};
+
+export function getCategoryLabel(tagType: EntityTagType): string | undefined {
+  return CATEGORY_LABELS[tagType];
+}
+
+export function isCategoryTagType(tagType: EntityTagType): boolean {
+  return tagType in CATEGORY_LABELS;
+}
 
 export function getTagLinkParams(data: EntityTag, multichainContext?: TMultichainContext | null): { type: 'external' | 'internal'; href: string } | undefined {
   if (data.meta?.warpcastHandle) {
     return {
       type: 'external',
       href: `https://warpcast.com/${ data.meta.warpcastHandle }`,
+    };
+  }
+
+  // Category-type badges always browse the category, overriding any
+  // tagUrl deep-link the submitter set (the deep-link survives in the
+  // tooltip's "Open ↗" affordance via EntityTagTooltip).
+  if (isCategoryTagType(data.tagType)) {
+    return {
+      type: 'internal',
+      href: route(
+        {
+          pathname: '/accounts/label/[slug]',
+          query: { slug: CATEGORY_BROWSE_SLUG, tagType: data.tagType, tagName: getCategoryLabel(data.tagType) ?? data.name },
+        },
+        multichainContext,
+      ),
     };
   }
 

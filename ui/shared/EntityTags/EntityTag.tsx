@@ -12,16 +12,24 @@ import { Tag } from 'toolkit/chakra/tag';
 import EntityTagIcon from './EntityTagIcon';
 import EntityTagTooltip from './EntityTagTooltip';
 import FittedTagName from './FittedTagName';
-import { getTagName, getTagLinkParams } from './utils';
+import { getCategoryLabel, getTagLinkParams, getTagName } from './utils';
 
 interface Props extends HTMLChakraProps<'span'> {
   data: TEntityTag;
   addressHash?: string;
   isLoading?: boolean;
   noLink?: boolean;
+  // 'category' (default) — for category-only tag types, render the
+  // human category label ("Liquidity Pool" / "Exchange" / ...) so the
+  // badge communicates the entity class rather than re-displaying a
+  // name that AddressEntity already shows in the adjacent cell.
+  // 'name' — always render the tag's specific name. Used by callers
+  // that have already filtered to one specific tag (e.g., the search
+  // result summary on /accounts/label/[slug]).
+  renderMode?: 'name' | 'category';
 }
 
-const EntityTag = ({ data, addressHash, isLoading, noLink, ...rest }: Props) => {
+const EntityTag = ({ data, addressHash, isLoading, noLink, renderMode = 'category', ...rest }: Props) => {
   const multichainContext = useMultichainContext();
 
   const linkParams = !noLink ? getTagLinkParams(data, multichainContext) : undefined;
@@ -47,6 +55,13 @@ const EntityTag = ({ data, addressHash, isLoading, noLink, ...rest }: Props) => 
   const text = (() => {
     if (data.meta?.warpcastHandle) {
       return `@${ data.meta.warpcastHandle }`;
+    }
+
+    if (renderMode === 'category') {
+      const categoryLabel = getCategoryLabel(data.tagType);
+      if (categoryLabel) {
+        return categoryLabel;
+      }
     }
 
     return getTagName(data, addressHash);

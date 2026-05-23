@@ -7,6 +7,7 @@ import { TableBody, TableCell, TableColumnHeader, TableHeaderSticky, TableRoot, 
 import AddressEntity from 'ui/shared/entities/address/AddressEntity';
 import TimeWithTooltip from 'ui/shared/time/TimeWithTooltip';
 
+import PublicTagApplicationPreview from './PublicTagApplicationPreview';
 import PublicTagApplicationStatusBadge from './PublicTagApplicationStatusBadge';
 
 interface Props {
@@ -22,7 +23,7 @@ const PublicTagApplicationsTable = ({ items, top, isLoading, onEdit }: Props) =>
       <TableHeaderSticky top={ top }>
         <TableRow>
           <TableColumnHeader>Address</TableColumnHeader>
-          <TableColumnHeader>Tag name</TableColumnHeader>
+          <TableColumnHeader>Preview</TableColumnHeader>
           <TableColumnHeader>Type</TableColumnHeader>
           <TableColumnHeader>Status</TableColumnHeader>
           <TableColumnHeader>Submitted</TableColumnHeader>
@@ -67,7 +68,7 @@ const PublicTagApplicationsTableItem = ({ item, isLoading, onEdit }: ItemProps) 
       </TableCell>
       <TableCell verticalAlign="middle">
         <Skeleton loading={ isLoading }>
-          <span>{ item.tag_name }</span>
+          <PublicTagApplicationPreview item={ item }/>
         </Skeleton>
       </TableCell>
       <TableCell verticalAlign="middle">

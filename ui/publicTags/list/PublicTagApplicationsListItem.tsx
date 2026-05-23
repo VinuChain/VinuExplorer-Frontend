@@ -6,6 +6,7 @@ import AddressEntity from 'ui/shared/entities/address/AddressEntity';
 import ListItemMobileGrid from 'ui/shared/ListItemMobile/ListItemMobileGrid';
 import TimeWithTooltip from 'ui/shared/time/TimeWithTooltip';
 
+import PublicTagApplicationPreview from './PublicTagApplicationPreview';
 import PublicTagApplicationStatusBadge from './PublicTagApplicationStatusBadge';
 
 interface Props {
@@ -33,9 +34,9 @@ const PublicTagApplicationsListItem = ({ item, isLoading, onEdit }: Props) => {
         />
       </ListItemMobileGrid.Value>
 
-      <ListItemMobileGrid.Label isLoading={ isLoading }>Tag name</ListItemMobileGrid.Label>
+      <ListItemMobileGrid.Label isLoading={ isLoading }>Preview</ListItemMobileGrid.Label>
       <ListItemMobileGrid.Value>
-        <span>{ item.tag_name }</span>
+        <PublicTagApplicationPreview item={ item } size="sm"/>
       </ListItemMobileGrid.Value>
 
       <ListItemMobileGrid.Label isLoading={ isLoading }>Type</ListItemMobileGrid.Label>

@@ -36,6 +36,7 @@ const DEFAULT_TAG_TYPES: Array<PublicTagType> = [
   { id: 'exchange', type: 'exchange', description: 'Exchange address tag' },
   { id: 'liquidity_pool', type: 'liquidity_pool', description: 'Liquidity pool contract tag' },
   { id: 'defi', type: 'defi', description: 'DeFi protocol address tag' },
+  { id: 'burn', type: 'burn', description: 'Burn address tag' },
 ];
 
 const PublicTagsSubmit = () => {

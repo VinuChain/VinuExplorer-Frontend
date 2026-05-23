@@ -27,6 +27,7 @@ const ALLOWED_CATEGORY_TYPES: Array<{ value: string; label: string }> = [
   { value: 'protocol', label: 'Protocol' },
   { value: 'project', label: 'Project' },
   { value: 'smart_contract', label: 'Smart Contract' },
+  { value: 'burn', label: 'Burn' },
 ];
 
 const PublicTagsSubmitFieldTagType = ({ index, tagTypes }: Props) => {

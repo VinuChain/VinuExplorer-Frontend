@@ -23,7 +23,7 @@ const EntityTagIcon = ({ data, ignoreColor }: Props) => {
     return <IconSvg name="publictags_slim" boxSize={ 3 } color={ iconColor }/>;
   }
 
-  if (data.tagType === 'protocol' || data.tagType === 'generic' || data.tagType === 'project') {
+  if (data.tagType === 'protocol' || data.tagType === 'generic' || data.tagType === 'project' || data.tagType === 'burn') {
     return <chakra.span color={ iconColor }>#</chakra.span>;
   }
 

@@ -17,7 +17,8 @@ export type AddressMetadataTagType =
   'meme' |
   'exchange' |
   'liquidity_pool' |
-  'defi';
+  'defi' |
+  'burn';
 
 // Response model from Metadata microservice API
 export interface AddressMetadataTag {

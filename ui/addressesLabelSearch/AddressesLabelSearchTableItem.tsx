@@ -1,3 +1,4 @@
+import { Flex } from '@chakra-ui/react';
 import React from 'react';
 
 import type { AddressesItem } from 'types/api/addresses';
@@ -5,6 +6,7 @@ import type { AddressesItem } from 'types/api/addresses';
 import { Skeleton } from 'toolkit/chakra/skeleton';
 import { TableCell, TableRow } from 'toolkit/chakra/table';
 import AddressEntity from 'ui/shared/entities/address/AddressEntity';
+import EntityTag from 'ui/shared/EntityTags/EntityTag';
 import NativeCoinValue from 'ui/shared/value/NativeCoinValue';
 
 type Props = {
@@ -17,6 +19,14 @@ const AddressesLabelSearchTableItem = ({
   isLoading,
 }: Props) => {
 
+  // Surface the tag chips matched by this search so a row whose only
+  // tag is a category label (e.g. a project-typed tag) renders the
+  // chip explicitly. AddressEntity intentionally skips category-only
+  // tags as a title source, so without this the row would just show
+  // the bare hash and the user would lose the visual proof of why it
+  // matched the filter.
+  const labelTags = (item.metadata?.tags ?? []).filter((tag) => tag.tagType !== 'name');
+
   return (
     <TableRow>
       <TableCell>
@@ -26,6 +36,18 @@ const AddressesLabelSearchTableItem = ({
           fontWeight={ 700 }
           my="2px"
         />
+      </TableCell>
+      <TableCell verticalAlign="middle">
+        <Flex columnGap={ 1 } rowGap={ 1 } flexWrap="wrap">
+          { labelTags.map((tag) => (
+            <EntityTag
+              key={ tag.slug }
+              data={ tag }
+              addressHash={ item.hash }
+              isLoading={ isLoading }
+            />
+          )) }
+        </Flex>
       </TableCell>
       <TableCell isNumeric>
         <NativeCoinValue

@@ -9,7 +9,7 @@ import { Badge } from 'toolkit/chakra/badge';
 import { PopoverBody, PopoverContent, PopoverRoot, PopoverTrigger } from 'toolkit/chakra/popover';
 
 import EntityTag from './EntityTag';
-import { isCategoryTagType } from './utils';
+import { getCategoryLabel, isCategoryTagType } from './utils';
 
 interface Props {
   className?: string;
@@ -30,9 +30,18 @@ interface ExpandedChip {
 // product expresses is: Tag = the specific identity, Label = the
 // browsable category. Expand category-typed tags that have a name into
 // two chips so both appear side-by-side in the page header.
+//
+// Skip the redundant Tag chip when the submitter named the tag the
+// same as the category label itself (e.g., a project tag whose name
+// is "Project"). Rendering both chips in that case produces two
+// identical badges; the single Label chip carries the same meaning.
 function expandTags(tags: Array<TEntityTag>): Array<ExpandedChip> {
   return tags.flatMap((tag) => {
     if (isCategoryTagType(tag.tagType) && tag.name) {
+      const categoryLabel = getCategoryLabel(tag.tagType);
+      if (categoryLabel && tag.name.trim().toLowerCase() === categoryLabel.toLowerCase()) {
+        return [ { tag, renderMode: 'category' as const, key: tag.slug } ];
+      }
       return [
         { tag, renderMode: 'name' as const, key: `${ tag.slug }-name` },
         { tag, renderMode: 'category' as const, key: `${ tag.slug }-category` },

@@ -18,7 +18,8 @@ const AddressesLabelSearchTable = ({ items, top, isLoading }: Props) => {
     <TableRoot>
       <TableHeaderSticky top={ top }>
         <TableRow>
-          <TableColumnHeader width="70%">Address</TableColumnHeader>
+          <TableColumnHeader width="50%">Address</TableColumnHeader>
+          <TableColumnHeader width="20%">Label</TableColumnHeader>
           <TableColumnHeader width="15%" isNumeric>{ `Balance ${ currencyUnits.ether }` }</TableColumnHeader>
           <TableColumnHeader width="15%" isNumeric>Txn count</TableColumnHeader>
         </TableRow>

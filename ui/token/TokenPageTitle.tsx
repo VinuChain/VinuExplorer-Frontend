@@ -30,6 +30,8 @@ import TokenVerifiedInfo from './TokenVerifiedInfo';
 
 const PREDEFINED_TAG_PRIORITY = 100;
 const PUBLIC_TAG_PRIORITY = 1_100;
+// See Address.tsx — name-type public tags lead the chip row.
+const NAME_TAG_PRIORITY = 1_200;
 
 interface Props {
   tokenQuery: UseQueryResult<TokenInfo, ResourceError<unknown>>;
@@ -77,7 +79,10 @@ const TokenPageTitle = ({ tokenQuery, addressQuery, verifiedInfoQuery, hash }: P
         undefined,
       ...(addressMetadataQuery.data?.addresses?.[hash.toLowerCase()]?.tags
         .filter((tag) => tag.tagType !== 'note')
-        .map((tag) => ({ ...tag, ordinal: PUBLIC_TAG_PRIORITY + Math.max(tag.ordinal ?? 0, 0) })) || []),
+        .map((tag) => {
+          const base = tag.tagType === 'name' ? NAME_TAG_PRIORITY : PUBLIC_TAG_PRIORITY;
+          return { ...tag, ordinal: base + Math.max(tag.ordinal ?? 0, 0) };
+        }) || []),
     ].filter(Boolean).sort(sortEntityTags);
   }, [
     addressMetadataQuery.data?.addresses,

@@ -25,11 +25,11 @@ export function useClientRect<E extends Element>(): [ DOMRect | null, LegacyRef<
 
     const resizeObserver = new ResizeObserver(resizeHandler);
     resizeObserver.observe(content);
-    resizeObserver.observe(window.document.body);
+    window.addEventListener('resize', resizeHandler);
 
     return function cleanup() {
       resizeObserver.unobserve(content);
-      resizeObserver.unobserve(window.document.body);
+      window.removeEventListener('resize', resizeHandler);
     };
   }, [ ]);
 

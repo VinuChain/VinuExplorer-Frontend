@@ -10,11 +10,10 @@ export function useViewportSize(debounceTime = 100) {
     const resizeHandler = debounce(() => {
       setViewportSize({ width: window.innerWidth, height: window.innerHeight });
     }, debounceTime);
-    const resizeObserver = new ResizeObserver(resizeHandler);
 
-    resizeObserver.observe(document.body);
+    window.addEventListener('resize', resizeHandler);
     return function cleanup() {
-      resizeObserver.unobserve(document.body);
+      window.removeEventListener('resize', resizeHandler);
     };
   }, [ debounceTime ]);
 

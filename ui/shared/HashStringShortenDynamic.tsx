@@ -84,11 +84,10 @@ const HashStringShortenDynamic = ({ hash, fontWeight = '400', noTooltip, tailLen
 
   useEffect(() => {
     const resizeHandler = debounce(calculateString, 100);
-    const resizeObserver = new ResizeObserver(resizeHandler);
 
-    resizeObserver.observe(document.body);
+    window.addEventListener('resize', resizeHandler);
     return function cleanup() {
-      resizeObserver.unobserve(document.body);
+      window.removeEventListener('resize', resizeHandler);
     };
   }, [ calculateString ]);
 

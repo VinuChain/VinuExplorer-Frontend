@@ -7,6 +7,7 @@ import { TableCell, TableRow } from 'toolkit/chakra/table';
 import { TruncatedText } from 'toolkit/components/truncation/TruncatedText';
 import AddressEntity from 'ui/shared/entities/address/AddressEntity';
 import EntityTag from 'ui/shared/EntityTags/EntityTag';
+import { withFallbackLabelIcons } from 'ui/shared/EntityTags/utils';
 import Utilization from 'ui/shared/Utilization/Utilization';
 import AssetValue from 'ui/shared/value/AssetValue';
 
@@ -39,7 +40,7 @@ const TokenHoldersTableItem = ({ holder, token, rank, isLoading }: Props) => {
   //                 guidance ("General" is the default option in the
   //                 submit dropdown and offers no signal once the Tag
   //                 itself has surfaced via AddressEntity).
-  const labelTags = (holder.address.metadata?.tags ?? []).filter(t => t.tagType !== 'name' && t.tagType !== 'generic');
+  const labelTags = withFallbackLabelIcons(holder.address.metadata?.tags ?? []).filter(t => t.tagType !== 'name' && t.tagType !== 'generic');
 
   return (
     <TableRow>

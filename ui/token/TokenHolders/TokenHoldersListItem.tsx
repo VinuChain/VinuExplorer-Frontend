@@ -6,6 +6,7 @@ import type { TokenHolder, TokenInfo } from 'types/api/token';
 import { TruncatedText } from 'toolkit/components/truncation/TruncatedText';
 import AddressEntity from 'ui/shared/entities/address/AddressEntity';
 import EntityTag from 'ui/shared/EntityTags/EntityTag';
+import { withFallbackLabelIcons } from 'ui/shared/EntityTags/utils';
 import ListItemMobileGrid from 'ui/shared/ListItemMobile/ListItemMobileGrid';
 import Utilization from 'ui/shared/Utilization/Utilization';
 import AssetValue from 'ui/shared/value/AssetValue';
@@ -22,7 +23,7 @@ const TokenHoldersListItem = ({ holder, token, rank, isLoading }: Props) => {
   // badge so the "Category Label" submitted via /public-tags/submit
   // (generic, meme, exchange, liquidity_pool, defi, protocol) all
   // surface on mobile. Name-type tags handled by AddressEntity.
-  const labelTags = (holder.address.metadata?.tags ?? []).filter(t => t.tagType !== 'name' && t.tagType !== 'generic');
+  const labelTags = withFallbackLabelIcons(holder.address.metadata?.tags ?? []).filter(t => t.tagType !== 'name' && t.tagType !== 'generic');
   // Matches the desktop renderer (TokenHoldersTableItem.formatUsd): without a
   // rate OR without decimals we can't compute USD honestly — the raw `amount`
   // is in token base-units, so a missing decimals would render a value off by

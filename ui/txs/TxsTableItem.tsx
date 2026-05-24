@@ -19,6 +19,7 @@ import TxFee from 'ui/shared/tx/TxFee';
 import TxWatchListTags from 'ui/shared/tx/TxWatchListTags';
 import NativeCoinValue from 'ui/shared/value/NativeCoinValue';
 import TxAdditionalInfo from 'ui/txs/TxAdditionalInfo';
+import TxTokenTransfersPreview from 'ui/txs/TxTokenTransfersPreview';
 
 import TxTranslationType from './TxTranslationType';
 import TxType from './TxType';
@@ -123,6 +124,7 @@ const TxsTableItem = ({
           mt="2px"
           mode="compact"
         />
+        <TxTokenTransfersPreview tx={ tx } isLoading={ isLoading }/>
       </TableCell>
       { !config.UI.views.tx.hiddenFields?.value && (
         <TableCell isNumeric>

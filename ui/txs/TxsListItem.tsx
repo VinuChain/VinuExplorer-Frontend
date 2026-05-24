@@ -20,6 +20,7 @@ import TxFee from 'ui/shared/tx/TxFee';
 import TxWatchListTags from 'ui/shared/tx/TxWatchListTags';
 import NativeCoinValue from 'ui/shared/value/NativeCoinValue';
 import TxAdditionalInfo from 'ui/txs/TxAdditionalInfo';
+import TxTokenTransfersPreview from 'ui/txs/TxTokenTransfersPreview';
 import TxType from 'ui/txs/TxType';
 
 import TxTranslationType from './TxTranslationType';
@@ -118,6 +119,7 @@ const TxsListItem = ({
         mt={ 6 }
         fontWeight="500"
       />
+      <TxTokenTransfersPreview tx={ tx } isLoading={ isLoading }/>
       { !config.UI.views.tx.hiddenFields?.value && (
         <Flex mt={ 2 } columnGap={ 2 }>
           <Skeleton loading={ isLoading } display="inline-block" whiteSpace="pre">Value</Skeleton>

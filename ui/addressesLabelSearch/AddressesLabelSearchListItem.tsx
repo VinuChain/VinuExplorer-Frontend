@@ -7,6 +7,7 @@ import { currencyUnits } from 'lib/units';
 import { Skeleton } from 'toolkit/chakra/skeleton';
 import AddressEntity from 'ui/shared/entities/address/AddressEntity';
 import EntityTag from 'ui/shared/EntityTags/EntityTag';
+import { withFallbackLabelIcons } from 'ui/shared/EntityTags/utils';
 import ListItemMobile from 'ui/shared/ListItemMobile/ListItemMobile';
 import NativeCoinValue from 'ui/shared/value/NativeCoinValue';
 
@@ -23,7 +24,7 @@ const AddressesLabelSearchListItem = ({
   // See AddressesLabelSearchTableItem — surface category-typed tag
   // chips so rows whose only public tag is the category label still
   // render the matching chip alongside the bare address.
-  const labelTags = (item.metadata?.tags ?? []).filter((tag) => tag.tagType !== 'name');
+  const labelTags = withFallbackLabelIcons(item.metadata?.tags ?? []).filter((tag) => tag.tagType !== 'name');
 
   return (
     <ListItemMobile rowGap={ 3 }>

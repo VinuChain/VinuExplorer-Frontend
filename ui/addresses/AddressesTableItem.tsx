@@ -8,6 +8,7 @@ import { Skeleton } from 'toolkit/chakra/skeleton';
 import { TableCell, TableRow } from 'toolkit/chakra/table';
 import AddressEntity from 'ui/shared/entities/address/AddressEntity';
 import EntityTag from 'ui/shared/EntityTags/EntityTag';
+import { withFallbackLabelIcons } from 'ui/shared/EntityTags/utils';
 import SimpleValue from 'ui/shared/value/SimpleValue';
 
 type Props = {
@@ -27,7 +28,7 @@ const AddressesTableItem = ({
 }: Props) => {
 
   const addressBalance = BigNumber(item.coin_balance || 0).div(BigNumber(10 ** config.chain.currency.decimals));
-  const labelTags = (item.metadata?.tags ?? []).filter(t => t.tagType !== 'name' && t.tagType !== 'generic');
+  const labelTags = withFallbackLabelIcons(item.metadata?.tags ?? []).filter(t => t.tagType !== 'name' && t.tagType !== 'generic');
 
   return (
     <TableRow>

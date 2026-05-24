@@ -6,6 +6,8 @@ import type { EntityTag } from './types';
 import { Image } from 'toolkit/chakra/image';
 import IconSvg from 'ui/shared/IconSvg';
 
+import { isCategoryTagType } from './utils';
+
 interface Props {
   data: EntityTag;
   ignoreColor?: boolean;
@@ -14,17 +16,39 @@ interface Props {
 const EntityTagIcon = ({ data, ignoreColor }: Props) => {
 
   const iconColor = data.meta?.textColor && !ignoreColor ? data.meta.textColor : 'icon.secondary';
+  const nameIconFallback = <IconSvg name="publictags_slim" boxSize={ 3 } color={ iconColor }/>;
+  const hashFallback = <chakra.span color={ iconColor }>#</chakra.span>;
+  const hasHashFallback = isCategoryTagType(data.tagType);
 
   if (data.meta?.tagIcon) {
-    return <Image boxSize={ 3 } src={ data.meta.tagIcon } alt={ `${ data.name } icon` }/>;
+    const fallback = (() => {
+      if (data.tagType === 'name') {
+        return nameIconFallback;
+      }
+
+      if (hasHashFallback) {
+        return hashFallback;
+      }
+
+      return undefined;
+    })();
+
+    return (
+      <Image
+        boxSize={ 3 }
+        src={ data.meta.tagIcon }
+        alt={ `${ data.name } icon` }
+        fallback={ fallback }
+      />
+    );
   }
 
   if (data.tagType === 'name') {
-    return <IconSvg name="publictags_slim" boxSize={ 3 } color={ iconColor }/>;
+    return nameIconFallback;
   }
 
-  if (data.tagType === 'protocol' || data.tagType === 'generic' || data.tagType === 'project' || data.tagType === 'burn') {
-    return <chakra.span color={ iconColor }>#</chakra.span>;
+  if (hasHashFallback) {
+    return hashFallback;
   }
 
   return null;

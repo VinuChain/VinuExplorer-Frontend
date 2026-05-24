@@ -2,7 +2,7 @@ import type { EntityTag } from './types';
 
 import { describe, it, expect } from 'vitest';
 
-import { CATEGORY_BROWSE_SLUG, getCategoryLabel, getTagLinkParams, isCategoryTagType } from './utils';
+import { CATEGORY_BROWSE_SLUG, getCategoryLabel, getTagLinkParams, isCategoryTagType, withFallbackLabelIcons } from './utils';
 
 describe('getCategoryLabel', () => {
   it.each([
@@ -45,6 +45,54 @@ describe('isCategoryTagType', () => {
     expect(isCategoryTagType('note')).toBe(false);
     expect(isCategoryTagType('information')).toBe(false);
     expect(isCategoryTagType('classifier')).toBe(false);
+  });
+});
+
+describe('withFallbackLabelIcons', () => {
+  it('uses a submitted name-tag icon for category label chips that do not have their own icon', () => {
+    const result = withFallbackLabelIcons([
+      {
+        slug: 'vir-ecosystem-wallet',
+        name: 'VIR Ecosystem Wallet',
+        tagType: 'name',
+        ordinal: 0,
+        meta: { tagIcon: 'https://example.com/vir.png' },
+      },
+      {
+        slug: 'project',
+        name: 'Project',
+        tagType: 'project',
+        ordinal: 1,
+        meta: null,
+      },
+    ]);
+
+    expect(result[1]?.meta?.tagIcon).toBe('https://example.com/vir.png');
+  });
+
+  it('keeps an explicit category tag icon and leaves no-logo labels unchanged', () => {
+    const withOwnIcon = withFallbackLabelIcons([
+      {
+        slug: 'identity',
+        name: 'Identity',
+        tagType: 'name',
+        ordinal: 0,
+        meta: { tagIcon: 'https://example.com/name.png' },
+      },
+      {
+        slug: 'project',
+        name: 'Project',
+        tagType: 'project',
+        ordinal: 1,
+        meta: { tagIcon: 'https://example.com/project.png' },
+      },
+    ]);
+    expect(withOwnIcon[1]?.meta?.tagIcon).toBe('https://example.com/project.png');
+
+    const noSubmittedIcon = withFallbackLabelIcons([
+      { slug: 'project', name: 'Project', tagType: 'project', ordinal: 1, meta: null },
+    ]);
+    expect(noSubmittedIcon[0]?.meta).toBeNull();
   });
 });
 

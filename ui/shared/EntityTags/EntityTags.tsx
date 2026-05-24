@@ -9,7 +9,7 @@ import { Badge } from 'toolkit/chakra/badge';
 import { PopoverBody, PopoverContent, PopoverRoot, PopoverTrigger } from 'toolkit/chakra/popover';
 
 import EntityTag from './EntityTag';
-import { getCategoryLabel, isCategoryTagType } from './utils';
+import { getCategoryLabel, isCategoryTagType, withFallbackLabelIcons } from './utils';
 
 interface Props {
   className?: string;
@@ -59,7 +59,7 @@ const EntityTags = ({ tags, addressHash, className, isLoading }: Props) => {
     <Box display="none" id="meta-suites__address-tag" data-ready={ !isLoading }/> :
     null;
 
-  const chips = React.useMemo(() => expandTags(tags), [ tags ]);
+  const chips = React.useMemo(() => expandTags(withFallbackLabelIcons(tags)), [ tags ]);
 
   if (chips.length === 0) {
     return metaSuitesPlaceholder;

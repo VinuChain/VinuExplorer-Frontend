@@ -13,12 +13,13 @@ import BlockEntity from 'ui/shared/entities/block/BlockEntity';
 import NftEntity from 'ui/shared/entities/nft/NftEntity';
 import TxEntity from 'ui/shared/entities/tx/TxEntity';
 import EntityTag from 'ui/shared/EntityTags/EntityTag';
+import { withFallbackLabelIcons } from 'ui/shared/EntityTags/utils';
 import ChainIcon from 'ui/shared/externalChains/ChainIcon';
 import TimeWithTooltip from 'ui/shared/time/TimeWithTooltip';
 import TokenValue from 'ui/shared/value/TokenValue';
 
 const categoryTagsFor = (address: TokenTransfer['from'] | TokenTransfer['to']) =>
-  (address?.metadata?.tags ?? []).filter((tag) => tag.tagType !== 'name');
+  withFallbackLabelIcons(address?.metadata?.tags ?? []).filter((tag) => tag.tagType !== 'name');
 
 type Props = {
   item: TokenTransfer;

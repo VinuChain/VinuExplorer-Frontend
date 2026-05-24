@@ -45,6 +45,32 @@ export function isCategoryTagType(tagType: EntityTagType): boolean {
   return tagType in CATEGORY_LABELS;
 }
 
+function getSubmittedTagIcon(tags: Array<EntityTag>): string | undefined {
+  return tags.find((tag) => tag.tagType === 'name' && tag.meta?.tagIcon)?.meta?.tagIcon ??
+    tags.find((tag) => tag.meta?.tagIcon)?.meta?.tagIcon;
+}
+
+export function withFallbackLabelIcons(tags: Array<EntityTag>): Array<EntityTag> {
+  const submittedTagIcon = getSubmittedTagIcon(tags);
+  if (!submittedTagIcon) {
+    return tags;
+  }
+
+  return tags.map((tag) => {
+    if (!isCategoryTagType(tag.tagType) || tag.meta?.tagIcon) {
+      return tag;
+    }
+
+    return {
+      ...tag,
+      meta: {
+        ...(tag.meta ?? {}),
+        tagIcon: submittedTagIcon,
+      },
+    };
+  });
+}
+
 export function getTagLinkParams(
   data: EntityTag,
   multichainContext?: TMultichainContext | null,

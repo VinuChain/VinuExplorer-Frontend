@@ -4,6 +4,7 @@ import React from 'react';
 
 import type { EntityTag as TEntityTag, EntityTagType } from 'ui/shared/EntityTags/types';
 
+import useAddressesMetadata from 'lib/address/useAddressesMetadata';
 import getQueryParamString from 'lib/router/getQueryParamString';
 import { TOP_ADDRESS } from 'stubs/address';
 import { generateListStub } from 'stubs/utils';
@@ -13,7 +14,7 @@ import AddressesLabelSearchTable from 'ui/addressesLabelSearch/AddressesLabelSea
 import { ACTION_BAR_HEIGHT_DESKTOP } from 'ui/shared/ActionBar';
 import DataListDisplay from 'ui/shared/DataListDisplay';
 import EntityTag from 'ui/shared/EntityTags/EntityTag';
-import { CATEGORY_BROWSE_SLUG } from 'ui/shared/EntityTags/utils';
+import { CATEGORY_BROWSE_SLUG, withFallbackLabelIcons } from 'ui/shared/EntityTags/utils';
 import PageTitle from 'ui/shared/Page/PageTitle';
 import useQueryWithPages from 'ui/shared/pagination/useQueryWithPages';
 import StickyPaginationWithText from 'ui/shared/StickyPaginationWithText';
@@ -47,17 +48,46 @@ const AccountsLabelSearch = () => {
     },
   });
 
-  const content = data?.items ? (
+  const hashesForMetadata = React.useMemo(
+    () => (data?.items ?? []).map((item) => item.hash),
+    [ data?.items ],
+  );
+  const { getMetadata } = useAddressesMetadata(hashesForMetadata);
+
+  const enrichedItems = React.useMemo(() => {
+    if (!data?.items) return undefined;
+    return data.items.map((item) => {
+      const metadata = getMetadata(item.hash);
+      if (!metadata?.tags.length) return item;
+
+      const existingTags = item.metadata?.tags ?? [];
+      const existingSlugs = new Set(existingTags.map((tag) => tag.slug));
+      const tags = [
+        ...existingTags,
+        ...metadata.tags.filter((tag) => !existingSlugs.has(tag.slug)),
+      ];
+
+      return {
+        ...item,
+        metadata: {
+          reputation: item.metadata?.reputation ?? metadata.reputation ?? null,
+          tags,
+        },
+      };
+    });
+  }, [ data?.items, getMetadata ]);
+
+  const content = enrichedItems ? (
     <>
       <Box hideBelow="lg">
         <AddressesLabelSearchTable
           top={ pagination.isVisible ? ACTION_BAR_HEIGHT_DESKTOP : 0 }
-          items={ data.items }
+          items={ enrichedItems }
           isLoading={ isPlaceholderData }
         />
       </Box>
       <Box hideFrom="lg">
-        { data.items.map((item, index) => {
+        { enrichedItems.map((item, index) => {
           return (
             <AddressesLabelSearchListItem
               key={ item.hash + (isPlaceholderData ? index : '') }
@@ -76,6 +106,13 @@ const AccountsLabelSearch = () => {
     }
 
     const num = data?.items.length || 0;
+    const labelTagFromResults = enrichedItems
+      ?.flatMap((item) => withFallbackLabelIcons(item.metadata?.tags ?? []))
+      .find((tag) =>
+        tag.tagType === tagType &&
+        (isCategoryBrowse || tag.slug === slug || tag.name === tagName) &&
+        tag.meta?.tagIcon,
+      );
 
     const tagData: TEntityTag = {
       tagType: tagType as EntityTagType,
@@ -90,6 +127,7 @@ const AccountsLabelSearch = () => {
       // exchange tag.
       name: tagName || slug,
       ordinal: 0,
+      meta: labelTagFromResults?.meta,
     };
 
     return (

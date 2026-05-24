@@ -7,6 +7,7 @@ import { Skeleton } from 'toolkit/chakra/skeleton';
 import { TableCell, TableRow } from 'toolkit/chakra/table';
 import AddressEntity from 'ui/shared/entities/address/AddressEntity';
 import EntityTag from 'ui/shared/EntityTags/EntityTag';
+import { withFallbackLabelIcons } from 'ui/shared/EntityTags/utils';
 import NativeCoinValue from 'ui/shared/value/NativeCoinValue';
 
 type Props = {
@@ -25,7 +26,7 @@ const AddressesLabelSearchTableItem = ({
   // tags as a title source, so without this the row would just show
   // the bare hash and the user would lose the visual proof of why it
   // matched the filter.
-  const labelTags = (item.metadata?.tags ?? []).filter((tag) => tag.tagType !== 'name');
+  const labelTags = withFallbackLabelIcons(item.metadata?.tags ?? []).filter((tag) => tag.tagType !== 'name');
 
   return (
     <TableRow>

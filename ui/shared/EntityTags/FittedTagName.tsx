@@ -28,6 +28,8 @@ const FittedTagName = React.memo(({ text, html }: Props) => {
     const inner = innerRef.current;
     if (!wrapper || !inner) return;
 
+    let rafId: number | undefined;
+
     const measure = () => {
       const containerWidth = wrapper.clientWidth;
       const textWidth = inner.scrollWidth;
@@ -38,11 +40,22 @@ const FittedTagName = React.memo(({ text, html }: Props) => {
       setScale((prev) => (Math.abs(prev - next) > 0.005 ? next : prev));
     };
 
+    const scheduleMeasure = () => {
+      if (rafId !== undefined) {
+        window.cancelAnimationFrame(rafId);
+      }
+      rafId = window.requestAnimationFrame(measure);
+    };
+
     measure();
-    const ro = new ResizeObserver(measure);
+    const ro = new ResizeObserver(scheduleMeasure);
     ro.observe(wrapper);
-    ro.observe(inner);
-    return () => ro.disconnect();
+    return () => {
+      ro.disconnect();
+      if (rafId !== undefined) {
+        window.cancelAnimationFrame(rafId);
+      }
+    };
   }, [ text, html ]);
 
   const willOverflow = scale <= FITTED_MIN_SCALE;

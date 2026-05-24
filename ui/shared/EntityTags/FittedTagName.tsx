@@ -3,8 +3,8 @@ import React, { useLayoutEffect, useRef, useState } from 'react';
 
 // Shrink-to-fit text renderer for tag labels. Long tag names (e.g.
 // "VIR Ecosystem Wallet") in narrow rows would otherwise truncate
-// with an ellipsis, losing brand-identity context. ResizeObserver +
-// width measurement lets us scale the text down via CSS transform
+// with an ellipsis, losing brand-identity context. Width measurement
+// lets us scale the text down via CSS transform
 // when the natural width exceeds the parent slot — preserving full
 // legibility for moderate sizes (clamped at FITTED_MIN_SCALE) before
 // falling back to ellipsis on extreme cases.
@@ -47,11 +47,11 @@ const FittedTagName = React.memo(({ text, html }: Props) => {
       rafId = window.requestAnimationFrame(measure);
     };
 
-    measure();
-    const ro = new ResizeObserver(scheduleMeasure);
-    ro.observe(wrapper);
+    scheduleMeasure();
+    window.addEventListener('resize', scheduleMeasure);
+
     return () => {
-      ro.disconnect();
+      window.removeEventListener('resize', scheduleMeasure);
       if (rafId !== undefined) {
         window.cancelAnimationFrame(rafId);
       }

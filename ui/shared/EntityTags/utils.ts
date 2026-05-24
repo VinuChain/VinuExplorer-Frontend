@@ -20,12 +20,21 @@ export const CATEGORY_BROWSE_SLUG = '_category';
 // title and would otherwise render as a redundant "VIR/VIN LP"
 // badge). For these types the badge displays the human category
 // label and clicking browses every address of the same type.
+//
+// Mirrors the curated Category Label set in
+// ui/publicTags/submit/fields/PublicTagsSubmitFieldTagType.tsx so every
+// submittable category routes through the same `_category` sentinel
+// and renders a consistent Label badge across the explorer.
 const CATEGORY_LABELS: Partial<Record<EntityTagType, string>> = {
   liquidity_pool: 'Liquidity Pool',
   exchange: 'Exchange',
   defi: 'DeFi',
   meme: 'Meme',
   smart_contract: 'Smart Contract',
+  project: 'Project',
+  protocol: 'Protocol',
+  generic: 'General',
+  burn: 'Burn',
 };
 
 export function getCategoryLabel(tagType: EntityTagType): string | undefined {
@@ -73,13 +82,11 @@ export function getTagLinkParams(
     };
   }
 
-  if (
-    data.tagType === 'generic' ||
-    data.tagType === 'protocol' ||
-    data.tagType === 'project' ||
-    data.tagType === 'burn' ||
-    isCategoryTagType(data.tagType)
-  ) {
+  // renderMode='name' branch for category-type tags (the Tag chip from
+  // expandTags' split). The Label sibling takes the _category sentinel
+  // above; this one routes to the specific slug so the user lands on
+  // "every address with THIS tag" rather than the whole category.
+  if (isCategoryTagType(data.tagType)) {
     return {
       type: 'internal',
       href: route({ pathname: '/accounts/label/[slug]', query: { slug: data.slug, tagType: data.tagType, tagName: data.name } }, multichainContext),

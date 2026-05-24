@@ -13,7 +13,7 @@ import { Skeleton } from 'toolkit/chakra/skeleton';
 import { Tooltip } from 'toolkit/chakra/tooltip';
 import * as EntityBase from 'ui/shared/entities/base/components';
 import FittedTagName from 'ui/shared/EntityTags/FittedTagName';
-import { getTagName } from 'ui/shared/EntityTags/utils';
+import { getCategoryLabel, getTagName } from 'ui/shared/EntityTags/utils';
 import getChainTooltipText from 'ui/shared/externalChains/getChainTooltipText';
 import type { IconName } from 'ui/shared/IconSvg';
 
@@ -26,6 +26,24 @@ type LinkProps = EntityBase.LinkBaseProps & Pick<EntityProps, 'address'>;
 
 const getDisplayedAddress = (address: AddressProp, altHash?: string) => {
   return address.filecoin?.robust ?? address.filecoin?.id ?? altHash ?? address.hash;
+};
+
+// A tag that meaningfully identifies the address as a specific entity
+// (vs. just classifying its category). Excludes category-typed tags
+// whose name is just the category label echoed back — those add no
+// identifying info beyond what the Label chip already shows and
+// should not become the address title (e.g., a project tag named
+// "Project" must not retitle the address as "Project").
+type AddressMetadataTagLike = NonNullable<NonNullable<AddressProp['metadata']>['tags']>[number];
+const isIdentityTag = (tag: AddressMetadataTagLike): boolean => {
+  if (!tag.name) {
+    return false;
+  }
+  const categoryLabel = getCategoryLabel(tag.tagType);
+  if (categoryLabel && tag.name.trim().toLowerCase() === categoryLabel.toLowerCase()) {
+    return false;
+  }
+  return true;
 };
 
 const Link = chakra((props: LinkProps) => {
@@ -108,7 +126,7 @@ const Icon = (props: IconProps) => {
   // available keeps the existing visual for un-curated addresses.
   const nameTag =
     props.address.metadata?.tags?.find((tag) => tag.tagType === 'name' && tag.name) ??
-    props.address.metadata?.tags?.find((tag) => Boolean(tag.name));
+    props.address.metadata?.tags?.find((tag) => isIdentityTag(tag));
   const nameTagIcon = nameTag?.meta?.tagIcon;
   const iconBoxPx = props.size ?? (props.variant === 'heading' ? 30 : 20);
 
@@ -170,7 +188,7 @@ const Content = chakra((props: ContentProps) => {
   // surfaces BOTH the replaced name and an "Exchange" badge.
   const tags = props.address.metadata?.tags;
   const nameTagData = tags?.find(tag => tag.tagType === 'name' && tag.name) ??
-    tags?.find(tag => Boolean(tag.name));
+    tags?.find(tag => isIdentityTag(tag));
   const nameTag = nameTagData ? getTagName(nameTagData, props.address.hash) : undefined;
   const nameText = nameTag || props.address.ens_domain_name || props.address.name;
 

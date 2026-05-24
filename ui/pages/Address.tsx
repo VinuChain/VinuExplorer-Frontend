@@ -66,6 +66,12 @@ import PageTitle from 'ui/shared/Page/PageTitle';
 const TOKEN_TABS = [ 'tokens_erc20', 'tokens_nfts', 'tokens_nfts_collection', 'tokens_nfts_list' ];
 const PREDEFINED_TAG_PRIORITY = 100;
 const PUBLIC_TAG_PRIORITY = 1_100;
+// `name`-type public tags are the address's specific identity
+// ("VIR Ecosystem Wallet") and must render before category labels
+// ("Project", "Liquidity Pool", ...) so the identity chip leads the
+// row. Bumping above PUBLIC_TAG_PRIORITY achieves that via the
+// existing DESC sort in sortEntityTags.
+const NAME_TAG_PRIORITY = 1_200;
 
 const txInterpretation = config.features.txInterpretation;
 const addressProfileAPIFeature = config.features.addressProfileAPI;
@@ -374,7 +380,10 @@ const AddressPageContent = () => {
       ...formatUserTags(addressQuery.data),
       ...(addressMetadataQuery.data?.addresses?.[hash.toLowerCase()]?.tags
         .filter((tag) => tag.tagType !== 'note')
-        .map((tag) => ({ ...tag, ordinal: PUBLIC_TAG_PRIORITY + Math.max(tag.ordinal ?? 0, 0) })) || []),
+        .map((tag) => {
+          const base = tag.tagType === 'name' ? NAME_TAG_PRIORITY : PUBLIC_TAG_PRIORITY;
+          return { ...tag, ordinal: base + Math.max(tag.ordinal ?? 0, 0) };
+        }) || []),
       !addressQuery.data?.is_contract && xScoreFeature.isEnabled && xStarQuery.data?.data.level ?
         {
           slug: 'xstar',

@@ -11,29 +11,40 @@ describe('getCategoryLabel', () => {
     [ 'defi', 'DeFi' ],
     [ 'meme', 'Meme' ],
     [ 'smart_contract', 'Smart Contract' ],
+    [ 'project', 'Project' ],
+    [ 'protocol', 'Protocol' ],
+    [ 'generic', 'General' ],
+    [ 'burn', 'Burn' ],
   ] as const)('maps %s -> %s', (tagType, expected) => {
     expect(getCategoryLabel(tagType)).toBe(expected);
   });
 
   it('returns undefined for non-category types', () => {
     expect(getCategoryLabel('name')).toBeUndefined();
-    expect(getCategoryLabel('protocol')).toBeUndefined();
-    expect(getCategoryLabel('generic')).toBeUndefined();
-    expect(getCategoryLabel('burn')).toBeUndefined();
+    expect(getCategoryLabel('note')).toBeUndefined();
+    expect(getCategoryLabel('information')).toBeUndefined();
+    expect(getCategoryLabel('classifier')).toBeUndefined();
   });
 });
 
 describe('isCategoryTagType', () => {
-  it('classifies category-only types as true', () => {
+  it('classifies every submittable category as true', () => {
     expect(isCategoryTagType('liquidity_pool')).toBe(true);
     expect(isCategoryTagType('exchange')).toBe(true);
+    expect(isCategoryTagType('defi')).toBe(true);
+    expect(isCategoryTagType('meme')).toBe(true);
+    expect(isCategoryTagType('smart_contract')).toBe(true);
+    expect(isCategoryTagType('project')).toBe(true);
+    expect(isCategoryTagType('protocol')).toBe(true);
+    expect(isCategoryTagType('generic')).toBe(true);
+    expect(isCategoryTagType('burn')).toBe(true);
   });
 
-  it('classifies tag-specific types as false', () => {
-    expect(isCategoryTagType('protocol')).toBe(false);
+  it('classifies non-category tag types as false', () => {
     expect(isCategoryTagType('name')).toBe(false);
-    expect(isCategoryTagType('generic')).toBe(false);
-    expect(isCategoryTagType('burn')).toBe(false);
+    expect(isCategoryTagType('note')).toBe(false);
+    expect(isCategoryTagType('information')).toBe(false);
+    expect(isCategoryTagType('classifier')).toBe(false);
   });
 });
 
@@ -59,19 +70,25 @@ describe('getTagLinkParams', () => {
     expect(link?.href).not.toContain('vinuswap.org');
   });
 
-  it('keeps meta.tagUrl as an external link for non-category types', () => {
-    const tag: EntityTag = { ...baseTag, tagType: 'protocol' };
-    const link = getTagLinkParams(tag);
-    expect(link?.type).toBe('external');
-    expect(link?.href).toContain('vinuswap.org');
-  });
-
-  it('routes the legacy generic/protocol/project/burn types to the specific-label listing when no tagUrl is set', () => {
-    const tag: EntityTag = { slug: 'aerodrome', name: 'Aerodrome', tagType: 'protocol', ordinal: 0 };
-    const link = getTagLinkParams(tag);
-    expect(link?.type).toBe('internal');
-    expect(link?.href).toContain('/accounts/label/aerodrome');
-    expect(link?.href).toContain('tagType=protocol');
+  it('routes every category type via the _category sentinel for the default (Label) render', () => {
+    for (const [ tagType, label ] of [
+      [ 'liquidity_pool', 'Liquidity+Pool' ],
+      [ 'exchange', 'Exchange' ],
+      [ 'defi', 'DeFi' ],
+      [ 'meme', 'Meme' ],
+      [ 'smart_contract', 'Smart+Contract' ],
+      [ 'project', 'Project' ],
+      [ 'protocol', 'Protocol' ],
+      [ 'generic', 'General' ],
+      [ 'burn', 'Burn' ],
+    ] as const) {
+      const tag: EntityTag = { slug: `${ tagType }-x`, name: 'Whatever', tagType, ordinal: 0 };
+      const link = getTagLinkParams(tag);
+      expect(link?.type).toBe('internal');
+      expect(link?.href).toContain(`/accounts/label/${ CATEGORY_BROWSE_SLUG }`);
+      expect(link?.href).toContain(`tagType=${ tagType }`);
+      expect(link?.href).toContain(`tagName=${ label }`);
+    }
   });
 
   it('returns undefined for an opaque/unknown tag type with no tagUrl', () => {
@@ -94,6 +111,17 @@ describe('getTagLinkParams', () => {
       expect(link?.href).toContain('tagType=liquidity_pool');
       // Must NOT be the category-browse sentinel.
       expect(link?.href).not.toContain(`slug=${ CATEGORY_BROWSE_SLUG }`);
+    });
+
+    it('routes the Tag chip to the specific slug for every promoted category type', () => {
+      for (const tagType of [ 'project', 'protocol', 'generic', 'burn' ] as const) {
+        const tag: EntityTag = { slug: `${ tagType }-tagname`, name: 'Specific Tag', tagType, ordinal: 0 };
+        const link = getTagLinkParams(tag, undefined, 'name');
+        expect(link?.type).toBe('internal');
+        expect(link?.href).toContain(`/accounts/label/${ tagType }-tagname`);
+        expect(link?.href).toContain(`tagType=${ tagType }`);
+        expect(link?.href).not.toContain(`slug=${ CATEGORY_BROWSE_SLUG }`);
+      }
     });
   });
 });

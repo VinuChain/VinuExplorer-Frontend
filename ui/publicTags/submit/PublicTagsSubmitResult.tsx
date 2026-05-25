@@ -18,9 +18,10 @@ import { groupSubmitResult } from './utils';
 
 interface Props {
   data: FormSubmitResult | undefined;
+  onAddNewTagClick?: () => void;
 }
 
-const PublicTagsSubmitResult = ({ data }: Props) => {
+const PublicTagsSubmitResult = ({ data, onAddNewTagClick }: Props) => {
   const groupedData = React.useMemo(() => groupSubmitResult(data), [ data ]);
 
   if (!groupedData) {
@@ -78,7 +79,7 @@ const PublicTagsSubmitResult = ({ data }: Props) => {
           </Link>
         ) }
         <Link href={ route({ pathname: '/public-tags/submit' }) } asChild>
-          <Button w={{ base: '100%', lg: 'auto' }}>Add new tag</Button>
+          <Button w={{ base: '100%', lg: 'auto' }} onClick={ onAddNewTagClick }>Add new tag</Button>
         </Link>
       </Flex>
     </div>

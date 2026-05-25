@@ -42,7 +42,7 @@ const FormFieldColorContent = <
     name,
     rules: {
       ...rules,
-      required: restProps.required,
+      required: restProps.required ?? rules?.required,
       validate: colorValidator,
       maxLength: 7,
     },

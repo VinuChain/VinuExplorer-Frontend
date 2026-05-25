@@ -17,13 +17,13 @@ const FormFieldSelectContent = <
   FormFields extends FieldValues,
   Name extends Path<FormFields>,
 >(props: FormFieldSelectProps<FormFields, Name>) => {
-  const { name, rules, size = 'lg', controllerProps, ...rest } = props;
+  const { name, rules, size = 'lg', controllerProps, required, ...rest } = props;
 
   const { control } = useFormContext<FormFields>();
   const { field, fieldState, formState } = useController<FormFields, typeof name>({
     control,
     name,
-    rules,
+    rules: { ...rules, required: required ?? rules?.required },
     ...controllerProps,
   });
 
@@ -48,6 +48,7 @@ const FormFieldSelectContent = <
       disabled={ isDisabled }
       invalid={ Boolean(fieldState.error) }
       errorText={ getFormFieldErrorText(fieldState.error) }
+      required={ required }
       size={ size }
       positioning={{ sameWidth: true }}
       { ...rest }

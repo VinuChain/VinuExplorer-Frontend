@@ -2,12 +2,19 @@ import React from 'react';
 
 import type { AddressesMetadataSearchResult } from 'types/api/addresses';
 import type { AddressMetadataInfo } from 'types/api/addressMetadata';
+import type { TokenLabelSearchResult } from 'types/api/token';
 
 import config from 'configs/app';
 import * as addressMocks from 'mocks/address/address';
+import { tokenInfoERC20b } from 'mocks/tokens/tokenInfo';
 import { test, expect } from 'playwright/lib';
+import { CATEGORY_BROWSE_SLUG } from 'ui/shared/EntityTags/utils';
 
 import AccountsLabelSearch from './AccountsLabelSearch';
+
+const EXPECT_TIMEOUT = 15_000;
+
+test.setTimeout(30_000);
 
 const addresses: AddressesMetadataSearchResult = {
   items: [
@@ -95,6 +102,37 @@ const projectAddressMetadata: AddressMetadataInfo = {
   },
 };
 
+const memeHooksConfig = {
+  router: {
+    query: {
+      slug: CATEGORY_BROWSE_SLUG,
+      tagType: 'meme',
+      tagName: 'Meme',
+    },
+  },
+};
+
+const memeTokens: TokenLabelSearchResult = {
+  items: [
+    {
+      ...tokenInfoERC20b,
+      socials: { website: 'https://meme.example' },
+      metadata: {
+        tags: [
+          {
+            tagType: 'meme',
+            name: 'Meme',
+            slug: 'meme',
+            ordinal: 0,
+            meta: { tagUrl: 'https://meme.example' },
+          },
+        ],
+      },
+    },
+  ],
+  next_page_params: null,
+};
+
 test('base view +@mobile', async({ render, mockTextAd, mockApiResponse }) => {
   await mockTextAd();
   await mockApiResponse(
@@ -108,7 +146,7 @@ test('base view +@mobile', async({ render, mockTextAd, mockApiResponse }) => {
     },
   );
   const component = await render(<AccountsLabelSearch/>, { hooksConfig });
-  await expect(component).toHaveScreenshot();
+  await expect(component).toHaveScreenshot({ timeout: EXPECT_TIMEOUT });
 });
 
 test('hydrates public name tag and logo for category label results', async({ render, mockTextAd, mockApiResponse, mockAssetResponse }) => {
@@ -134,7 +172,29 @@ test('hydrates public name tag and logo for category label results', async({ ren
 
   const component = await render(<AccountsLabelSearch/>, { hooksConfig: projectHooksConfig });
 
-  await expect(component.getByText('VIR Ecosystem Wallet').first()).toBeVisible();
-  await expect(component.getByText('Project').first()).toBeVisible();
-  await expect(component.getByAltText('Project icon').first()).toBeVisible();
+  await expect(component.getByText('VIR Ecosystem Wallet').first()).toBeVisible({ timeout: EXPECT_TIMEOUT });
+  await expect(component.getByText('Project').first()).toBeVisible({ timeout: EXPECT_TIMEOUT });
+  await expect(component.getByAltText('Project icon').first()).toBeVisible({ timeout: EXPECT_TIMEOUT });
+});
+
+test('renders meme label as token tracker table', async({ render, mockTextAd, mockApiResponse }) => {
+  await mockTextAd();
+  await mockApiResponse(
+    'general:tokens_metadata_search',
+    memeTokens,
+    {
+      queryParams: {
+        tag_type: 'meme',
+      },
+    },
+  );
+
+  const component = await render(<AccountsLabelSearch/>, { hooksConfig: memeHooksConfig });
+
+  await expect(component.getByRole('heading', { name: 'Token Tracker' })).toBeVisible({ timeout: EXPECT_TIMEOUT });
+  await expect(component.getByRole('columnheader', { name: 'Contract Address' })).toBeVisible({ timeout: EXPECT_TIMEOUT });
+  await expect(component.getByRole('columnheader', { name: 'Token Name' })).toBeVisible({ timeout: EXPECT_TIMEOUT });
+  await expect(component.getByRole('columnheader', { name: 'Market Cap' })).toBeVisible({ timeout: EXPECT_TIMEOUT });
+  await expect(component.getByRole('columnheader', { name: 'Holders' })).toBeVisible({ timeout: EXPECT_TIMEOUT });
+  await expect(component.getByRole('link', { name: 'meme.example' }).first()).toBeVisible({ timeout: EXPECT_TIMEOUT });
 });

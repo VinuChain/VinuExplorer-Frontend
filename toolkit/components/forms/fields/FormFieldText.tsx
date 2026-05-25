@@ -44,7 +44,7 @@ const FormFieldTextContent = <
   const { field, fieldState, formState } = useController<FormFields, typeof name>({
     control,
     name,
-    rules: { ...rules, required: restProps.required },
+    rules: { ...rules, required: restProps.required ?? rules?.required },
     ...controllerProps,
   });
 

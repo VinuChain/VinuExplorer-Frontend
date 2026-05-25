@@ -70,6 +70,16 @@ const PublicTagsSubmit = () => {
     }
   }, [ queryClient, router ]);
 
+  const handleTabsValueChange = React.useCallback(({ value }: { value: string }) => {
+    if (value === 'submit-tag') {
+      setSubmitResult(undefined);
+    }
+  }, []);
+
+  const handleAddNewTagClick = React.useCallback(() => {
+    handleTabsValueChange({ value: 'submit-tag' });
+  }, [ handleTabsValueChange ]);
+
   const tagTypes = configQuery.data?.tagTypes ?? DEFAULT_TAG_TYPES;
 
   const tabs: Array<TabItemRegular> = React.useMemo(() => [
@@ -77,7 +87,7 @@ const PublicTagsSubmit = () => {
       id: 'submit-tag',
       title: 'Submit new tag',
       component: submitResult ? (
-        <PublicTagsSubmitResult data={ submitResult }/>
+        <PublicTagsSubmitResult data={ submitResult } onAddNewTagClick={ handleAddNewTagClick }/>
       ) : (
         <PublicTagsSubmitForm
           config={{ tagTypes }}
@@ -91,7 +101,7 @@ const PublicTagsSubmit = () => {
       title: 'My requests',
       component: <PublicTagApplicationsList/>,
     },
-  ], [ submitResult, tagTypes, handleFormSubmitResult, profileQuery.data ]);
+  ], [ submitResult, handleAddNewTagClick, tagTypes, handleFormSubmitResult, profileQuery.data ]);
 
   if (profileQuery.isLoading || (appConfig.features.addressMetadata.isEnabled && configQuery.isPending)) {
     return (
@@ -117,6 +127,7 @@ const PublicTagsSubmit = () => {
       <RoutedTabs
         tabs={ tabs }
         defaultTabId="submit-tag"
+        onValueChange={ handleTabsValueChange }
       />
     </>
   );

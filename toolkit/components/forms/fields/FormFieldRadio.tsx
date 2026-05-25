@@ -1,3 +1,4 @@
+import { chakra } from '@chakra-ui/react';
 import React from 'react';
 import type { FieldValues, Path } from 'react-hook-form';
 import { useController, useFormContext } from 'react-hook-form';
@@ -7,6 +8,7 @@ import type { ExcludeUndefined } from 'types/utils';
 
 import type { RadioGroupProps, RadioProps } from '../../../chakra/radio';
 import { Radio, RadioGroup } from '../../../chakra/radio';
+import { getFormFieldErrorText } from '../utils/getFormFieldErrorText';
 
 export interface FormFieldRadioProps<
   FormFields extends FieldValues,
@@ -27,13 +29,16 @@ const FormFieldRadioContent = <
   itemProps,
   onValueChange,
   disabled,
+  required,
+  rules,
   controllerProps,
   ...rest
 }: FormFieldRadioProps<FormFields, Name>) => {
   const { control } = useFormContext<FormFields>();
-  const { field, formState } = useController<FormFields, typeof name>({
+  const { field, fieldState, formState } = useController<FormFields, typeof name>({
     control,
     name,
+    rules: { ...rules, required: required ?? rules?.required },
     ...controllerProps,
   });
 
@@ -46,25 +51,33 @@ const FormFieldRadioContent = <
   );
 
   return (
-    <RadioGroup
-      ref={ field.ref }
-      name={ field.name }
-      value={ field.value }
-      onValueChange={ handleValueChange }
-      disabled={ formState.isSubmitting || disabled }
-      { ...rest }
-    >
-      { options.map(({ value, label }) => (
-        <Radio
-          key={ value }
-          value={ value }
-          inputProps={{ onBlur: field.onBlur }}
-          { ...itemProps }
-        >
-          { label }
-        </Radio>
-      )) }
-    </RadioGroup>
+    <>
+      <RadioGroup
+        ref={ field.ref }
+        name={ field.name }
+        value={ field.value }
+        onValueChange={ handleValueChange }
+        disabled={ formState.isSubmitting || disabled }
+        invalid={ Boolean(fieldState.error) }
+        { ...rest }
+      >
+        { options.map(({ value, label }) => (
+          <Radio
+            key={ value }
+            value={ value }
+            inputProps={{ onBlur: field.onBlur }}
+            { ...itemProps }
+          >
+            { label }
+          </Radio>
+        )) }
+      </RadioGroup>
+      { fieldState.error && (
+        <chakra.div color="text.error" textStyle="sm" mt={ 1 }>
+          { getFormFieldErrorText(fieldState.error) }
+        </chakra.div>
+      ) }
+    </>
   );
 };
 

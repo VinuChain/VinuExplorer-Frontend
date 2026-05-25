@@ -10,6 +10,8 @@ import type {
   TokenInstance,
   TokenInstanceTransfersCount,
   TokenInventoryFilters,
+  TokenLabelSearchFilters,
+  TokenLabelSearchResult,
 } from 'types/api/token';
 import type { TokensResponse, TokensFilters, TokensSorting, TokenInstanceTransferResponse, TokensBridgedFilters } from 'types/api/tokens';
 import type { TokenTransferResponse, TokenTransferFilters } from 'types/api/tokenTransfer';
@@ -63,6 +65,11 @@ export const GENERAL_API_TOKEN_RESOURCES = {
   tokens: {
     path: '/api/v2/tokens',
     filterFields: [ 'q' as const, 'type' as const ],
+    paginated: true,
+  },
+  tokens_metadata_search: {
+    path: '/api/v2/proxy/metadata/tokens',
+    filterFields: [ 'slug' as const, 'tag_type' as const ],
     paginated: true,
   },
   tokens_bridged: {
@@ -126,6 +133,7 @@ R extends 'general:token_instance_transfers' ? TokenInstanceTransferResponse :
 R extends 'general:token_instance_holders' ? TokenHolders :
 R extends 'general:token_inventory' ? TokenInventoryResponse :
 R extends 'general:tokens' ? TokensResponse :
+R extends 'general:tokens_metadata_search' ? TokenLabelSearchResult :
 R extends 'general:tokens_bridged' ? TokensResponse :
 R extends 'general:token_transfers_all' ? TokenTransferResponse :
 never;
@@ -137,6 +145,7 @@ R extends 'general:token_transfers' ? TokenTransferFilters :
 R extends 'general:token_holders' ? TokenHoldersFilters :
 R extends 'general:token_inventory' ? TokenInventoryFilters :
 R extends 'general:tokens' ? TokensFilters :
+R extends 'general:tokens_metadata_search' ? TokenLabelSearchFilters :
 R extends 'general:tokens_bridged' ? TokensBridgedFilters :
 R extends 'general:token_transfers_all' ? TokenTransferFilters :
 never;

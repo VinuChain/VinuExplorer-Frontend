@@ -14,7 +14,7 @@ export type AddressesResponse = {
 
 export interface AddressesMetadataSearchResult {
   items: Array<AddressesItem>;
-  next_page_params: null;
+  next_page_params: { page_token: string } | null;
 }
 
 export interface AddressesMetadataSearchFilters {

@@ -1,4 +1,5 @@
 import type { TokenInfoApplication } from './account';
+import type { AddressMetadataTagApi } from './addressMetadata';
 import type { AddressParam } from './addressParams';
 
 export type NFTTokenType = 'ERC-721' | 'ERC-1155' | 'ERC-404';
@@ -27,6 +28,22 @@ export interface TokenInfo<T extends TokenType = TokenType> {
   origin_chain_id?: string | null;
   foreign_address?: string | null;
   filecoin_robust_address?: string | null;
+}
+
+export type TokenLabelSearchItem = TokenInfo & {
+  metadata?: {
+    tags: Array<AddressMetadataTagApi>;
+  } | null;
+};
+
+export interface TokenLabelSearchResult {
+  items: Array<TokenLabelSearchItem>;
+  next_page_params: { page_token: string } | null;
+}
+
+export interface TokenLabelSearchFilters {
+  slug?: string;
+  tag_type: string;
 }
 
 export interface TokenCounters {

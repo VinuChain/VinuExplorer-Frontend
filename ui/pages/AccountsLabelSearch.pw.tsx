@@ -194,7 +194,9 @@ test('renders meme label as token tracker table', async({ render, mockTextAd, mo
   await expect(component.getByRole('heading', { name: 'Token Tracker' })).toBeVisible({ timeout: EXPECT_TIMEOUT });
   await expect(component.getByRole('columnheader', { name: 'Contract Address' })).toBeVisible({ timeout: EXPECT_TIMEOUT });
   await expect(component.getByRole('columnheader', { name: 'Token Name' })).toBeVisible({ timeout: EXPECT_TIMEOUT });
+  await expect(component.getByRole('columnheader', { name: 'Label' })).toBeVisible({ timeout: EXPECT_TIMEOUT });
   await expect(component.getByRole('columnheader', { name: 'Market Cap' })).toBeVisible({ timeout: EXPECT_TIMEOUT });
   await expect(component.getByRole('columnheader', { name: 'Holders' })).toBeVisible({ timeout: EXPECT_TIMEOUT });
+  await expect(component.getByRole('link', { name: 'Meme' }).first()).toBeVisible({ timeout: EXPECT_TIMEOUT });
   await expect(component.getByRole('link', { name: 'meme.example' }).first()).toBeVisible({ timeout: EXPECT_TIMEOUT });
 });

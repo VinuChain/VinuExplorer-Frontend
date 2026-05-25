@@ -8,11 +8,12 @@ import { Link } from 'toolkit/chakra/link';
 import { Skeleton } from 'toolkit/chakra/skeleton';
 import AddressEntity from 'ui/shared/entities/address/AddressEntity';
 import TokenEntity from 'ui/shared/entities/token/TokenEntity';
+import EntityTag from 'ui/shared/EntityTags/EntityTag';
 import ListItemMobile from 'ui/shared/ListItemMobile/ListItemMobile';
 import SimpleValue from 'ui/shared/value/SimpleValue';
 import { DEFAULT_ACCURACY_USD } from 'ui/shared/value/utils';
 
-import { getTokenLabelWebsite } from './tokenLabelUtils';
+import { getTokenLabelTags, getTokenLabelWebsite } from './tokenLabelUtils';
 
 interface Props {
   item: TokenLabelSearchItem;
@@ -21,9 +22,10 @@ interface Props {
 
 const TokenLabelSearchListItem = ({ item, isLoading }: Props) => {
   const website = getTokenLabelWebsite(item);
+  const labelTags = getTokenLabelTags(item);
 
   return (
-    <ListItemMobile rowGap={ 3 }>
+    <ListItemMobile rowGap={ 2 }>
       <TokenEntity
         token={ item }
         isLoading={ isLoading }
@@ -43,6 +45,21 @@ const TokenLabelSearchListItem = ({ item, isLoading }: Props) => {
           color="text.secondary"
         />
       </HStack>
+      { labelTags.length > 0 && (
+        <HStack gap={ 3 } alignItems="flex-start">
+          <Skeleton loading={ isLoading } fontSize="sm" fontWeight={ 500 } flexShrink={ 0 }>Label</Skeleton>
+          <HStack gap={ 1 } flexWrap="wrap">
+            { labelTags.map((tag) => (
+              <EntityTag
+                key={ tag.slug }
+                data={ tag }
+                addressHash={ item.address_hash }
+                isLoading={ isLoading }
+              />
+            )) }
+          </HStack>
+        </HStack>
+      ) }
       { item.circulating_market_cap && (
         <HStack gap={ 3 }>
           <Skeleton loading={ isLoading } fontSize="sm" fontWeight={ 500 }>Market Cap</Skeleton>

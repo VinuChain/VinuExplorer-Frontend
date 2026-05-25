@@ -9,10 +9,11 @@ import { Skeleton } from 'toolkit/chakra/skeleton';
 import { TableCell, TableRow } from 'toolkit/chakra/table';
 import AddressEntity from 'ui/shared/entities/address/AddressEntity';
 import TokenEntity from 'ui/shared/entities/token/TokenEntity';
+import EntityTag from 'ui/shared/EntityTags/EntityTag';
 import SimpleValue from 'ui/shared/value/SimpleValue';
 import { DEFAULT_ACCURACY_USD } from 'ui/shared/value/utils';
 
-import { getTokenLabelWebsite } from './tokenLabelUtils';
+import { getTokenLabelTags, getTokenLabelWebsite } from './tokenLabelUtils';
 
 interface Props {
   item: TokenLabelSearchItem;
@@ -21,10 +22,11 @@ interface Props {
 
 const TokenLabelSearchTableItem = ({ item, isLoading }: Props) => {
   const website = getTokenLabelWebsite(item);
+  const labelTags = getTokenLabelTags(item);
 
   return (
     <TableRow>
-      <TableCell>
+      <TableCell py={ 3 }>
         <AddressEntity
           address={{ hash: item.address_hash, filecoin: { robust: item.filecoin_robust_address } }}
           isLoading={ isLoading }
@@ -33,7 +35,7 @@ const TokenLabelSearchTableItem = ({ item, isLoading }: Props) => {
           fontWeight={ 500 }
         />
       </TableCell>
-      <TableCell>
+      <TableCell py={ 3 }>
         <Flex alignItems="center" columnGap={ 2 } minW={ 0 }>
           <TokenEntity
             token={ item }
@@ -46,7 +48,20 @@ const TokenLabelSearchTableItem = ({ item, isLoading }: Props) => {
           />
         </Flex>
       </TableCell>
-      <TableCell isNumeric>
+      <TableCell py={ 3 }>
+        <Flex gap={ 1 } flexWrap="wrap">
+          { labelTags.map((tag) => (
+            <EntityTag
+              key={ tag.slug }
+              data={ tag }
+              addressHash={ item.address_hash }
+              isLoading={ isLoading }
+              maxW="100%"
+            />
+          )) }
+        </Flex>
+      </TableCell>
+      <TableCell py={ 3 } isNumeric whiteSpace="nowrap">
         { item.circulating_market_cap ? (
           <SimpleValue
             value={ BigNumber(item.circulating_market_cap) }
@@ -56,12 +71,12 @@ const TokenLabelSearchTableItem = ({ item, isLoading }: Props) => {
           />
         ) : null }
       </TableCell>
-      <TableCell isNumeric>
+      <TableCell py={ 3 } isNumeric whiteSpace="nowrap">
         <Skeleton loading={ isLoading } display="inline-block">
           { item.holders_count ? Number(item.holders_count).toLocaleString() : null }
         </Skeleton>
       </TableCell>
-      <TableCell>
+      <TableCell py={ 3 }>
         { website && (
           <Link external href={ website.href } variant="underlaid" textStyle="sm">
             { website.domain }

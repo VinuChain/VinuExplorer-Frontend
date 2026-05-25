@@ -2,9 +2,6 @@ import { Flex } from '@chakra-ui/react';
 import BigNumber from 'bignumber.js';
 import React from 'react';
 
-import type { TokenInfo } from 'types/api/token';
-import type { AggregatedTokenInfo } from 'types/client/multichain-aggregator';
-
 import config from 'configs/app';
 import multichainConfig from 'configs/multichain';
 import getItemIndex from 'lib/getItemIndex';
@@ -16,12 +13,15 @@ import AddressAddToWallet from 'ui/shared/address/AddressAddToWallet';
 import type { EntityProps as AddressEntityProps } from 'ui/shared/entities/address/AddressEntity';
 import AddressEntity from 'ui/shared/entities/address/AddressEntity';
 import TokenEntity from 'ui/shared/entities/token/TokenEntity';
+import EntityTag from 'ui/shared/EntityTags/EntityTag';
 import SimpleValue from 'ui/shared/value/SimpleValue';
 import { DEFAULT_ACCURACY_USD } from 'ui/shared/value/utils';
 import TokenSocialLinks from 'ui/token/TokenSocialLinks';
 
+import { getTokenLabelTags, type TokenWithMetadata } from './tokenLabelUtils';
+
 type Props = {
-  token: TokenInfo | AggregatedTokenInfo;
+  token: TokenWithMetadata;
   index: number;
   page: number;
   isLoading?: boolean;
@@ -51,6 +51,8 @@ const TokensTableItem = ({
   const bridgedChainTag = bridgedTokensFeature.isEnabled ?
     bridgedTokensFeature.chains.find(({ id }) => id === originalChainId)?.short_title :
     undefined;
+
+  const labelTags = getTokenLabelTags(token);
 
   const tokenAddress: AddressEntityProps['address'] = {
     hash: addressHash,
@@ -127,6 +129,18 @@ const TokensTableItem = ({
             </Flex>
           </Flex>
         </Flex>
+      </TableCell>
+      <TableCell verticalAlign="middle">
+        { labelTags.map((tag) => (
+          <EntityTag
+            key={ tag.slug }
+            data={ tag }
+            addressHash={ addressHash }
+            isLoading={ isLoading }
+            mr={ 1 }
+            mb={ 1 }
+          />
+        )) }
       </TableCell>
       <TableCell isNumeric>
         { exchangeRate ? (

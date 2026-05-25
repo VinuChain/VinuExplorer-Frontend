@@ -1,13 +1,12 @@
 import React from 'react';
 
-import type { TokenInfo } from 'types/api/token';
 import type { TokensSortingField, TokensSortingValue } from 'types/api/tokens';
-import type { AggregatedTokenInfo } from 'types/client/multichain-aggregator';
 
 import { TableBody, TableColumnHeader, TableColumnHeaderSortable, TableHeaderSticky, TableRoot, TableRow } from 'toolkit/chakra/table';
 import { ACTION_BAR_HEIGHT_DESKTOP } from 'ui/shared/ActionBar';
 import { default as getNextSortValueShared } from 'ui/shared/sort/getNextSortValue';
 
+import type { TokenWithMetadata } from './tokenLabelUtils';
 import TokensTableItem from './TokensTableItem';
 
 const SORT_SEQUENCE: Record<TokensSortingField, Array<TokensSortingValue>> = {
@@ -19,7 +18,7 @@ const SORT_SEQUENCE: Record<TokensSortingField, Array<TokensSortingValue>> = {
 const getNextSortValue = (getNextSortValueShared<TokensSortingField, TokensSortingValue>).bind(undefined, SORT_SEQUENCE);
 
 type Props = {
-  items: Array<TokenInfo> | Array<AggregatedTokenInfo>;
+  items: Array<TokenWithMetadata>;
   page: number;
   sorting?: TokensSortingValue;
   setSorting?: (value: TokensSortingValue) => void;
@@ -43,7 +42,8 @@ const TokensTable = ({ items, page, isLoading, sorting, setSorting, top }: Props
     <TableRoot>
       <TableHeaderSticky top={ top ?? ACTION_BAR_HEIGHT_DESKTOP }>
         <TableRow>
-          <TableColumnHeader w="50%">Token</TableColumnHeader>
+          <TableColumnHeader w="35%">Token</TableColumnHeader>
+          <TableColumnHeader w="15%">Label</TableColumnHeader>
           { hasSorting ? (
             <TableColumnHeaderSortable
               isNumeric

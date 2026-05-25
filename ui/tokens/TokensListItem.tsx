@@ -2,9 +2,6 @@ import { Flex, HStack, Grid, GridItem } from '@chakra-ui/react';
 import BigNumber from 'bignumber.js';
 import React from 'react';
 
-import type { TokenInfo } from 'types/api/token';
-import type { AggregatedTokenInfo } from 'types/client/multichain-aggregator';
-
 import config from 'configs/app';
 import multichainConfig from 'configs/multichain';
 import getItemIndex from 'lib/getItemIndex';
@@ -14,13 +11,16 @@ import { Tag } from 'toolkit/chakra/tag';
 import AddressAddToWallet from 'ui/shared/address/AddressAddToWallet';
 import AddressEntity from 'ui/shared/entities/address/AddressEntity';
 import TokenEntity from 'ui/shared/entities/token/TokenEntity';
+import EntityTag from 'ui/shared/EntityTags/EntityTag';
 import ListItemMobile from 'ui/shared/ListItemMobile/ListItemMobile';
 import SimpleValue from 'ui/shared/value/SimpleValue';
 import { DEFAULT_ACCURACY_USD } from 'ui/shared/value/utils';
 import TokenSocialLinks from 'ui/token/TokenSocialLinks';
 
+import { getTokenLabelTags, type TokenWithMetadata } from './tokenLabelUtils';
+
 type Props = {
-  token: TokenInfo | AggregatedTokenInfo;
+  token: TokenWithMetadata;
   index: number;
   page: number;
   isLoading?: boolean;
@@ -51,6 +51,7 @@ const TokensListItem = ({
     undefined;
 
   const filecoinRobustAddress = 'filecoin_robust_address' in token ? token.filecoin_robust_address : undefined;
+  const labelTags = getTokenLabelTags(token);
 
   const chainInfo = React.useMemo(() => {
     if (!chainInfos) {
@@ -102,6 +103,21 @@ const TokensListItem = ({
         />
         <AddressAddToWallet token={ token } isLoading={ isLoading }/>
       </Flex>
+      { labelTags.length > 0 && (
+        <HStack gap={ 2 } alignItems="flex-start">
+          <Skeleton loading={ isLoading } textStyle="sm" fontWeight={ 500 }>Label</Skeleton>
+          <Flex gap={ 1 } flexWrap="wrap">
+            { labelTags.map((tag) => (
+              <EntityTag
+                key={ tag.slug }
+                data={ tag }
+                addressHash={ addressHash }
+                isLoading={ isLoading }
+              />
+            )) }
+          </Flex>
+        </HStack>
+      ) }
       { exchangeRate && (
         <HStack gap={ 3 }>
           <Skeleton loading={ isLoading } textStyle="sm" fontWeight={ 500 }>Price</Skeleton>

@@ -7,6 +7,25 @@ import { test, expect } from 'playwright/lib';
 
 import Tokens from './Tokens';
 
+const EXPECT_TIMEOUT = 15_000;
+
+const memeTag = {
+  slug: 'meme',
+  name: 'Meme',
+  tagType: 'meme' as const,
+  ordinal: 0,
+  meta: null,
+};
+
+const memeToken = {
+  ...tokens.tokenInfoERC20b,
+  metadata: {
+    tags: [ memeTag ],
+  },
+};
+
+test.setTimeout(30_000);
+
 test.beforeEach(async({ mockTextAd, mockAssetResponse }) => {
   await mockTextAd();
   await mockAssetResponse(tokens.tokenInfoERC20a.icon_url as string, './playwright/mocks/image_svg.svg');
@@ -44,7 +63,7 @@ test.skip('base view +@mobile +@dark-mode', async({ render, mockApiResponse }) =
 test('with search +@mobile +@dark-mode', async({ render, mockApiResponse }) => {
   const filteredTokens = {
     items: [
-      tokens.tokenInfoERC20a, tokens.tokenInfoERC20b, tokens.tokenInfoERC20c,
+      tokens.tokenInfoERC20a, memeToken, tokens.tokenInfoERC20c,
     ],
     next_page_params: null,
   };
@@ -63,7 +82,8 @@ test('with search +@mobile +@dark-mode', async({ render, mockApiResponse }) => {
   await component.getByRole('textbox', { name: 'Token name or symbol' }).fill('foo');
   await component.getByRole('textbox', { name: 'Token name or symbol' }).blur();
 
-  await expect(component).toHaveScreenshot();
+  await expect(component).toContainText('Meme', { timeout: EXPECT_TIMEOUT });
+  await expect(component).toHaveScreenshot({ timeout: EXPECT_TIMEOUT });
 });
 
 test.describe('bridged tokens', () => {
@@ -105,12 +125,12 @@ test.describe('bridged tokens', () => {
       { hooksConfig },
     );
 
-    await expect(component).toHaveScreenshot();
+    await expect(component).toHaveScreenshot({ timeout: EXPECT_TIMEOUT });
 
     await component.getByRole('button', { name: /filter/i }).click();
     await page.locator('label').filter({ hasText: /poa/i }).click();
     await page.click('body');
 
-    await expect(component).toHaveScreenshot();
+    await expect(component).toHaveScreenshot({ timeout: EXPECT_TIMEOUT });
   });
 });

@@ -16,6 +16,7 @@ export interface FormFieldRadioProps<
 > extends Pick<FormFieldPropsBase<FormFields>, 'rules' | 'controllerProps'>,
   RadioGroupProps {
   name: Name;
+  required?: FormFieldPropsBase<FormFields, Name>['required'];
   options: Array<{ value: ExcludeUndefined<FormFields[Name]>; label: string }>;
   itemProps?: RadioProps;
 }
@@ -58,7 +59,7 @@ const FormFieldRadioContent = <
         value={ field.value }
         onValueChange={ handleValueChange }
         disabled={ formState.isSubmitting || disabled }
-        invalid={ Boolean(fieldState.error) }
+        { ...(fieldState.error ? { 'aria-invalid': true, 'data-invalid': true } : {}) }
         { ...rest }
       >
         { options.map(({ value, label }) => (

@@ -24,9 +24,9 @@ import useQueryWithPages from 'ui/shared/pagination/useQueryWithPages';
 import StickyPaginationWithText from 'ui/shared/StickyPaginationWithText';
 
 interface LabelRouteState {
-  slug: string | undefined;
-  tagType: string | undefined;
-  tagName: string | undefined;
+  slug: string;
+  tagType: string;
+  tagName: string;
   isCategoryBrowse: boolean;
 }
 
@@ -178,6 +178,20 @@ const AccountsLabelAddressSearch = ({ slug, tagType, tagName, isCategoryBrowse }
 
 const AccountsLabelTokenSearch = ({ slug, tagType, tagName, isCategoryBrowse }: LabelRouteState) => {
   const router = useRouter();
+  const accountsHref = React.useMemo(() => {
+    const query = new URLSearchParams();
+
+    Object.entries(router.query).forEach(([ key, value ]) => {
+      if (Array.isArray(value)) {
+        value.forEach((item) => query.append(key, item));
+      } else if (value) {
+        query.set(key, value);
+      }
+    });
+    query.set('view', 'accounts');
+
+    return `?${ query.toString() }`;
+  }, [ router.query ]);
 
   const { isError, isPlaceholderData, data, pagination } = useQueryWithPages({
     resourceName: 'general:tokens_metadata_search',
@@ -253,7 +267,7 @@ const AccountsLabelTokenSearch = ({ slug, tagType, tagName, isCategoryBrowse }: 
         <chakra.span color="text.primary" fontWeight={ 700 }>{ label.toUpperCase() }</chakra.span>
         <chakra.span>Related labels:</chakra.span>
         <Link
-          href={{ pathname: router.pathname, query: { ...router.query, view: 'accounts' } }}
+          href={ accountsHref }
           variant="underlaid"
         >
           Accounts

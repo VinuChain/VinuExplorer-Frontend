@@ -28,13 +28,12 @@ export interface TokenInfo<T extends TokenType = TokenType> {
   origin_chain_id?: string | null;
   foreign_address?: string | null;
   filecoin_robust_address?: string | null;
-}
-
-export type TokenLabelSearchItem = TokenInfo & {
   metadata?: {
     tags: Array<AddressMetadataTagApi>;
   } | null;
-};
+}
+
+export type TokenLabelSearchItem = TokenInfo;
 
 export interface TokenLabelSearchResult {
   items: Array<TokenLabelSearchItem>;

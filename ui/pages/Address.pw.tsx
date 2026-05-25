@@ -21,6 +21,18 @@ test.beforeEach(async({ mockTextAd }) => {
   await mockTextAd();
 });
 
+test('shows token logo on token contract title', async({ render, mockApiResponse, mockAssetResponse }) => {
+  await mockAssetResponse(addressMock.token.token?.icon_url as string, './playwright/mocks/image_svg.svg');
+  await mockApiResponse('general:address', addressMock.token, { pathParams: { hash: addressMock.hash } });
+  await mockApiResponse('general:address_counters', addressCountersMock.forToken, { pathParams: { hash: addressMock.hash } });
+  await mockApiResponse('general:address_tabs_counters', addressTabCountersMock.base, { pathParams: { hash: addressMock.hash } });
+  await mockApiResponse('general:address_txs', { items: [], next_page_params: null }, { pathParams: { hash: addressMock.hash } });
+
+  const component = await render(<Address/>, { hooksConfig });
+
+  await expect(component.locator('img[alt="ARIANEE logo"]').first()).toBeVisible();
+});
+
 test.describe('fetched bytecode', () => {
   test('should refetch address query', async({ render, mockApiResponse, createSocket, page }) => {
     const addressApiUrl = await mockApiResponse('general:address', addressMock.validator, { pathParams: { hash: addressMock.hash } });

@@ -56,6 +56,7 @@ import TextAd from 'ui/shared/ad/TextAd';
 import AddressAddToWallet from 'ui/shared/address/AddressAddToWallet';
 import AddressEntity from 'ui/shared/entities/address/AddressEntity';
 import EnsEntity from 'ui/shared/entities/ens/EnsEntity';
+import * as TokenEntity from 'ui/shared/entities/token/TokenEntity';
 import EntityTags from 'ui/shared/EntityTags/EntityTags';
 import formatUserTags from 'ui/shared/EntityTags/formatUserTags';
 import sortEntityTags from 'ui/shared/EntityTags/sortEntityTags';
@@ -445,6 +446,8 @@ const AddressPageContent = () => {
           maxW="300px"
         />
       ) }
+      { !isLoading && addressQuery.data?.token &&
+        <TokenEntity.Icon token={ addressQuery.data.token } variant="subheading"/> }
       <AddressEntity
         address={{
           ...addressQuery.data,
@@ -456,6 +459,7 @@ const AddressPageContent = () => {
         isLoading={ isLoading }
         variant="subheading"
         noLink
+        noIcon={ Boolean(addressQuery.data?.token) }
         isSafeAddress={ isSafeAddress }
         icon={{ color: isSafeAddress ? { _light: 'black', _dark: 'white' } : undefined }}
       />

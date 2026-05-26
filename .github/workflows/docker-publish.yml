@@ -29,6 +29,8 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v6
+        with:
+          fetch-depth: 2
 
       - name: Set SHORT_SHA
         run: echo "SHORT_SHA=$(echo $GITHUB_SHA | cut -c1-8)" >> $GITHUB_ENV
@@ -43,8 +45,29 @@ jobs:
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
+      - name: Choose Docker cache export policy
+        id: cache-policy
+        run: |
+          set -euo pipefail
+
+          if ! git rev-parse HEAD^ >/dev/null 2>&1; then
+            echo "cache_to=type=gha,mode=max" >> "$GITHUB_OUTPUT"
+            echo "No parent commit available; exporting Docker cache."
+            exit 0
+          fi
+
+          if git diff --name-only HEAD^ HEAD | grep -Eq '^(Dockerfile|package.json|yarn.lock|tsconfig\.json|configs/app/|toolkit/theme/|toolkit/chakra/color-mode\.tsx|toolkit/utils/(isBrowser|regexp|url)\.ts|toolkit/components/forms/validators/url\.ts|lib/api/types\.ts|lib/settings/colorTheme\.ts|types/api/(contract|contracts)\.ts|types/client/(adButlerConfig|adProviders|addressProfileAPIConfig|contract|deFiDropdown|externalTxsConfig|gasRefuelProviderConfig|gasTracker|marketplace|multichainProviderConfig|navigation|rollup|token|txInterpretation|validators|wallets)\.ts|types/views/|types/(externalChains|homepage|multichain|networks|settings|ui|utils)\.ts)'; then
+            echo "cache_to=type=gha,mode=max" >> "$GITHUB_OUTPUT"
+            echo "Docker dependency inputs changed; exporting Docker cache."
+          else
+            echo "cache_to=" >> "$GITHUB_OUTPUT"
+            echo "Docker dependency inputs unchanged; skipping Docker cache export."
+          fi
+
       - name: Build and push
         uses: docker/build-push-action@v7
+        env:
+          DOCKER_BUILD_RECORD_UPLOAD: false
         with:
           context: .
           push: true
@@ -57,7 +80,7 @@ jobs:
           # GHA layer cache cuts incremental builds from ~22 min to ~5-8 min
           # by reusing the npm-install + next-build layers across runs.
           cache-from: type=gha
-          cache-to: type=gha,mode=max
+          cache-to: ${{ steps.cache-policy.outputs.cache_to }}
 
       - name: Trigger backend deployment
         if: success()

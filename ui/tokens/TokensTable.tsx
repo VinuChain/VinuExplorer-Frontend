@@ -1,6 +1,6 @@
 import React from 'react';
 
-import type { TokensSortingField, TokensSortingValue } from 'types/api/tokens';
+import type { TokensClientSortingField, TokensSortingValue } from 'types/api/tokens';
 
 import { TableBody, TableColumnHeader, TableColumnHeaderSortable, TableHeaderSticky, TableRoot, TableRow } from 'toolkit/chakra/table';
 import { ACTION_BAR_HEIGHT_DESKTOP } from 'ui/shared/ActionBar';
@@ -9,13 +9,15 @@ import { default as getNextSortValueShared } from 'ui/shared/sort/getNextSortVal
 import type { TokenWithMetadata } from './tokenLabelUtils';
 import TokensTableItem from './TokensTableItem';
 
-const SORT_SEQUENCE: Record<TokensSortingField, Array<TokensSortingValue>> = {
+const SORT_SEQUENCE: Record<TokensClientSortingField, Array<TokensSortingValue>> = {
+  name: [ 'name-asc', 'name-desc', 'default' ],
+  label: [ 'label-asc', 'label-desc', 'default' ],
   fiat_value: [ 'fiat_value-desc', 'fiat_value-asc', 'default' ],
-  holders_count: [ 'holders_count-desc', 'holders_count-asc', 'default' ],
+  holder_count: [ 'holder_count-desc', 'holder_count-asc', 'default' ],
   circulating_market_cap: [ 'circulating_market_cap-desc', 'circulating_market_cap-asc', 'default' ],
 };
 
-const getNextSortValue = (getNextSortValueShared<TokensSortingField, TokensSortingValue>).bind(undefined, SORT_SEQUENCE);
+const getNextSortValue = (getNextSortValueShared<TokensClientSortingField, TokensSortingValue>).bind(undefined, SORT_SEQUENCE);
 
 type Props = {
   items: Array<TokenWithMetadata>;
@@ -30,7 +32,7 @@ const TokensTable = ({ items, page, isLoading, sorting, setSorting, top }: Props
 
   const hasSorting = setSorting && sorting;
 
-  const sort = React.useCallback((field: TokensSortingField) => {
+  const sort = React.useCallback((field: TokensClientSortingField) => {
     if (!hasSorting) {
       return;
     }
@@ -39,15 +41,41 @@ const TokensTable = ({ items, page, isLoading, sorting, setSorting, top }: Props
   }, [ sorting, setSorting, hasSorting ]);
 
   return (
-    <TableRoot maxW="1080px" tableLayout="fixed">
+    <TableRoot minW="1080px" w="100%" tableLayout="fixed">
       <TableHeaderSticky top={ top ?? ACTION_BAR_HEIGHT_DESKTOP }>
         <TableRow>
-          <TableColumnHeader w="40%" py={ 3 }>Token</TableColumnHeader>
-          <TableColumnHeader w="18%" py={ 3 }>Label</TableColumnHeader>
+          { hasSorting ? (
+            <TableColumnHeaderSortable
+              w="34%"
+              py={ 3 }
+              sortField="name"
+              sortValue={ sorting }
+              onSortToggle={ sort }
+              indicatorPosition="right"
+            >
+              Token
+            </TableColumnHeaderSortable>
+          ) : (
+            <TableColumnHeader w="34%" py={ 3 }>Token</TableColumnHeader>
+          ) }
+          { hasSorting ? (
+            <TableColumnHeaderSortable
+              w="14%"
+              py={ 3 }
+              sortField="label"
+              sortValue={ sorting }
+              onSortToggle={ sort }
+              indicatorPosition="right"
+            >
+              Label
+            </TableColumnHeaderSortable>
+          ) : (
+            <TableColumnHeader w="14%" py={ 3 }>Label</TableColumnHeader>
+          ) }
           { hasSorting ? (
             <TableColumnHeaderSortable
               isNumeric
-              w="12%"
+              w="17%"
               py={ 3 }
               sortField="fiat_value"
               sortValue={ sorting }
@@ -56,14 +84,14 @@ const TokensTable = ({ items, page, isLoading, sorting, setSorting, top }: Props
               Price
             </TableColumnHeaderSortable>
           ) : (
-            <TableColumnHeader isNumeric width="12%" py={ 3 }>
+            <TableColumnHeader isNumeric width="17%" py={ 3 }>
               Price
             </TableColumnHeader>
           ) }
           { hasSorting ? (
             <TableColumnHeaderSortable
               isNumeric
-              w="16%"
+              w="20%"
               py={ 3 }
               sortField="circulating_market_cap"
               sortValue={ sorting }
@@ -72,23 +100,23 @@ const TokensTable = ({ items, page, isLoading, sorting, setSorting, top }: Props
               Market cap
             </TableColumnHeaderSortable>
           ) : (
-            <TableColumnHeader isNumeric width="16%" py={ 3 }>
+            <TableColumnHeader isNumeric width="20%" py={ 3 }>
               Market cap
             </TableColumnHeader>
           ) }
           { hasSorting ? (
             <TableColumnHeaderSortable
               isNumeric
-              w="14%"
+              w="15%"
               py={ 3 }
-              sortField="holders_count"
+              sortField="holder_count"
               sortValue={ sorting }
               onSortToggle={ sort }
             >
               Holders
             </TableColumnHeaderSortable>
           ) : (
-            <TableColumnHeader isNumeric width="14%" py={ 3 }>
+            <TableColumnHeader isNumeric width="15%" py={ 3 }>
               Holders
             </TableColumnHeader>
           ) }

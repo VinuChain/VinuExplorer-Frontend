@@ -9,7 +9,7 @@ import DataFetchAlert from 'ui/shared/DataFetchAlert';
 import DataListDisplay from 'ui/shared/DataListDisplay';
 import type { QueryWithPagesResult } from 'ui/shared/pagination/useQueryWithPages';
 
-import type { TokenWithMetadata } from './tokenLabelUtils';
+import { getTokenLabelTags, type TokenWithMetadata } from './tokenLabelUtils';
 import TokensListItem from './TokensListItem';
 import TokensTable from './TokensTable';
 
@@ -21,6 +21,39 @@ interface Props {
   hasActiveFilters: boolean;
   description?: React.ReactNode;
   tableTop?: number;
+}
+
+function getTokenLabelSortValue(token: TokenWithMetadata) {
+  return getTokenLabelTags(token).map((tag) => tag.name || tag.slug).join(' ').toLocaleLowerCase();
+}
+
+function sortTokensByLabel(items: Array<TokenWithMetadata>, sort?: TokensSortingValue) {
+  if (sort !== 'label-asc' && sort !== 'label-desc') {
+    return items;
+  }
+
+  const order = sort === 'label-asc' ? 1 : -1;
+
+  return [ ...items ].sort((a, b) => {
+    const labelA = getTokenLabelSortValue(a);
+    const labelB = getTokenLabelSortValue(b);
+
+    if (Boolean(labelA) !== Boolean(labelB)) {
+      return labelA ? -1 : 1;
+    }
+
+    const labelCompare = labelA.localeCompare(labelB);
+    if (labelCompare !== 0) {
+      return labelCompare * order;
+    }
+
+    const nameCompare = (a.name ?? '').localeCompare(b.name ?? '');
+    if (nameCompare !== 0) {
+      return nameCompare * order;
+    }
+
+    return a.address_hash.localeCompare(b.address_hash) * order;
+  });
 }
 
 const Tokens = ({ query, onSortChange, sort, actionBar, description, hasActiveFilters, tableTop }: Props) => {
@@ -58,15 +91,19 @@ const Tokens = ({ query, onSortChange, sort, actionBar, description, hasActiveFi
     });
   }, [ data?.items, getMetadata ]);
 
+  const sortedItems = React.useMemo(() => {
+    return enrichedItems ? sortTokensByLabel(enrichedItems, sort) : undefined;
+  }, [ enrichedItems, sort ]);
+
   if (isError) {
     return <DataFetchAlert/>;
   }
 
-  const content = enrichedItems ? (
+  const content = sortedItems ? (
     <>
       <Box hideFrom="lg">
         { description }
-        { enrichedItems.map((item, index) => {
+        { sortedItems.map((item, index) => {
           const chainIds = 'chain_infos' in item ? Object.keys(item.chain_infos).join(',') : undefined;
 
           return (
@@ -80,10 +117,10 @@ const Tokens = ({ query, onSortChange, sort, actionBar, description, hasActiveFi
           );
         }) }
       </Box>
-      <Box hideBelow="lg">
+      <Box hideBelow="lg" overflowX="auto" maxW="100%">
         { description }
         <TokensTable
-          items={ enrichedItems }
+          items={ sortedItems }
           page={ pagination.page }
           isLoading={ isPlaceholderData }
           setSorting={ onSortChange }

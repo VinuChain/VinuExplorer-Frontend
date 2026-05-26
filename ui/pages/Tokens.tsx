@@ -4,7 +4,7 @@ import React from 'react';
 
 import type { TabItemRegular } from 'toolkit/components/AdaptiveTabs/types';
 import type { TokenType } from 'types/api/token';
-import type { TokensSortingValue, TokensSortingField, TokensSorting } from 'types/api/tokens';
+import type { TokensClientSortingField, TokensSorting, TokensSortingValue } from 'types/api/tokens';
 
 import config from 'configs/app';
 import useDebounce from 'lib/hooks/useDebounce';
@@ -41,6 +41,16 @@ const TABS_RIGHT_SLOT_PROPS: SlotProps = {
 
 const bridgedTokensFeature = config.features.bridgedTokens;
 
+function getTokensApiSorting(value: TokensSortingValue) {
+  const sorting = getSortParamsFromValue<TokensSortingValue, TokensClientSortingField, TokensSorting['order']>(value);
+
+  if (!sorting || sorting.sort === 'label') {
+    return undefined;
+  }
+
+  return sorting as TokensSorting;
+}
+
 const Tokens = () => {
   const router = useRouter();
   const isMobile = useIsMobile();
@@ -58,14 +68,14 @@ const Tokens = () => {
   const tokensQuery = useQueryWithPages({
     resourceName: tab === 'bridged' ? 'general:tokens_bridged' : 'general:tokens',
     filters: tab === 'bridged' ? { q: debouncedSearchTerm, chain_ids: bridgeChains } : { q: debouncedSearchTerm, type: tokenTypes },
-    sorting: getSortParamsFromValue<TokensSortingValue, TokensSortingField, TokensSorting['order']>(sort),
+    sorting: getTokensApiSorting(sort),
     options: {
       placeholderData: generateListStub<'general:tokens'>(
         TOKEN_INFO_ERC_20,
         50,
         {
           next_page_params: {
-            holders_count: 81528,
+            holder_count: 81528,
             items_count: 50,
             name: '',
             market_cap: null,
@@ -94,7 +104,7 @@ const Tokens = () => {
 
   const handleSortChange = React.useCallback((value: TokensSortingValue) => {
     setSort(value);
-    tokensQuery.onSortingChange(getSortParamsFromValue(value));
+    tokensQuery.onSortingChange(getTokensApiSorting(value));
   }, [ tokensQuery ]);
 
   const handleTabChange = React.useCallback(() => {

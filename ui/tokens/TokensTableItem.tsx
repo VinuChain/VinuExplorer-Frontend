@@ -79,7 +79,7 @@ const TokensTableItem = ({
   return (
     <TableRow className="group">
       <TableCell py={ 3 }>
-        <Flex alignItems="flex-start">
+        <Flex alignItems="flex-start" minW={ 0 }>
           <Skeleton
             loading={ isLoading }
             textStyle="sm"
@@ -89,8 +89,8 @@ const TokensTableItem = ({
           >
             { getItemIndex(index, page) }
           </Skeleton>
-          <Flex overflow="hidden" flexDir="column" rowGap={ 1 }>
-            <Flex alignItems="center" columnGap={ 2 }>
+          <Flex overflow="hidden" flexDir="column" rowGap={ 1 } minW={ 0 }>
+            <Flex alignItems="center" columnGap={ 2 } minW={ 0 }>
               <TokenEntity
                 token={ token }
                 chain={ chainInfo }
@@ -107,11 +107,12 @@ const TokensTableItem = ({
                 boxSize={ 4 }
               />
             </Flex>
-            <Flex columnGap={ 2 } py={ 1 } alignItems="center">
+            <Flex columnGap={ 2 } py={ 1 } alignItems="center" minW={ 0 }>
               <AddressEntity
                 address={ tokenAddress }
                 isLoading={ isLoading }
                 noIcon
+                truncation="none"
                 textStyle="sm"
                 fontWeight={ 500 }
               />
@@ -123,7 +124,7 @@ const TokensTableItem = ({
                 _groupHover={{ opacity: 1 }}
               />
             </Flex>
-            <Flex columnGap={ 1 }>
+            <Flex columnGap={ 1 } minW={ 0 }>
               <Tag loading={ isLoading }>{ getTokenTypeName(type) }</Tag>
               { bridgedChainTag && <Tag loading={ isLoading }>{ bridgedChainTag }</Tag> }
             </Flex>
@@ -142,27 +143,31 @@ const TokensTableItem = ({
           />
         )) }
       </TableCell>
-      <TableCell py={ 3 } isNumeric>
+      <TableCell py={ 3 } isNumeric whiteSpace="nowrap">
         { exchangeRate ? (
           <SimpleValue
             value={ BigNumber(exchangeRate) }
             accuracy={ 4 }
             loading={ isLoading }
             prefix="$"
+            w="100%"
+            justifyContent="flex-end"
           />
         ) : null }
       </TableCell>
-      <TableCell py={ 3 } isNumeric>
+      <TableCell py={ 3 } isNumeric whiteSpace="nowrap">
         { marketCap && (
           <SimpleValue
             value={ BigNumber(marketCap) }
             loading={ isLoading }
             prefix="$"
             accuracy={ DEFAULT_ACCURACY_USD }
+            w="100%"
+            justifyContent="flex-end"
           />
         ) }
       </TableCell>
-      <TableCell py={ 3 } isNumeric>
+      <TableCell py={ 3 } isNumeric whiteSpace="nowrap">
         <Skeleton
           loading={ isLoading }
           display="inline-block"

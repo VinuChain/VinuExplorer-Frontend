@@ -18,7 +18,7 @@ export interface TableCellProps extends ChakraTable.CellProps {
 export const TableCell = (props: TableCellProps) => {
   const { isNumeric, ...rest } = props;
 
-  return <ChakraTable.Cell textAlign={ isNumeric ? 'right' : undefined } { ...rest }/>;
+  return <ChakraTable.Cell minW={ 0 } textAlign={ isNumeric ? 'right' : undefined } { ...rest }/>;
 };
 
 export interface TableColumnHeaderProps extends ChakraTable.ColumnHeaderProps {
@@ -28,7 +28,7 @@ export interface TableColumnHeaderProps extends ChakraTable.ColumnHeaderProps {
 export const TableColumnHeader = (props: TableColumnHeaderProps) => {
   const { isNumeric, ...rest } = props;
 
-  return <ChakraTable.ColumnHeader textAlign={ isNumeric ? 'right' : undefined } { ...rest }/>;
+  return <ChakraTable.ColumnHeader minW={ 0 } textAlign={ isNumeric ? 'right' : undefined } { ...rest }/>;
 };
 
 export interface TableColumnHeaderSortableProps<F extends string> extends TableColumnHeaderProps {
@@ -49,7 +49,14 @@ export const TableColumnHeaderSortable = <F extends string>(props: TableColumnHe
 
   return (
     <TableColumnHeader { ...rest }>
-      <Link onClick={ disabled ? undefined : handleSortToggle } position="relative">
+      <Link
+        onClick={ disabled ? undefined : handleSortToggle }
+        position="relative"
+        display="inline-flex"
+        alignItems="center"
+        maxW="100%"
+        minW={ 0 }
+      >
         { sortValue.includes(sortField) && (
           <Icon
             w={ 4 }

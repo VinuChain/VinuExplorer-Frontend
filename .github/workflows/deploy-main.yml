@@ -1,19 +1,9 @@
-name: Deploy from main branch
+name: Legacy private image publish
 
 on:
-  push:
-    branches:
-      - main
-    paths-ignore:
-      - '.github/ISSUE_TEMPLATE/**'
-      - '.husky/**'
-      - '.vscode/**'
-      - 'docs/**'
-      - 'vitest/**'
-      - 'mocks/**'
-      - 'playwright/**'
-      - 'stubs/**'
-      - 'tools/**'
+  # This is the upstream Blockscout private-image workflow. VinuExplorer's
+  # production deploy path is docker-publish.yml -> backend deploy.yml, so keep
+  # this available only for manual compatibility runs.
   workflow_dispatch:
 
 concurrency:

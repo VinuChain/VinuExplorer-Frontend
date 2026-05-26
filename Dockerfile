@@ -10,12 +10,51 @@ RUN ln -sf /usr/bin/python3 /usr/bin/python
 # Install dependencies
 WORKDIR /app
 COPY package.json yarn.lock tsconfig.json ./
-COPY types ./types
-COPY lib ./lib
 COPY configs/app ./configs/app
 COPY toolkit/theme ./toolkit/theme
-COPY toolkit/utils ./toolkit/utils
+RUN mkdir -p \
+    lib/api \
+    lib/settings \
+    toolkit/chakra \
+    toolkit/components/forms/validators \
+    toolkit/utils \
+    types/api \
+    types/client \
+    types/views
+COPY lib/api/types.ts ./lib/api/types.ts
+COPY lib/settings/colorTheme.ts ./lib/settings/colorTheme.ts
+COPY toolkit/chakra/color-mode.tsx ./toolkit/chakra/color-mode.tsx
+COPY toolkit/utils/isBrowser.ts ./toolkit/utils/isBrowser.ts
+COPY toolkit/utils/regexp.ts ./toolkit/utils/regexp.ts
+COPY toolkit/utils/url.ts ./toolkit/utils/url.ts
 COPY toolkit/components/forms/validators/url.ts ./toolkit/components/forms/validators/url.ts
+COPY types/api/contract.ts ./types/api/contract.ts
+COPY types/api/contracts.ts ./types/api/contracts.ts
+COPY types/client/adButlerConfig.ts \
+    types/client/adProviders.ts \
+    types/client/addressProfileAPIConfig.ts \
+    types/client/contract.ts \
+    types/client/deFiDropdown.ts \
+    types/client/externalTxsConfig.ts \
+    types/client/gasRefuelProviderConfig.ts \
+    types/client/gasTracker.ts \
+    types/client/marketplace.ts \
+    types/client/multichainProviderConfig.ts \
+    types/client/navigation.ts \
+    types/client/rollup.ts \
+    types/client/token.ts \
+    types/client/txInterpretation.ts \
+    types/client/validators.ts \
+    types/client/wallets.ts \
+    ./types/client/
+COPY types/views ./types/views
+COPY types/externalChains.ts ./types/externalChains.ts
+COPY types/homepage.ts ./types/homepage.ts
+COPY types/multichain.ts ./types/multichain.ts
+COPY types/networks.ts ./types/networks.ts
+COPY types/settings.ts ./types/settings.ts
+COPY types/ui.ts ./types/ui.ts
+COPY types/utils.ts ./types/utils.ts
 RUN apk add git
 RUN yarn --frozen-lockfile --network-timeout 100000
 

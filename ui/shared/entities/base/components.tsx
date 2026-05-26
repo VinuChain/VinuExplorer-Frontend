@@ -270,9 +270,10 @@ const Content = chakra(({
     <Skeleton
       className={ className }
       loading={ isLoading }
-      overflow="hidden"
+      overflow={ truncation === 'none' ? 'visible' : 'hidden' }
       whiteSpace="nowrap"
-      w="100%"
+      w={ truncation === 'none' ? 'auto' : '100%' }
+      flexShrink={ truncation === 'none' ? 0 : undefined }
       { ...styles }
     >
       { children }

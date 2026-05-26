@@ -47,10 +47,23 @@ export const TableColumnHeaderSortable = <F extends string>(props: TableColumnHe
     onSortToggle(sortField);
   }, [ onSortToggle, sortField ]);
 
+  const handleSortKeyDown = React.useCallback((event: React.KeyboardEvent) => {
+    if (disabled || (event.key !== 'Enter' && event.key !== ' ')) {
+      return;
+    }
+
+    event.preventDefault();
+    onSortToggle(sortField);
+  }, [ disabled, onSortToggle, sortField ]);
+
   return (
     <TableColumnHeader { ...rest }>
       <Link
         onClick={ disabled ? undefined : handleSortToggle }
+        onKeyDown={ handleSortKeyDown }
+        role="button"
+        tabIndex={ disabled ? -1 : 0 }
+        aria-disabled={ disabled || undefined }
         position="relative"
         display="inline-flex"
         alignItems="center"

@@ -68,12 +68,26 @@ const TokenLabelSearchTableItem = ({ item, index, isLoading }: Props) => {
         </Flex>
       </TableCell>
       <TableCell py={ 3 } isNumeric whiteSpace="nowrap">
+        { item.exchange_rate ? (
+          <SimpleValue
+            value={ BigNumber(item.exchange_rate) }
+            loading={ isLoading }
+            prefix="$"
+            accuracy={ DEFAULT_ACCURACY_USD }
+            w="100%"
+            justifyContent="flex-end"
+          />
+        ) : null }
+      </TableCell>
+      <TableCell py={ 3 } isNumeric whiteSpace="nowrap">
         { item.circulating_market_cap ? (
           <SimpleValue
             value={ BigNumber(item.circulating_market_cap) }
             loading={ isLoading }
             prefix="$"
             accuracy={ DEFAULT_ACCURACY_USD }
+            w="100%"
+            justifyContent="flex-end"
           />
         ) : null }
       </TableCell>

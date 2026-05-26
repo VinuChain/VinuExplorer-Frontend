@@ -92,6 +92,8 @@ function getTokenLabelSearchValue(row: TokenLabelSearchRow, field: TokenLabelSea
       return `${ row.item.name || '' } ${ row.item.symbol || '' }`;
     case 'label':
       return getTokenLabelTags(row.item).map((tag) => tag.name || tag.slug).join(' ');
+    case 'price':
+      return row.item.exchange_rate ? BigNumber(row.item.exchange_rate) : null;
     case 'market_cap':
       return row.item.circulating_market_cap ? BigNumber(row.item.circulating_market_cap) : null;
     case 'holders':
@@ -346,7 +348,7 @@ const AccountsLabelTokenSearch = ({ slug, tagType, tagName, isCategoryBrowse }: 
 
   const content = sortedTokenRows ? (
     <>
-      <Box hideBelow="lg">
+      <Box hideBelow="lg" overflowX="auto" maxW="100%">
         <TokenLabelSearchTable
           top={ pagination.isVisible ? ACTION_BAR_HEIGHT_DESKTOP : 0 }
           items={ sortedTokenRows }

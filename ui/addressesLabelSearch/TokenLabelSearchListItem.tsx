@@ -66,6 +66,19 @@ const TokenLabelSearchListItem = ({ item, index, isLoading }: Props) => {
           </HStack>
         </HStack>
       ) }
+      { item.exchange_rate && (
+        <HStack gap={ 3 }>
+          <Skeleton loading={ isLoading } fontSize="sm" fontWeight={ 500 }>Price</Skeleton>
+          <SimpleValue
+            value={ BigNumber(item.exchange_rate) }
+            loading={ isLoading }
+            prefix="$"
+            accuracy={ DEFAULT_ACCURACY_USD }
+            textStyle="sm"
+            color="text.secondary"
+          />
+        </HStack>
+      ) }
       { item.circulating_market_cap && (
         <HStack gap={ 3 }>
           <Skeleton loading={ isLoading } fontSize="sm" fontWeight={ 500 }>Market Cap</Skeleton>

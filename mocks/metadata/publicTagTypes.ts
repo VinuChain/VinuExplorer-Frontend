@@ -41,6 +41,16 @@ export const publicTagTypes = {
       description: 'Stablecoin token tag',
     },
     {
+      id: 'layer_1',
+      type: 'layer_1' as const,
+      description: 'Layer 1 token tag',
+    },
+    {
+      id: 'layer_2',
+      type: 'layer_2' as const,
+      description: 'Layer 2 token tag',
+    },
+    {
       id: 'exchange',
       type: 'exchange' as const,
       description: 'Exchange address tag',

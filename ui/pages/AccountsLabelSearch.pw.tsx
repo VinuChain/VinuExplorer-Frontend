@@ -172,6 +172,7 @@ test('hydrates public name tag and logo for category label results', async({ ren
 
   const component = await render(<AccountsLabelSearch/>, { hooksConfig: projectHooksConfig });
 
+  await expect(component.getByRole('columnheader', { name: '#' })).toBeVisible({ timeout: EXPECT_TIMEOUT });
   await expect(component.getByText('VIR Ecosystem Wallet').first()).toBeVisible({ timeout: EXPECT_TIMEOUT });
   await expect(component.getByText('Project').first()).toBeVisible({ timeout: EXPECT_TIMEOUT });
   await expect(component.getByAltText('Project icon').first()).toBeVisible({ timeout: EXPECT_TIMEOUT });
@@ -192,6 +193,7 @@ test('renders meme label as token tracker table', async({ render, mockTextAd, mo
   const component = await render(<AccountsLabelSearch/>, { hooksConfig: memeHooksConfig });
 
   await expect(component.getByRole('heading', { name: 'Token Tracker' })).toBeVisible({ timeout: EXPECT_TIMEOUT });
+  await expect(component.getByRole('columnheader', { name: '#' })).toBeVisible({ timeout: EXPECT_TIMEOUT });
   await expect(component.getByRole('columnheader', { name: 'Contract Address' })).toBeVisible({ timeout: EXPECT_TIMEOUT });
   await expect(component.getByRole('columnheader', { name: 'Token Name' })).toBeVisible({ timeout: EXPECT_TIMEOUT });
   await expect(component.getByRole('columnheader', { name: 'Label' })).toBeVisible({ timeout: EXPECT_TIMEOUT });

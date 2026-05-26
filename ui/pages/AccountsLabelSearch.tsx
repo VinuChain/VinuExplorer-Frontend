@@ -1,4 +1,5 @@
 import { Box, chakra, Flex } from '@chakra-ui/react';
+import BigNumber from 'bignumber.js';
 import { useRouter } from 'next/router';
 import React from 'react';
 
@@ -13,9 +14,9 @@ import { generateListStub } from 'stubs/utils';
 import { Link } from 'toolkit/chakra/link';
 import { Skeleton } from 'toolkit/chakra/skeleton';
 import AddressesLabelSearchListItem from 'ui/addressesLabelSearch/AddressesLabelSearchListItem';
-import AddressesLabelSearchTable from 'ui/addressesLabelSearch/AddressesLabelSearchTable';
+import AddressesLabelSearchTable, { type AddressesLabelSearchRow, type AddressesLabelSearchSortField } from 'ui/addressesLabelSearch/AddressesLabelSearchTable';
 import TokenLabelSearchListItem from 'ui/addressesLabelSearch/TokenLabelSearchListItem';
-import TokenLabelSearchTable from 'ui/addressesLabelSearch/TokenLabelSearchTable';
+import TokenLabelSearchTable, { type TokenLabelSearchRow, type TokenLabelSearchSortField } from 'ui/addressesLabelSearch/TokenLabelSearchTable';
 import { getTokenLabelTags } from 'ui/addressesLabelSearch/tokenLabelUtils';
 import { ACTION_BAR_HEIGHT_DESKTOP } from 'ui/shared/ActionBar';
 import DataListDisplay from 'ui/shared/DataListDisplay';
@@ -32,7 +33,78 @@ interface LabelRouteState {
   isCategoryBrowse: boolean;
 }
 
-const TOKEN_TRACKER_TAG_TYPES = new Set([ 'meme', 'stablecoin' ]);
+const TOKEN_TRACKER_TAG_TYPES = new Set([ 'meme', 'stablecoin', 'layer_1', 'layer_2' ]);
+const LABEL_RESULTS_PAGE_SIZE = 50;
+type LabelSearchSortDirection = 'asc' | 'desc';
+type LabelSearchSortValue = string | number | BigNumber | null | undefined;
+
+function compareLabelSearchValues(aValue: LabelSearchSortValue, bValue: LabelSearchSortValue) {
+  if (aValue === bValue) {
+    return 0;
+  }
+
+  if (aValue === null || aValue === undefined || aValue === '') {
+    return 1;
+  }
+
+  if (bValue === null || bValue === undefined || bValue === '') {
+    return -1;
+  }
+
+  if (BigNumber.isBigNumber(aValue) && BigNumber.isBigNumber(bValue)) {
+    return aValue.comparedTo(bValue);
+  }
+
+  if (typeof aValue === 'number' && typeof bValue === 'number') {
+    return aValue - bValue;
+  }
+
+  return String(aValue).localeCompare(String(bValue), undefined, { numeric: true, sensitivity: 'base' });
+}
+
+function getAddressLabelSearchValue(row: AddressesLabelSearchRow, field: AddressesLabelSearchSortField): LabelSearchSortValue {
+  switch (field) {
+    case 'rank':
+      return row.rank;
+    case 'address':
+      return row.item.hash;
+    case 'label':
+      return row.item.metadata?.tags?.map((tag) => tag.name || tag.slug).join(' ') || '';
+    case 'balance':
+      return row.item.coin_balance ? BigNumber(row.item.coin_balance) : null;
+    case 'txns':
+      return row.item.transactions_count ? BigNumber(row.item.transactions_count) : null;
+  }
+}
+
+function compareAddressLabelRows(a: AddressesLabelSearchRow, b: AddressesLabelSearchRow, field: AddressesLabelSearchSortField) {
+  const result = compareLabelSearchValues(getAddressLabelSearchValue(a, field), getAddressLabelSearchValue(b, field));
+  return result === 0 ? a.rank - b.rank : result;
+}
+
+function getTokenLabelSearchValue(row: TokenLabelSearchRow, field: TokenLabelSearchSortField): LabelSearchSortValue {
+  switch (field) {
+    case 'rank':
+      return row.rank;
+    case 'address':
+      return row.item.address_hash;
+    case 'name':
+      return `${ row.item.name || '' } ${ row.item.symbol || '' }`;
+    case 'label':
+      return getTokenLabelTags(row.item).map((tag) => tag.name || tag.slug).join(' ');
+    case 'market_cap':
+      return row.item.circulating_market_cap ? BigNumber(row.item.circulating_market_cap) : null;
+    case 'holders':
+      return row.item.holders_count ? BigNumber(row.item.holders_count) : null;
+    case 'website':
+      return row.item.socials?.website || '';
+  }
+}
+
+function compareTokenLabelRows(a: TokenLabelSearchRow, b: TokenLabelSearchRow, field: TokenLabelSearchSortField) {
+  const result = compareLabelSearchValues(getTokenLabelSearchValue(a, field), getTokenLabelSearchValue(b, field));
+  return result === 0 ? a.rank - b.rank : result;
+}
 
 function getTokenLabelStub(tagType: string, tagName: string, slug: string) {
   const label = tagName || slug || 'Meme';
@@ -54,6 +126,10 @@ function getTokenLabelStub(tagType: string, tagName: string, slug: string) {
 }
 
 const AccountsLabelAddressSearch = ({ slug, tagType, tagName, isCategoryBrowse }: LabelRouteState) => {
+  const [ sort, setSort ] = React.useState<{ field: AddressesLabelSearchSortField; direction: LabelSearchSortDirection }>({
+    field: 'rank',
+    direction: 'asc',
+  });
   const { isError, isPlaceholderData, data, pagination } = useQueryWithPages({
     resourceName: 'general:addresses_metadata_search',
     filters: {
@@ -99,22 +175,44 @@ const AccountsLabelAddressSearch = ({ slug, tagType, tagName, isCategoryBrowse }
       };
     });
   }, [ data?.items, getMetadata ]);
+  const pageStartIndex = (pagination.page - 1) * LABEL_RESULTS_PAGE_SIZE;
+  const addressRows = React.useMemo(() => {
+    return enrichedItems?.map((item, index) => ({ item, rank: pageStartIndex + index + 1 }));
+  }, [ enrichedItems, pageStartIndex ]);
+  const sortedAddressRows = React.useMemo(() => {
+    if (!addressRows) return undefined;
 
-  const content = enrichedItems ? (
+    return [ ...addressRows ].sort((a, b) => {
+      const result = compareAddressLabelRows(a, b, sort.field);
+      return sort.direction === 'asc' ? result : -result;
+    });
+  }, [ addressRows, sort.direction, sort.field ]);
+  const sortValue = `${ sort.field }_${ sort.direction }`;
+  const handleSortToggle = React.useCallback((field: AddressesLabelSearchSortField) => {
+    setSort((current) => ({
+      field,
+      direction: current.field === field && current.direction === 'asc' ? 'desc' : 'asc',
+    }));
+  }, []);
+
+  const content = sortedAddressRows ? (
     <>
       <Box hideBelow="lg">
         <AddressesLabelSearchTable
           top={ pagination.isVisible ? ACTION_BAR_HEIGHT_DESKTOP : 0 }
-          items={ enrichedItems }
+          items={ sortedAddressRows }
+          sortValue={ sortValue }
+          onSortToggle={ handleSortToggle }
           isLoading={ isPlaceholderData }
         />
       </Box>
       <Box hideFrom="lg">
-        { enrichedItems.map((item, index) => {
+        { sortedAddressRows.map(({ item, rank }, index) => {
           return (
             <AddressesLabelSearchListItem
               key={ item.hash + (isPlaceholderData ? index : '') }
               item={ item }
+              index={ rank }
               isLoading={ isPlaceholderData }
             />
           );
@@ -186,6 +284,10 @@ const AccountsLabelAddressSearch = ({ slug, tagType, tagName, isCategoryBrowse }
 
 const AccountsLabelTokenSearch = ({ slug, tagType, tagName, isCategoryBrowse }: LabelRouteState) => {
   const router = useRouter();
+  const [ sort, setSort ] = React.useState<{ field: TokenLabelSearchSortField; direction: LabelSearchSortDirection }>({
+    field: 'rank',
+    direction: 'asc',
+  });
   const tokenLabelStub = React.useMemo(
     () => getTokenLabelStub(tagType, tagName, slug),
     [ slug, tagName, tagType ],
@@ -222,21 +324,43 @@ const AccountsLabelTokenSearch = ({ slug, tagType, tagName, isCategoryBrowse }: 
       ),
     },
   });
+  const pageStartIndex = (pagination.page - 1) * LABEL_RESULTS_PAGE_SIZE;
+  const tokenRows = React.useMemo(() => {
+    return data?.items.map((item, index) => ({ item, rank: pageStartIndex + index + 1 }));
+  }, [ data?.items, pageStartIndex ]);
+  const sortedTokenRows = React.useMemo(() => {
+    if (!tokenRows) return undefined;
 
-  const content = data?.items ? (
+    return [ ...tokenRows ].sort((a, b) => {
+      const result = compareTokenLabelRows(a, b, sort.field);
+      return sort.direction === 'asc' ? result : -result;
+    });
+  }, [ sort.direction, sort.field, tokenRows ]);
+  const sortValue = `${ sort.field }_${ sort.direction }`;
+  const handleSortToggle = React.useCallback((field: TokenLabelSearchSortField) => {
+    setSort((current) => ({
+      field,
+      direction: current.field === field && current.direction === 'asc' ? 'desc' : 'asc',
+    }));
+  }, []);
+
+  const content = sortedTokenRows ? (
     <>
       <Box hideBelow="lg">
         <TokenLabelSearchTable
           top={ pagination.isVisible ? ACTION_BAR_HEIGHT_DESKTOP : 0 }
-          items={ data.items }
+          items={ sortedTokenRows }
+          sortValue={ sortValue }
+          onSortToggle={ handleSortToggle }
           isLoading={ isPlaceholderData }
         />
       </Box>
       <Box hideFrom="lg">
-        { data.items.map((item, index) => (
+        { sortedTokenRows.map(({ item, rank }, index) => (
           <TokenLabelSearchListItem
             key={ item.address_hash + (isPlaceholderData ? index : '') }
             item={ item }
+            index={ rank }
             isLoading={ isPlaceholderData }
           />
         )) }

@@ -64,7 +64,7 @@ const TokensListItem = ({
   }, [ chainInfos ]);
 
   return (
-    <ListItemMobile rowGap={ 3 }>
+    <ListItemMobile rowGap={ 2 }>
       <Grid
         width="100%"
         gridTemplateColumns="minmax(0, 1fr)"

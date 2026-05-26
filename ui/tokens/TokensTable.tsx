@@ -39,15 +39,16 @@ const TokensTable = ({ items, page, isLoading, sorting, setSorting, top }: Props
   }, [ sorting, setSorting, hasSorting ]);
 
   return (
-    <TableRoot>
+    <TableRoot maxW="1080px" tableLayout="fixed">
       <TableHeaderSticky top={ top ?? ACTION_BAR_HEIGHT_DESKTOP }>
         <TableRow>
-          <TableColumnHeader w="35%">Token</TableColumnHeader>
-          <TableColumnHeader w="15%">Label</TableColumnHeader>
+          <TableColumnHeader w="40%" py={ 3 }>Token</TableColumnHeader>
+          <TableColumnHeader w="18%" py={ 3 }>Label</TableColumnHeader>
           { hasSorting ? (
             <TableColumnHeaderSortable
               isNumeric
-              w="15%"
+              w="12%"
+              py={ 3 }
               sortField="fiat_value"
               sortValue={ sorting }
               onSortToggle={ sort }
@@ -55,14 +56,15 @@ const TokensTable = ({ items, page, isLoading, sorting, setSorting, top }: Props
               Price
             </TableColumnHeaderSortable>
           ) : (
-            <TableColumnHeader isNumeric width="15%">
+            <TableColumnHeader isNumeric width="12%" py={ 3 }>
               Price
             </TableColumnHeader>
           ) }
           { hasSorting ? (
             <TableColumnHeaderSortable
               isNumeric
-              w="20%"
+              w="16%"
+              py={ 3 }
               sortField="circulating_market_cap"
               sortValue={ sorting }
               onSortToggle={ sort }
@@ -70,14 +72,15 @@ const TokensTable = ({ items, page, isLoading, sorting, setSorting, top }: Props
               Market cap
             </TableColumnHeaderSortable>
           ) : (
-            <TableColumnHeader isNumeric width="20%">
+            <TableColumnHeader isNumeric width="16%" py={ 3 }>
               Market cap
             </TableColumnHeader>
           ) }
           { hasSorting ? (
             <TableColumnHeaderSortable
               isNumeric
-              w="15%"
+              w="14%"
+              py={ 3 }
               sortField="holders_count"
               sortValue={ sorting }
               onSortToggle={ sort }
@@ -85,7 +88,7 @@ const TokensTable = ({ items, page, isLoading, sorting, setSorting, top }: Props
               Holders
             </TableColumnHeaderSortable>
           ) : (
-            <TableColumnHeader isNumeric width="15%">
+            <TableColumnHeader isNumeric width="14%" py={ 3 }>
               Holders
             </TableColumnHeader>
           ) }

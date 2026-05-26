@@ -12,11 +12,13 @@ import NativeCoinValue from 'ui/shared/value/NativeCoinValue';
 
 type Props = {
   item: AddressesItem;
+  index: number;
   isLoading?: boolean;
 };
 
 const AddressesLabelSearchTableItem = ({
   item,
+  index,
   isLoading,
 }: Props) => {
 
@@ -30,6 +32,11 @@ const AddressesLabelSearchTableItem = ({
 
   return (
     <TableRow>
+      <TableCell py={ 3 } color="text.secondary" fontWeight={ 600 } whiteSpace="nowrap">
+        <Skeleton loading={ isLoading } display="inline-block">
+          { index }
+        </Skeleton>
+      </TableCell>
       <TableCell py={ 3 }>
         <AddressEntity
           address={ item }

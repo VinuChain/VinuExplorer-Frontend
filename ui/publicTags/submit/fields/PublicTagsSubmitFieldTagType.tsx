@@ -22,6 +22,8 @@ const ALLOWED_CATEGORY_TYPES: Array<{ value: string; label: string }> = [
   { value: 'generic', label: 'General' },
   { value: 'meme', label: 'Meme' },
   { value: 'stablecoin', label: 'Stablecoin' },
+  { value: 'layer_1', label: 'Layer 1' },
+  { value: 'layer_2', label: 'Layer 2' },
   { value: 'exchange', label: 'Exchange' },
   { value: 'liquidity_pool', label: 'Liquidity Pool' },
   { value: 'defi', label: 'DeFi' },

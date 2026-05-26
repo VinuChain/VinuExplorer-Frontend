@@ -17,15 +17,21 @@ import { getTokenLabelTags, getTokenLabelWebsite } from './tokenLabelUtils';
 
 interface Props {
   item: TokenLabelSearchItem;
+  index: number;
   isLoading?: boolean;
 }
 
-const TokenLabelSearchTableItem = ({ item, isLoading }: Props) => {
+const TokenLabelSearchTableItem = ({ item, index, isLoading }: Props) => {
   const website = getTokenLabelWebsite(item);
   const labelTags = getTokenLabelTags(item);
 
   return (
     <TableRow>
+      <TableCell py={ 3 } color="text.secondary" fontWeight={ 600 } whiteSpace="nowrap">
+        <Skeleton loading={ isLoading } display="inline-block">
+          { index }
+        </Skeleton>
+      </TableCell>
       <TableCell py={ 3 }>
         <AddressEntity
           address={{ hash: item.address_hash, filecoin: { robust: item.filecoin_robust_address } }}

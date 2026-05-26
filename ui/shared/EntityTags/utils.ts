@@ -31,6 +31,8 @@ const CATEGORY_LABELS: Partial<Record<EntityTagType, string>> = {
   defi: 'DeFi',
   meme: 'Meme',
   stablecoin: 'Stablecoin',
+  layer_1: 'Layer 1',
+  layer_2: 'Layer 2',
   smart_contract: 'Smart Contract',
   project: 'Project',
   protocol: 'Protocol',

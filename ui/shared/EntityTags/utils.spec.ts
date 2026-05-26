@@ -11,6 +11,8 @@ describe('getCategoryLabel', () => {
     [ 'defi', 'DeFi' ],
     [ 'meme', 'Meme' ],
     [ 'stablecoin', 'Stablecoin' ],
+    [ 'layer_1', 'Layer 1' ],
+    [ 'layer_2', 'Layer 2' ],
     [ 'smart_contract', 'Smart Contract' ],
     [ 'project', 'Project' ],
     [ 'protocol', 'Protocol' ],
@@ -35,6 +37,8 @@ describe('isCategoryTagType', () => {
     expect(isCategoryTagType('defi')).toBe(true);
     expect(isCategoryTagType('meme')).toBe(true);
     expect(isCategoryTagType('stablecoin')).toBe(true);
+    expect(isCategoryTagType('layer_1')).toBe(true);
+    expect(isCategoryTagType('layer_2')).toBe(true);
     expect(isCategoryTagType('smart_contract')).toBe(true);
     expect(isCategoryTagType('project')).toBe(true);
     expect(isCategoryTagType('protocol')).toBe(true);
@@ -127,6 +131,8 @@ describe('getTagLinkParams', () => {
       [ 'defi', 'DeFi' ],
       [ 'meme', 'Meme' ],
       [ 'stablecoin', 'Stablecoin' ],
+      [ 'layer_1', 'Layer+1' ],
+      [ 'layer_2', 'Layer+2' ],
       [ 'smart_contract', 'Smart+Contract' ],
       [ 'project', 'Project' ],
       [ 'protocol', 'Protocol' ],
@@ -165,7 +171,7 @@ describe('getTagLinkParams', () => {
     });
 
     it('routes the Tag chip to the specific slug for every promoted category type', () => {
-      for (const tagType of [ 'project', 'protocol', 'generic', 'burn' ] as const) {
+      for (const tagType of [ 'project', 'protocol', 'generic', 'burn', 'layer_1', 'layer_2' ] as const) {
         const tag: EntityTag = { slug: `${ tagType }-tagname`, name: 'Specific Tag', tagType, ordinal: 0 };
         const link = getTagLinkParams(tag, undefined, 'name');
         expect(link?.type).toBe('internal');

@@ -17,24 +17,30 @@ import { getTokenLabelTags, getTokenLabelWebsite } from './tokenLabelUtils';
 
 interface Props {
   item: TokenLabelSearchItem;
+  index: number;
   isLoading?: boolean;
 }
 
-const TokenLabelSearchListItem = ({ item, isLoading }: Props) => {
+const TokenLabelSearchListItem = ({ item, index, isLoading }: Props) => {
   const website = getTokenLabelWebsite(item);
   const labelTags = getTokenLabelTags(item);
 
   return (
     <ListItemMobile rowGap={ 2 }>
-      <TokenEntity
-        token={ item }
-        isLoading={ isLoading }
-        jointSymbol
-        noCopy
-        w="100%"
-        textStyle="sm"
-        fontWeight={ 700 }
-      />
+      <HStack gap={ 2 } maxW="100%" alignItems="center">
+        <Skeleton loading={ isLoading } fontSize="sm" fontWeight={ 600 } color="text.secondary" flexShrink={ 0 }>
+          #{ index }
+        </Skeleton>
+        <TokenEntity
+          token={ item }
+          isLoading={ isLoading }
+          jointSymbol
+          noCopy
+          w="100%"
+          textStyle="sm"
+          fontWeight={ 700 }
+        />
+      </HStack>
       <HStack gap={ 3 } maxW="100%" alignItems="flex-start">
         <Skeleton loading={ isLoading } fontSize="sm" fontWeight={ 500 } flexShrink={ 0 }>Contract Address</Skeleton>
         <AddressEntity

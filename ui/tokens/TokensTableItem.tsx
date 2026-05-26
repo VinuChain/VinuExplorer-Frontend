@@ -78,18 +78,18 @@ const TokensTableItem = ({
 
   return (
     <TableRow className="group">
-      <TableCell>
+      <TableCell py={ 3 }>
         <Flex alignItems="flex-start">
           <Skeleton
             loading={ isLoading }
             textStyle="sm"
             fontWeight={ 600 }
-            mr={ 3 }
-            minW="28px"
+            mr={ 2 }
+            minW="24px"
           >
             { getItemIndex(index, page) }
           </Skeleton>
-          <Flex overflow="hidden" flexDir="column" rowGap={ 2 }>
+          <Flex overflow="hidden" flexDir="column" rowGap={ 1 }>
             <Flex alignItems="center" columnGap={ 2 }>
               <TokenEntity
                 token={ token }
@@ -107,7 +107,7 @@ const TokensTableItem = ({
                 boxSize={ 4 }
               />
             </Flex>
-            <Flex columnGap={ 2 } py="5px" alignItems="center">
+            <Flex columnGap={ 2 } py={ 1 } alignItems="center">
               <AddressEntity
                 address={ tokenAddress }
                 isLoading={ isLoading }
@@ -130,7 +130,7 @@ const TokensTableItem = ({
           </Flex>
         </Flex>
       </TableCell>
-      <TableCell verticalAlign="middle">
+      <TableCell py={ 3 } verticalAlign="middle">
         { labelTags.map((tag) => (
           <EntityTag
             key={ tag.slug }
@@ -142,7 +142,7 @@ const TokensTableItem = ({
           />
         )) }
       </TableCell>
-      <TableCell isNumeric>
+      <TableCell py={ 3 } isNumeric>
         { exchangeRate ? (
           <SimpleValue
             value={ BigNumber(exchangeRate) }
@@ -152,7 +152,7 @@ const TokensTableItem = ({
           />
         ) : null }
       </TableCell>
-      <TableCell isNumeric>
+      <TableCell py={ 3 } isNumeric>
         { marketCap && (
           <SimpleValue
             value={ BigNumber(marketCap) }
@@ -162,7 +162,7 @@ const TokensTableItem = ({
           />
         ) }
       </TableCell>
-      <TableCell isNumeric>
+      <TableCell py={ 3 } isNumeric>
         <Skeleton
           loading={ isLoading }
           display="inline-block"

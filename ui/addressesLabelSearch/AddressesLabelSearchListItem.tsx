@@ -13,11 +13,13 @@ import NativeCoinValue from 'ui/shared/value/NativeCoinValue';
 
 type Props = {
   item: AddressesItem;
+  index: number;
   isLoading?: boolean;
 };
 
 const AddressesLabelSearchListItem = ({
   item,
+  index,
   isLoading,
 }: Props) => {
 
@@ -28,12 +30,18 @@ const AddressesLabelSearchListItem = ({
 
   return (
     <ListItemMobile rowGap={ 2 }>
-      <AddressEntity
-        address={ item }
-        isLoading={ isLoading }
-        fontWeight={ 700 }
-        w="100%"
-      />
+      <HStack gap={ 2 } maxW="100%" alignItems="center">
+        <Skeleton loading={ isLoading } fontSize="sm" fontWeight={ 600 } color="text.secondary" flexShrink={ 0 }>
+          #{ index }
+        </Skeleton>
+        <AddressEntity
+          address={ item }
+          isLoading={ isLoading }
+          fontWeight={ 700 }
+          w="100%"
+          minW={ 0 }
+        />
+      </HStack>
       { labelTags.length > 0 && (
         <Flex columnGap={ 1 } rowGap={ 1 } flexWrap="wrap">
           { labelTags.map((tag) => (

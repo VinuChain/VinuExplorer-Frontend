@@ -23,9 +23,13 @@ test.describe('local transfers', () => {
   };
   let component: Locator;
 
-  test.beforeEach(async({ render, mockMultichainConfig, mockEnvs, mockApiResponse, mockAssetResponse, createSocket }) => {
+  test.beforeEach(async({ render, mockMultichainConfig, mockEnvs, mockApiResponse, mockAssetResponse, createSocket, page }) => {
     await mockMultichainConfig();
     await mockEnvs(ENVS_MAP.opSuperchain);
+    await page.route('https://raw.githubusercontent.com/VinuChain/vinuchain-lists/main/tokens/**', (route) => route.fulfill({
+      status: 404,
+      body: '',
+    }));
     await mockApiResponse(
       'general:address_token_transfers',
       { items: [ tokenTransferMock.erc20 ], next_page_params: DEFAULT_PAGINATION },

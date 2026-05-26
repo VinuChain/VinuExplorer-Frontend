@@ -8,6 +8,7 @@ import { getTokenTypeName } from 'lib/token/tokenTypes';
 import { Badge } from 'toolkit/chakra/badge';
 import { Skeleton } from 'toolkit/chakra/skeleton';
 import AddressFromTo from 'ui/shared/address/AddressFromTo';
+import AddressLabelTags, { hasAddressLabelTags } from 'ui/shared/address/AddressLabelTags';
 import NftEntity from 'ui/shared/entities/nft/NftEntity';
 import TokenEntity from 'ui/shared/entities/token/TokenEntity';
 import TxEntity from 'ui/shared/entities/tx/TxEntity';
@@ -39,6 +40,9 @@ const TokenTransferListItem = ({
   isLoading,
   chainData,
 }: Props) => {
+  const labelAddresses = [ from, to ];
+  const hasLabels = hasAddressLabelTags(labelAddresses);
+
   return (
     <ListItemMobile rowGap={ 3 }>
       <Flex w="100%" justifyContent="space-between">
@@ -92,6 +96,12 @@ const TokenTransferListItem = ({
         isLoading={ isLoading }
         w="100%"
       />
+      { hasLabels && (
+        <Flex columnGap={ 2 } w="100%" alignItems="flex-start">
+          <Skeleton loading={ isLoading } fontWeight={ 500 } flexShrink={ 0 }>Label</Skeleton>
+          <AddressLabelTags addresses={ labelAddresses } isLoading={ isLoading }/>
+        </Flex>
+      ) }
       { total && 'value' in total && total.value !== null && (
         <Flex columnGap={ 2 } w="100%">
           <Skeleton loading={ isLoading } fontWeight={ 500 } flexShrink={ 0 }>Value</Skeleton>

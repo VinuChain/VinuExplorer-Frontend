@@ -31,7 +31,7 @@ const TokenTransferTable = ({ data, top, showSocketInfo, showSocketErrorAlert, s
 
   return (
     <AddressHighlightProvider>
-      <TableRoot minW="950px">
+      <TableRoot minW="1090px">
         <TableHeaderSticky top={ top }>
           <TableRow>
             { chainData && <TableColumnHeader width="38px"/> }
@@ -41,6 +41,7 @@ const TokenTransferTable = ({ data, top, showSocketInfo, showSocketErrorAlert, s
             </TableColumnHeader>
             <TableColumnHeader width="200px">Method</TableColumnHeader>
             <TableColumnHeader width={{ lg: '224px', xl: '380px' }}>From/To</TableColumnHeader>
+            <TableColumnHeader width="140px">Label</TableColumnHeader>
             { (NFT_TOKEN_TYPE_IDS.includes(tokenType)) &&
               <TableColumnHeader width={ tokenType === 'ERC-1155' || tokenType === 'ERC-404' ? '50%' : '100%' }>Token ID</TableColumnHeader>
             }

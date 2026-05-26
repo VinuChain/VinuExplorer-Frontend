@@ -71,6 +71,10 @@ export function withFallbackLabelIcons(tags: Array<EntityTag>): Array<EntityTag>
   });
 }
 
+export function getAddressLabelTags(tags: Array<EntityTag> | null | undefined): Array<EntityTag> {
+  return withFallbackLabelIcons(tags ?? []).filter((tag) => tag.tagType !== 'name' && tag.tagType !== 'generic');
+}
+
 export function getTagLinkParams(
   data: EntityTag,
   multichainContext?: TMultichainContext | null,

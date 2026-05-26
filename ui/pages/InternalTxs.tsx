@@ -1,6 +1,7 @@
 import { Box } from '@chakra-ui/react';
 import React from 'react';
 
+import useInternalTransactionsMetadata from 'lib/address/useInternalTransactionsMetadata';
 import useIsMobile from 'lib/hooks/useIsMobile';
 import { FilterInput } from 'toolkit/components/filters/FilterInput';
 import { apos } from 'toolkit/utils/htmlEntities';
@@ -18,6 +19,7 @@ const InternalTxs = () => {
 
   const { query, searchTerm, debouncedSearchTerm, onSearchTermChange } = useInternalTxsQuery();
   const { isError, isPlaceholderData, data, pagination } = query;
+  const enrichedItems = useInternalTransactionsMetadata(data?.items);
 
   const filterInput = (
     <FilterInput
@@ -45,13 +47,13 @@ const InternalTxs = () => {
     </>
   );
 
-  const content = data?.items ? (
+  const content = enrichedItems ? (
     <>
       <Box hideFrom="lg">
-        <InternalTxsList data={ data.items } isLoading={ isPlaceholderData }/>
+        <InternalTxsList data={ enrichedItems } isLoading={ isPlaceholderData }/>
       </Box>
       <Box hideBelow="lg">
-        <InternalTxsTable data={ data.items } isLoading={ isPlaceholderData }/>
+        <InternalTxsTable data={ enrichedItems } isLoading={ isPlaceholderData }/>
       </Box>
     </>
   ) : null;
@@ -64,7 +66,7 @@ const InternalTxs = () => {
       />
       <DataListDisplay
         isError={ isError }
-        itemsNum={ data?.items.length }
+        itemsNum={ enrichedItems?.length }
         emptyText="There are no internal transactions."
         filterProps={{
           emptyFilteredText: `Couldn${ apos }t find any internal transaction that matches your query.`,

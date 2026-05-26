@@ -9,9 +9,10 @@ import { omit } from 'es-toolkit';
 import { useRouter } from 'next/router';
 import React from 'react';
 
-import type { AdvancedFilterParams } from 'types/api/advancedFilter';
+import type { AdvancedFilterParams, AdvancedFilterResponseItem } from 'types/api/advancedFilter';
 import { ADVANCED_FILTER_TYPES, ADVANCED_FILTER_AGES, ADVANCED_FILTER_ADDRESS_RELATION } from 'types/api/advancedFilter';
 
+import useAddressesMetadata from 'lib/address/useAddressesMetadata';
 import useApiQuery from 'lib/api/useApiQuery';
 import { AddressHighlightProvider } from 'lib/contexts/addressHighlight';
 import { useMultichainContext } from 'lib/contexts/multichain';
@@ -101,6 +102,30 @@ const AdvancedFilter = () => {
   useApiQuery('general:tokens', { queryParams: { limit: '7', q: '' }, queryOptions: { refetchOnMount: false } });
   useApiQuery('general:advanced_filter_methods', { queryParams: { q: '' }, queryOptions: { refetchOnMount: false } });
 
+  const hashesForMetadata = React.useMemo(
+    () => (data?.items ?? [])
+      .flatMap((item) => [ item.from?.hash, item.to?.hash, item.created_contract?.hash ])
+      .filter((hash): hash is string => Boolean(hash)),
+    [ data?.items ],
+  );
+  const { getMetadata } = useAddressesMetadata(hashesForMetadata);
+
+  const enrichedItems: Array<AdvancedFilterResponseItem> | undefined = React.useMemo(() => {
+    if (!data?.items) {
+      return data?.items;
+    }
+
+    return data.items.map((item) => ({
+      ...item,
+      from: item.from && { ...item.from, metadata: getMetadata(item.from.hash) ?? item.from.metadata },
+      to: item.to && { ...item.to, metadata: getMetadata(item.to.hash) ?? item.to.metadata },
+      created_contract: item.created_contract && {
+        ...item.created_contract,
+        metadata: getMetadata(item.created_contract.hash) ?? item.created_contract.metadata,
+      },
+    }));
+  }, [ data?.items, getMetadata ]);
+
   const handleFilterChange = React.useCallback(<T extends keyof AdvancedFilterParams>(field: T, val: AdvancedFilterParams[T]) => {
     setFilters(prevState => {
       const newState = { ...prevState };
@@ -144,7 +169,7 @@ const AdvancedFilter = () => {
   const content = (
     <AddressHighlightProvider>
       <Box maxW="100%" display="grid" overflowX="scroll" whiteSpace="nowrap">
-        <TableRoot tableLayout="fixed" minWidth="950px" w="100%">
+        <TableRoot tableLayout="fixed" minWidth="1090px" w="100%">
           <TableHeaderSticky>
             <TableRow>
               { multichainContext?.chain && <TableColumnHeader width="38px"/> }
@@ -178,7 +203,7 @@ const AdvancedFilter = () => {
             </TableRow>
           </TableHeaderSticky>
           <TableBody>
-            { data?.items.map((item, index) => (
+            { enrichedItems?.map((item, index) => (
               <TableRow key={ item.hash + String(index) }>
                 { multichainContext?.chain && (
                   <TableCell>
@@ -267,7 +292,7 @@ const AdvancedFilter = () => {
       </HStack>
       <DataListDisplay
         isError={ isError }
-        itemsNum={ data?.items.length }
+        itemsNum={ enrichedItems?.length }
         emptyText="There are no transactions."
         actionBar={ actionBar }
         filterProps={{

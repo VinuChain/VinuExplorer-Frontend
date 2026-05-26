@@ -9,12 +9,34 @@ import TokenTransferList from './TokenTransferList';
 
 test.use({ viewport: devices['iPhone 13 Pro'].viewport });
 
+test.beforeEach(async({ page }) => {
+  await page.route('https://raw.githubusercontent.com/VinuChain/vinuchain-lists/main/tokens/**', (route) => route.fulfill({
+    status: 404,
+    body: '',
+  }));
+});
+
 const data = [
   {
     ...tokenTransferMock.erc20,
     to: {
       ...tokenTransferMock.erc20.to,
       hash: tokenTransferMock.erc721.to.hash,
+    },
+    from: {
+      ...tokenTransferMock.erc20.from,
+      metadata: {
+        reputation: null,
+        tags: [
+          {
+            tagType: 'liquidity_pool' as const,
+            name: 'VIR/VINU LP',
+            slug: 'vir-vinu-lp',
+            ordinal: 0,
+            meta: null,
+          },
+        ],
+      },
     },
   },
   tokenTransferMock.erc721,
@@ -35,6 +57,8 @@ test('without tx info', async({ render, mockAssetResponse }) => {
     </Box>,
   );
 
+  await expect(component.getByText('Label')).toBeVisible();
+  await expect(component.getByText('Liquidity Pool')).toBeVisible();
   await expect(component).toHaveScreenshot();
 });
 

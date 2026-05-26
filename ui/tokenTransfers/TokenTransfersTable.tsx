@@ -18,7 +18,7 @@ interface Props {
 const TokenTransferTable = ({ items, top, isLoading, chainData }: Props) => {
   return (
     <AddressHighlightProvider>
-      <TableRoot minW="950px" tableLayout="auto">
+      <TableRoot minW="1090px" tableLayout="auto">
         <TableHeaderSticky top={ top }>
           <TableRow>
             { chainData && <TableColumnHeader width="38px"/> }
@@ -29,6 +29,7 @@ const TokenTransferTable = ({ items, top, isLoading, chainData }: Props) => {
             <TableColumnHeader>Method</TableColumnHeader>
             <TableColumnHeader>Block</TableColumnHeader>
             <TableColumnHeader>From/To</TableColumnHeader>
+            <TableColumnHeader>Label</TableColumnHeader>
             <TableColumnHeader>Token ID</TableColumnHeader>
             <TableColumnHeader isNumeric>Amount</TableColumnHeader>
           </TableRow>

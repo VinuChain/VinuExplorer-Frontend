@@ -37,7 +37,7 @@ const TokenTransferTable = ({
 
   return (
     <AddressHighlightProvider>
-      <TableRoot minW="950px">
+      <TableRoot minW="1090px">
         <TableHeaderSticky top={ top }>
           <TableRow>
             { showTxInfo && <TableColumnHeader width="48px"></TableColumnHeader> }
@@ -51,6 +51,7 @@ const TokenTransferTable = ({
               </TableColumnHeader>
             ) }
             <TableColumnHeader width="60%">From/To</TableColumnHeader>
+            <TableColumnHeader width="140px">Label</TableColumnHeader>
             <TableColumnHeader width="40%" isNumeric>Value</TableColumnHeader>
           </TableRow>
         </TableHeaderSticky>

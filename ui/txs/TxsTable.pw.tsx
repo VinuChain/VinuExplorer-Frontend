@@ -6,10 +6,31 @@ import * as pwConfig from 'playwright/utils/config';
 
 import TxsTable from './TxsTable';
 
+const addressMetadata = {
+  reputation: null,
+  tags: [
+    {
+      tagType: 'liquidity_pool' as const,
+      name: 'VIR/VINU LP',
+      slug: 'vir-vinu-lp',
+      ordinal: 0,
+      meta: null,
+    },
+  ],
+};
+
+const txWithLabel = {
+  ...txMock.base,
+  from: {
+    ...txMock.base.from,
+    metadata: addressMetadata,
+  },
+};
+
 test('base view +@dark-mode', async({ render }) => {
   const component = await render(
     <TxsTable
-      txs={ [ txMock.base, txMock.withPendingUpdate ] }
+      txs={ [ txWithLabel, txMock.withPendingUpdate ] }
       sort="default"
       // eslint-disable-next-line react/jsx-no-bind
       onSortToggle={ () => {} }
@@ -20,6 +41,7 @@ test('base view +@dark-mode', async({ render }) => {
 
   await component.getByText('kitty').first().hover();
 
+  await expect(component.getByText('Liquidity Pool')).toBeVisible();
   await expect(component).toHaveScreenshot();
 });
 

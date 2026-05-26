@@ -10,6 +10,7 @@ import { Badge } from 'toolkit/chakra/badge';
 import { Skeleton } from 'toolkit/chakra/skeleton';
 import { TableCell, TableRow } from 'toolkit/chakra/table';
 import AddressFromTo from 'ui/shared/address/AddressFromTo';
+import AddressLabelTags from 'ui/shared/address/AddressLabelTags';
 import NftEntity from 'ui/shared/entities/nft/NftEntity';
 import TxEntity from 'ui/shared/entities/tx/TxEntity';
 import ChainIcon from 'ui/shared/externalChains/ChainIcon';
@@ -77,6 +78,9 @@ const TokenTransferTableItem = ({
           tokenHash={ token?.address_hash }
           tokenSymbol={ token?.symbol ?? undefined }
         />
+      </TableCell>
+      <TableCell>
+        <AddressLabelTags addresses={ [ from, to ] } isLoading={ isLoading } mt="5px"/>
       </TableCell>
       { (token && NFT_TOKEN_TYPE_IDS.includes(token.type)) && (
         <TableCell>

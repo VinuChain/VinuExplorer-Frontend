@@ -8,6 +8,7 @@ import { currencyUnits } from 'lib/units';
 import { Badge } from 'toolkit/chakra/badge';
 import { Skeleton } from 'toolkit/chakra/skeleton';
 import AddressFromTo from 'ui/shared/address/AddressFromTo';
+import AddressLabelTags, { hasAddressLabelTags } from 'ui/shared/address/AddressLabelTags';
 import BlockEntity from 'ui/shared/entities/block/BlockEntity';
 import TxEntity from 'ui/shared/entities/tx/TxEntity';
 import ListItemMobile from 'ui/shared/ListItemMobile/ListItemMobile';
@@ -36,6 +37,8 @@ const InternalTxsListItem = ({
 }: Props) => {
   const typeTitle = TX_INTERNALS_ITEMS.find(({ id }) => id === type)?.title;
   const toData = to ? to : createdContract;
+  const labelAddresses = [ from, toData ];
+  const hasLabels = hasAddressLabelTags(labelAddresses);
 
   return (
     <ListItemMobile rowGap={ 3 }>
@@ -77,6 +80,12 @@ const InternalTxsListItem = ({
         isLoading={ isLoading }
         w="100%"
       />
+      { hasLabels && (
+        <HStack gap={ 3 } alignItems="flex-start">
+          <Skeleton loading={ isLoading } fontSize="sm" fontWeight={ 500 }>Label</Skeleton>
+          <AddressLabelTags addresses={ labelAddresses } isLoading={ isLoading }/>
+        </HStack>
+      ) }
       <HStack gap={ 3 }>
         <Skeleton loading={ isLoading } fontSize="sm" fontWeight={ 500 }>Value { currencyUnits.ether }</Skeleton>
         <NativeCoinValue

@@ -10,6 +10,7 @@ import { Badge } from 'toolkit/chakra/badge';
 import { Skeleton } from 'toolkit/chakra/skeleton';
 import { TruncatedText } from 'toolkit/components/truncation/TruncatedText';
 import AddressFromTo from 'ui/shared/address/AddressFromTo';
+import AddressLabelTags, { hasAddressLabelTags } from 'ui/shared/address/AddressLabelTags';
 import NftEntity from 'ui/shared/entities/nft/NftEntity';
 import TxEntity from 'ui/shared/entities/tx/TxEntity';
 import ListItemMobile from 'ui/shared/ListItemMobile/ListItemMobile';
@@ -31,6 +32,9 @@ const TokenTransferListItem = ({
   instance,
   chainData,
 }: Props) => {
+  const labelAddresses = [ from, to ];
+  const hasLabels = hasAddressLabelTags(labelAddresses);
+
   return (
     <ListItemMobile rowGap={ 3 }>
       <Flex justifyContent="space-between" alignItems="center" lineHeight="24px" width="100%">
@@ -63,6 +67,12 @@ const TokenTransferListItem = ({
         w="100%"
         fontWeight="500"
       />
+      { hasLabels && (
+        <Flex alignItems="flex-start" columnGap={ 2 } maxW="100%">
+          <Skeleton loading={ isLoading } fontWeight={ 500 } flexShrink={ 0 }>Label</Skeleton>
+          <AddressLabelTags addresses={ labelAddresses } isLoading={ isLoading }/>
+        </Flex>
+      ) }
       { total && 'value' in total && token && (token.type === 'ERC-20' || token.type === 'ERC-1155') && (
         <Flex alignItems="center" columnGap={ 2 } maxW="100%">
           <Skeleton

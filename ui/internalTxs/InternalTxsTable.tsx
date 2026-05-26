@@ -24,7 +24,7 @@ const InternalTxsTable = ({ data, currentAddress, isLoading, top, showBlockInfo 
 
   return (
     <AddressHighlightProvider>
-      <TableRoot minW="900px">
+      <TableRoot minW="1040px">
         <TableHeaderSticky top={ top ?? 68 }>
           <TableRow>
             { chainData && <TableColumnHeader width="38px"></TableColumnHeader> }
@@ -34,7 +34,8 @@ const InternalTxsTable = ({ data, currentAddress, isLoading, top, showBlockInfo 
             </TableColumnHeader>
             <TableColumnHeader width="15%">Type</TableColumnHeader>
             { showBlockInfo && <TableColumnHeader width="15%">Block</TableColumnHeader> }
-            <TableColumnHeader width="50%">From/To</TableColumnHeader>
+            <TableColumnHeader width="40%">From/To</TableColumnHeader>
+            <TableColumnHeader width="140px">Label</TableColumnHeader>
             <TableColumnHeader width="20%" isNumeric>
               Value { currencyUnits.ether }
             </TableColumnHeader>

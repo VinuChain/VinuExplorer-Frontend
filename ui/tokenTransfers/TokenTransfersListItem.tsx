@@ -1,4 +1,3 @@
-import { Flex } from '@chakra-ui/react';
 import React from 'react';
 
 import type { TokenTransfer } from 'types/api/tokenTransfer';
@@ -6,18 +5,14 @@ import type { ClusterChainConfig } from 'types/multichain';
 
 import { NFT_TOKEN_TYPE_IDS } from 'lib/token/tokenTypes';
 import { Badge } from 'toolkit/chakra/badge';
+import AddressLabelTags, { hasAddressLabelTags } from 'ui/shared/address/AddressLabelTags';
 import AddressEntity from 'ui/shared/entities/address/AddressEntity';
 import BlockEntity from 'ui/shared/entities/block/BlockEntity';
 import NftEntity from 'ui/shared/entities/nft/NftEntity';
 import TxEntity from 'ui/shared/entities/tx/TxEntity';
-import EntityTag from 'ui/shared/EntityTags/EntityTag';
-import { withFallbackLabelIcons } from 'ui/shared/EntityTags/utils';
 import ListItemMobileGrid from 'ui/shared/ListItemMobile/ListItemMobileGrid';
 import TimeWithTooltip from 'ui/shared/time/TimeWithTooltip';
 import TokenValue from 'ui/shared/value/TokenValue';
-
-const categoryTagsFor = (address: TokenTransfer['from'] | TokenTransfer['to']) =>
-  withFallbackLabelIcons(address?.metadata?.tags ?? []).filter((tag) => tag.tagType !== 'name');
 
 type Props = {
   item: TokenTransfer;
@@ -26,8 +21,8 @@ type Props = {
 };
 
 const TokenTransfersListItem = ({ item, isLoading, chainData }: Props) => {
-  const fromTags = categoryTagsFor(item.from);
-  const toTags = categoryTagsFor(item.to);
+  const addresses = [ item.from, item.to ];
+  const hasLabels = hasAddressLabelTags(addresses);
 
   return (
     <ListItemMobileGrid.Container>
@@ -64,31 +59,22 @@ const TokenTransfersListItem = ({ item, isLoading, chainData }: Props) => {
 
       <ListItemMobileGrid.Label isLoading={ isLoading }>From</ListItemMobileGrid.Label>
       <ListItemMobileGrid.Value>
-        <Flex flexDir="column" rowGap={ 1 } alignItems="flex-start">
-          <AddressEntity address={ item.from } isLoading={ isLoading } truncation="constant"/>
-          { fromTags.length > 0 && (
-            <Flex columnGap={ 1 } rowGap={ 1 } flexWrap="wrap">
-              { fromTags.map((tag) => (
-                <EntityTag key={ `from-${ tag.slug }` } data={ tag } addressHash={ item.from.hash } isLoading={ isLoading }/>
-              )) }
-            </Flex>
-          ) }
-        </Flex>
+        <AddressEntity address={ item.from } isLoading={ isLoading } truncation="constant"/>
       </ListItemMobileGrid.Value>
 
       <ListItemMobileGrid.Label isLoading={ isLoading }>To</ListItemMobileGrid.Label>
       <ListItemMobileGrid.Value>
-        <Flex flexDir="column" rowGap={ 1 } alignItems="flex-start">
-          <AddressEntity address={ item.to } isLoading={ isLoading } truncation="constant"/>
-          { toTags.length > 0 && item.to && (
-            <Flex columnGap={ 1 } rowGap={ 1 } flexWrap="wrap">
-              { toTags.map((tag) => (
-                <EntityTag key={ `to-${ tag.slug }` } data={ tag } addressHash={ item.to!.hash } isLoading={ isLoading }/>
-              )) }
-            </Flex>
-          ) }
-        </Flex>
+        <AddressEntity address={ item.to } isLoading={ isLoading } truncation="constant"/>
       </ListItemMobileGrid.Value>
+
+      { hasLabels && (
+        <>
+          <ListItemMobileGrid.Label isLoading={ isLoading }>Label</ListItemMobileGrid.Label>
+          <ListItemMobileGrid.Value>
+            <AddressLabelTags addresses={ addresses } isLoading={ isLoading }/>
+          </ListItemMobileGrid.Value>
+        </>
+      ) }
 
       { item.total && 'token_id' in item.total && item.token && (NFT_TOKEN_TYPE_IDS.includes(item.token.type)) && item.total.token_id !== null && (
         <>

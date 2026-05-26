@@ -7,6 +7,7 @@ import type { ClusterChainConfig } from 'types/multichain';
 import { Badge } from 'toolkit/chakra/badge';
 import { TableCell, TableRow } from 'toolkit/chakra/table';
 import AddressFromTo from 'ui/shared/address/AddressFromTo';
+import AddressLabelTags from 'ui/shared/address/AddressLabelTags';
 import BlockEntity from 'ui/shared/entities/block/BlockEntity';
 import TxEntity from 'ui/shared/entities/tx/TxEntity';
 import ChainIcon from 'ui/shared/externalChains/ChainIcon';
@@ -89,6 +90,9 @@ const InternalTxsTableItem = ({
           current={ currentAddress }
           isLoading={ isLoading }
         />
+      </TableCell>
+      <TableCell verticalAlign="middle">
+        <AddressLabelTags addresses={ [ from, toData ] } isLoading={ isLoading }/>
       </TableCell>
       <TableCell isNumeric verticalAlign="middle">
         <NativeCoinValue

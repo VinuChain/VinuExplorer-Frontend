@@ -11,6 +11,7 @@ import type { ClusterChainConfig } from 'types/multichain';
 import config from 'configs/app';
 import { Skeleton } from 'toolkit/chakra/skeleton';
 import AddressFromTo from 'ui/shared/address/AddressFromTo';
+import AddressLabelTags, { hasAddressLabelTags } from 'ui/shared/address/AddressLabelTags';
 import BlockEntity from 'ui/shared/entities/block/BlockEntity';
 import TxEntity from 'ui/shared/entities/tx/TxEntity';
 import ListItemMobile from 'ui/shared/ListItemMobile/ListItemMobile';
@@ -49,6 +50,8 @@ const TxsListItem = ({
   translationData,
 }: Props) => {
   const dataTo = tx.to ? tx.to : tx.created_contract;
+  const labelAddresses = [ tx.from, dataTo ];
+  const hasLabels = hasAddressLabelTags(labelAddresses);
 
   return (
     <ListItemMobile display="block" width="100%" animation={ animation } key={ tx.hash }>
@@ -119,6 +122,12 @@ const TxsListItem = ({
         mt={ 6 }
         fontWeight="500"
       />
+      { hasLabels && (
+        <Flex mt={ 2 } columnGap={ 2 } alignItems="flex-start">
+          <Skeleton loading={ isLoading } display="inline-block" fontWeight={ 500 }>Label</Skeleton>
+          <AddressLabelTags addresses={ labelAddresses } isLoading={ isLoading }/>
+        </Flex>
+      ) }
       <TxTokenTransfersPreview tx={ tx } isLoading={ isLoading }/>
       { !config.UI.views.tx.hiddenFields?.value && (
         <Flex mt={ 2 } columnGap={ 2 }>

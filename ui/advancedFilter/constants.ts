@@ -4,7 +4,7 @@ import config from 'configs/app';
 
 export const NATIVE_TOKEN_ICON_URL = '/images/vinuchain.svg';
 
-export type ColumnsIds = 'tx_hash' | 'type' | 'method' | 'age' | 'from' | 'or_and' | 'to' | 'amount' | 'asset' | 'fee';
+export type ColumnsIds = 'tx_hash' | 'type' | 'method' | 'age' | 'from' | 'or_and' | 'to' | 'label' | 'amount' | 'asset' | 'fee';
 
 type TxTableColumn = {
   id: ColumnsIds;
@@ -48,6 +48,11 @@ export const TABLE_COLUMNS: Array<TxTableColumn> = [
     id: 'to',
     name: 'To',
     width: '160px',
+  },
+  {
+    id: 'label',
+    name: 'Label',
+    width: '140px',
   },
   {
     id: 'amount',

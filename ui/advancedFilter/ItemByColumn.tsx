@@ -7,6 +7,7 @@ import { Badge } from 'toolkit/chakra/badge';
 import { Skeleton } from 'toolkit/chakra/skeleton';
 import { NATIVE_TOKEN, type ColumnsIds } from 'ui/advancedFilter/constants';
 import AddressFromToIcon from 'ui/shared/address/AddressFromToIcon';
+import AddressLabelTags from 'ui/shared/address/AddressLabelTags';
 import AddressEntity from 'ui/shared/entities/address/AddressEntity';
 import TokenEntity from 'ui/shared/entities/token/TokenEntity';
 import TxEntity from 'ui/shared/entities/tx/TxEntity';
@@ -54,6 +55,14 @@ const ItemByColumn = ({ item, column, isLoading }: Props) => {
         </Flex>
       );
     }
+    case 'label':
+      return (
+        <AddressLabelTags
+          addresses={ [ item.from, item.to ?? item.created_contract ] }
+          isLoading={ isLoading }
+          maxW="100%"
+        />
+      );
     case 'or_and':
       return (
         <AddressFromToIcon

@@ -5,6 +5,7 @@ import React from 'react';
 import type { TokenType } from 'types/api/token';
 import type { TokenTransfer } from 'types/api/tokenTransfer';
 
+import useTokenTransfersMetadata from 'lib/address/useTokenTransfersMetadata';
 import getFilterValuesFromQuery from 'lib/getFilterValuesFromQuery';
 import { TOKEN_TYPE_IDS } from 'lib/token/tokenTypes';
 import { getTokenTransfersStub } from 'stubs/token';
@@ -43,6 +44,7 @@ const TxTokenTransfer = ({ txQuery, tokenTransferFilter }: Props) => {
     },
     filters: { type: typeFilter },
   });
+  const enrichedTokenTransferItems = useTokenTransfersMetadata(tokenTransferQuery.data?.items);
 
   const handleTypeFilterChange = React.useCallback((nextValue: Array<TokenType>) => {
     tokenTransferQuery.onFilterChange({ type: nextValue });
@@ -62,15 +64,15 @@ const TxTokenTransfer = ({ txQuery, tokenTransferFilter }: Props) => {
 
   let items: Array<TokenTransfer> = [];
 
-  if (tokenTransferQuery.data?.items) {
+  if (enrichedTokenTransferItems) {
     if (tokenTransferQuery.isPlaceholderData) {
-      items = tokenTransferQuery.data?.items;
+      items = enrichedTokenTransferItems;
     } else {
-      items = tokenTransferFilter ? tokenTransferQuery.data.items.filter(tokenTransferFilter) : tokenTransferQuery.data.items;
+      items = tokenTransferFilter ? enrichedTokenTransferItems.filter(tokenTransferFilter) : enrichedTokenTransferItems;
     }
   }
 
-  const content = tokenTransferQuery.data?.items ? (
+  const content = enrichedTokenTransferItems ? (
     <>
       <Box hideBelow="lg">
         <TokenTransferTable data={ items } top={ isActionBarHidden ? 0 : ACTION_BAR_HEIGHT_DESKTOP } isLoading={ tokenTransferQuery.isPlaceholderData }/>

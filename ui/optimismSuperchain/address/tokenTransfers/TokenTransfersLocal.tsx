@@ -3,6 +3,7 @@ import React from 'react';
 
 import type { TokenType } from 'types/api/token';
 
+import useTokenTransfersMetadata from 'lib/address/useTokenTransfersMetadata';
 import useIsMobile from 'lib/hooks/useIsMobile';
 import { apos } from 'toolkit/utils/htmlEntities';
 import AddressAdvancedFilterLink from 'ui/address/AddressAdvancedFilterLink';
@@ -29,6 +30,7 @@ interface Props {
 const TokenTransfersLocal = ({ query, filters, addressHash, onTypeFilterChange, onAddressFilterChange }: Props) => {
   const { isError, isPlaceholderData, data, pagination } = query;
   const isMobile = useIsMobile();
+  const enrichedItems = useTokenTransfersMetadata(data?.items);
 
   const { showSocketAlert, newItemsCount } = useAddressTokenTransfersSocket({
     filters,
@@ -39,11 +41,11 @@ const TokenTransfersLocal = ({ query, filters, addressHash, onTypeFilterChange, 
 
   const numActiveFilters = (filters.type?.length || 0) + (filters.filter ? 1 : 0);
 
-  const content = data?.items ? (
+  const content = enrichedItems ? (
     <>
       <Box hideBelow="lg">
         <TokenTransferTable
-          data={ data?.items }
+          data={ enrichedItems }
           baseAddress={ addressHash }
           showTxInfo
           top={ ACTION_BAR_HEIGHT_DESKTOP }
@@ -64,7 +66,7 @@ const TokenTransfersLocal = ({ query, filters, addressHash, onTypeFilterChange, 
           />
         ) }
         <TokenTransferList
-          data={ data?.items }
+          data={ enrichedItems }
           baseAddress={ addressHash }
           showTxInfo
           enableTimeIncrement
@@ -105,7 +107,7 @@ const TokenTransfersLocal = ({ query, filters, addressHash, onTypeFilterChange, 
   return (
     <DataListDisplay
       isError={ isError }
-      itemsNum={ data?.items?.length }
+      itemsNum={ enrichedItems?.length }
       emptyText="There are no token transfers."
       filterProps={{
         emptyFilteredText: `Couldn${ apos }t find any token transfer that matches your query.`,

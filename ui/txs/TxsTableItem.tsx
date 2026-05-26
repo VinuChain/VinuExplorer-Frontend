@@ -9,6 +9,7 @@ import config from 'configs/app';
 import { Badge } from 'toolkit/chakra/badge';
 import { TableCell, TableRow } from 'toolkit/chakra/table';
 import AddressFromTo from 'ui/shared/address/AddressFromTo';
+import AddressLabelTags from 'ui/shared/address/AddressLabelTags';
 import BlockPendingUpdateHint from 'ui/shared/block/BlockPendingUpdateHint';
 import BlockEntity from 'ui/shared/entities/block/BlockEntity';
 import TxEntity from 'ui/shared/entities/tx/TxEntity';
@@ -125,6 +126,9 @@ const TxsTableItem = ({
           mode="compact"
         />
         <TxTokenTransfersPreview tx={ tx } isLoading={ isLoading }/>
+      </TableCell>
+      <TableCell>
+        <AddressLabelTags addresses={ [ tx.from, dataTo ] } isLoading={ isLoading }/>
       </TableCell>
       { !config.UI.views.tx.hiddenFields?.value && (
         <TableCell isNumeric>

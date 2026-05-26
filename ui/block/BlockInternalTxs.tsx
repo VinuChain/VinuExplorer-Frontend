@@ -1,6 +1,7 @@
 import { Box } from '@chakra-ui/react';
 import React from 'react';
 
+import useInternalTransactionsMetadata from 'lib/address/useInternalTransactionsMetadata';
 import InternalTxsList from 'ui/internalTxs/InternalTxsList';
 import InternalTxsTable from 'ui/internalTxs/InternalTxsTable';
 import DataListDisplay from 'ui/shared/DataListDisplay';
@@ -13,14 +14,15 @@ interface Props {
 
 const BlockInternalTxs = ({ query, top }: Props) => {
   const { data, isPlaceholderData, isError } = query;
+  const enrichedItems = useInternalTransactionsMetadata(data?.items);
 
-  const content = data?.items ? (
+  const content = enrichedItems ? (
     <>
       <Box hideFrom="lg">
-        <InternalTxsList data={ data.items } isLoading={ isPlaceholderData } showBlockInfo={ false }/>
+        <InternalTxsList data={ enrichedItems } isLoading={ isPlaceholderData } showBlockInfo={ false }/>
       </Box>
       <Box hideBelow="lg">
-        <InternalTxsTable data={ data.items } isLoading={ isPlaceholderData } top={ top } showBlockInfo={ false }/>
+        <InternalTxsTable data={ enrichedItems } isLoading={ isPlaceholderData } top={ top } showBlockInfo={ false }/>
       </Box>
     </>
   ) : null;
@@ -28,7 +30,7 @@ const BlockInternalTxs = ({ query, top }: Props) => {
   return (
     <DataListDisplay
       isError={ isError }
-      itemsNum={ data?.items.length }
+      itemsNum={ enrichedItems?.length }
       emptyText="There are no internal transactions."
     >
       { content }

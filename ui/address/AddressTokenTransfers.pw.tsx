@@ -8,6 +8,8 @@ import { test, expect, devices } from 'playwright/lib';
 import AddressTokenTransfers from './AddressTokenTransfers';
 
 const CURRENT_ADDRESS = '0xd789a607CEac2f0E14867de4EB15b15C9FFB5859';
+const TOKEN_ICON_ADDRESS = '0xF56b7693E4212C584de4a83117f805B8E89224CB';
+const TOKEN_LIST_ICON_URL = `https://raw.githubusercontent.com/VinuChain/vinuchain-lists/main/tokens/${ TOKEN_ICON_ADDRESS }/${ TOKEN_ICON_ADDRESS }.png`;
 const hooksConfig = {
   router: {
     query: { hash: CURRENT_ADDRESS },
@@ -17,6 +19,10 @@ const hooksConfig = {
 // FIXME
 // test cases which use socket cannot run in parallel since the socket server always run on the same port
 test.describe.configure({ mode: 'serial' });
+
+test.beforeEach(async({ mockAssetResponse }) => {
+  await mockAssetResponse(TOKEN_LIST_ICON_URL, './playwright/mocks/image_s.jpg');
+});
 
 const tokenTransfersWithPagination = {
   items: [ tokenTransferMock.erc1155A ],

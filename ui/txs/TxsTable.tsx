@@ -68,7 +68,7 @@ const TxsTable = ({
 
   return (
     <AddressHighlightProvider>
-      <TableRoot minWidth="1000px">
+      <TableRoot minWidth="1120px">
         <TableHeaderComponent top={ stickyHeader ? top : undefined }>
           <TableRow>
             <TableColumnHeader width="48px"></TableColumnHeader>
@@ -94,6 +94,7 @@ const TxsTable = ({
               )
             ) }
             <TableColumnHeader width={ columnNum <= 2 ? baseWidth : '224px' }>From/To</TableColumnHeader>
+            <TableColumnHeader width="140px">Label</TableColumnHeader>
             { !config.UI.views.tx.hiddenFields?.value && (
               onSortToggle ? (
                 <TableColumnHeaderSortable

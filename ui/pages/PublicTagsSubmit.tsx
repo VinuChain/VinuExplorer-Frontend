@@ -33,6 +33,7 @@ const DEFAULT_TAG_TYPES: Array<PublicTagType> = [
   { id: 'project', type: 'project', description: 'Project or ecosystem tag' },
   { id: 'smart_contract', type: 'smart_contract', description: 'Smart contract category tag' },
   { id: 'meme', type: 'meme', description: 'Meme token or community project tag' },
+  { id: 'stablecoin', type: 'stablecoin', description: 'Stablecoin token tag' },
   { id: 'exchange', type: 'exchange', description: 'Exchange address tag' },
   { id: 'liquidity_pool', type: 'liquidity_pool', description: 'Liquidity pool contract tag' },
   { id: 'defi', type: 'defi', description: 'DeFi protocol address tag' },

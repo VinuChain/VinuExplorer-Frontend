@@ -39,12 +39,13 @@ import SearchResultEntityTag from './SearchResultEntityTag';
 
 interface Props {
   data: SearchResultItem | SearchResultAppItem;
+  index: number;
   searchTerm: string;
   isLoading?: boolean;
   addressFormat?: AddressFormat;
 }
 
-const SearchResultTableItem = ({ data, searchTerm, isLoading, addressFormat }: Props) => {
+const SearchResultTableItem = ({ data, index, searchTerm, isLoading, addressFormat }: Props) => {
 
   const handleLinkClick = React.useCallback((e: React.MouseEvent<HTMLAnchorElement>) => {
     saveToRecentKeywords(searchTerm);
@@ -484,6 +485,11 @@ const SearchResultTableItem = ({ data, searchTerm, isLoading, addressFormat }: P
 
   return (
     <TableRow>
+      <TableCell width="56px" fontSize="sm" color="text.secondary" verticalAlign="middle">
+        <Skeleton loading={ isLoading } display="inline-block">
+          <span>{ index }</span>
+        </Skeleton>
+      </TableCell>
       { content }
       <TableCell fontSize="sm" textTransform="capitalize" verticalAlign="middle">
         <Skeleton loading={ isLoading } color="text.secondary" display="inline-block">

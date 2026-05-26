@@ -10,6 +10,7 @@ describe('getCategoryLabel', () => {
     [ 'exchange', 'Exchange' ],
     [ 'defi', 'DeFi' ],
     [ 'meme', 'Meme' ],
+    [ 'stablecoin', 'Stablecoin' ],
     [ 'smart_contract', 'Smart Contract' ],
     [ 'project', 'Project' ],
     [ 'protocol', 'Protocol' ],
@@ -33,6 +34,7 @@ describe('isCategoryTagType', () => {
     expect(isCategoryTagType('exchange')).toBe(true);
     expect(isCategoryTagType('defi')).toBe(true);
     expect(isCategoryTagType('meme')).toBe(true);
+    expect(isCategoryTagType('stablecoin')).toBe(true);
     expect(isCategoryTagType('smart_contract')).toBe(true);
     expect(isCategoryTagType('project')).toBe(true);
     expect(isCategoryTagType('protocol')).toBe(true);
@@ -124,6 +126,7 @@ describe('getTagLinkParams', () => {
       [ 'exchange', 'Exchange' ],
       [ 'defi', 'DeFi' ],
       [ 'meme', 'Meme' ],
+      [ 'stablecoin', 'Stablecoin' ],
       [ 'smart_contract', 'Smart+Contract' ],
       [ 'project', 'Project' ],
       [ 'protocol', 'Protocol' ],

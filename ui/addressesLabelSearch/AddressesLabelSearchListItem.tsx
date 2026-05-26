@@ -27,7 +27,7 @@ const AddressesLabelSearchListItem = ({
   const labelTags = withFallbackLabelIcons(item.metadata?.tags ?? []).filter((tag) => tag.tagType !== 'name');
 
   return (
-    <ListItemMobile rowGap={ 3 }>
+    <ListItemMobile rowGap={ 2 }>
       <AddressEntity
         address={ item }
         isLoading={ isLoading }
@@ -46,7 +46,7 @@ const AddressesLabelSearchListItem = ({
           )) }
         </Flex>
       ) }
-      <HStack gap={ 3 } maxW="100%" alignItems="flex-start">
+      <HStack gap={ 2 } maxW="100%" alignItems="flex-start">
         <Skeleton loading={ isLoading } fontSize="sm" fontWeight={ 500 } flexShrink={ 0 }>{ `Balance ${ currencyUnits.ether }` }</Skeleton>
         <NativeCoinValue
           amount={ item.coin_balance }
@@ -56,7 +56,7 @@ const AddressesLabelSearchListItem = ({
           color="text.secondary"
         />
       </HStack>
-      <HStack gap={ 3 }>
+      <HStack gap={ 2 }>
         <Skeleton loading={ isLoading } fontSize="sm" fontWeight={ 500 }>Txn count</Skeleton>
         <Skeleton loading={ isLoading } fontSize="sm" color="text.secondary">
           <span>{ Number(item.transactions_count).toLocaleString() }</span>

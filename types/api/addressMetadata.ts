@@ -15,6 +15,7 @@ export type AddressMetadataTagType =
   'project' |
   'smart_contract' |
   'meme' |
+  'stablecoin' |
   'exchange' |
   'liquidity_pool' |
   'defi' |

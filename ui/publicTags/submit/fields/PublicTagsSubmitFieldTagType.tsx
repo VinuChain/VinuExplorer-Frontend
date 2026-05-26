@@ -21,6 +21,7 @@ interface Props {
 const ALLOWED_CATEGORY_TYPES: Array<{ value: string; label: string }> = [
   { value: 'generic', label: 'General' },
   { value: 'meme', label: 'Meme' },
+  { value: 'stablecoin', label: 'Stablecoin' },
   { value: 'exchange', label: 'Exchange' },
   { value: 'liquidity_pool', label: 'Liquidity Pool' },
   { value: 'defi', label: 'DeFi' },

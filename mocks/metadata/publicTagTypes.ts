@@ -36,6 +36,11 @@ export const publicTagTypes = {
       description: 'Meme token or community project tag',
     },
     {
+      id: 'stablecoin',
+      type: 'stablecoin' as const,
+      description: 'Stablecoin token tag',
+    },
+    {
       id: 'exchange',
       type: 'exchange' as const,
       description: 'Exchange address tag',

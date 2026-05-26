@@ -30,7 +30,7 @@ const AddressesLabelSearchTableItem = ({
 
   return (
     <TableRow>
-      <TableCell>
+      <TableCell py={ 3 }>
         <AddressEntity
           address={ item }
           isLoading={ isLoading }
@@ -38,7 +38,7 @@ const AddressesLabelSearchTableItem = ({
           my="2px"
         />
       </TableCell>
-      <TableCell verticalAlign="middle">
+      <TableCell py={ 3 } verticalAlign="middle">
         <Flex columnGap={ 1 } rowGap={ 1 } flexWrap="wrap">
           { labelTags.map((tag) => (
             <EntityTag
@@ -50,7 +50,7 @@ const AddressesLabelSearchTableItem = ({
           )) }
         </Flex>
       </TableCell>
-      <TableCell isNumeric>
+      <TableCell py={ 3 } isNumeric>
         <NativeCoinValue
           amount={ item.coin_balance }
           noSymbol
@@ -58,7 +58,7 @@ const AddressesLabelSearchTableItem = ({
           lineHeight="24px"
         />
       </TableCell>
-      <TableCell isNumeric>
+      <TableCell py={ 3 } isNumeric>
         <Skeleton loading={ isLoading } display="inline-block" lineHeight="24px">
           { Number(item.transactions_count).toLocaleString() }
         </Skeleton>

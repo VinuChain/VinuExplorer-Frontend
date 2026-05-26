@@ -2,6 +2,7 @@ import { Box, chakra, Flex } from '@chakra-ui/react';
 import { useRouter } from 'next/router';
 import React from 'react';
 
+import type { AddressMetadataTagType } from 'types/api/addressMetadata';
 import type { EntityTag as TEntityTag, EntityTagType } from 'ui/shared/EntityTags/types';
 
 import useAddressesMetadata from 'lib/address/useAddressesMetadata';
@@ -15,6 +16,7 @@ import AddressesLabelSearchListItem from 'ui/addressesLabelSearch/AddressesLabel
 import AddressesLabelSearchTable from 'ui/addressesLabelSearch/AddressesLabelSearchTable';
 import TokenLabelSearchListItem from 'ui/addressesLabelSearch/TokenLabelSearchListItem';
 import TokenLabelSearchTable from 'ui/addressesLabelSearch/TokenLabelSearchTable';
+import { getTokenLabelTags } from 'ui/addressesLabelSearch/tokenLabelUtils';
 import { ACTION_BAR_HEIGHT_DESKTOP } from 'ui/shared/ActionBar';
 import DataListDisplay from 'ui/shared/DataListDisplay';
 import EntityTag from 'ui/shared/EntityTags/EntityTag';
@@ -30,20 +32,26 @@ interface LabelRouteState {
   isCategoryBrowse: boolean;
 }
 
-const TOKEN_LABEL_STUB = {
-  ...TOKEN_INFO_ERC_20,
-  metadata: {
-    tags: [
-      {
-        tagType: 'meme' as const,
-        name: 'Meme',
-        slug: 'meme',
-        ordinal: 0,
-        meta: null,
-      },
-    ],
-  },
-};
+const TOKEN_TRACKER_TAG_TYPES = new Set([ 'meme', 'stablecoin' ]);
+
+function getTokenLabelStub(tagType: string, tagName: string, slug: string) {
+  const label = tagName || slug || 'Meme';
+
+  return {
+    ...TOKEN_INFO_ERC_20,
+    metadata: {
+      tags: [
+        {
+          tagType: (tagType || 'meme') as AddressMetadataTagType,
+          name: label,
+          slug: slug || tagType || 'meme',
+          ordinal: 0,
+          meta: null,
+        },
+      ],
+    },
+  };
+}
 
 const AccountsLabelAddressSearch = ({ slug, tagType, tagName, isCategoryBrowse }: LabelRouteState) => {
   const { isError, isPlaceholderData, data, pagination } = useQueryWithPages({
@@ -178,6 +186,10 @@ const AccountsLabelAddressSearch = ({ slug, tagType, tagName, isCategoryBrowse }
 
 const AccountsLabelTokenSearch = ({ slug, tagType, tagName, isCategoryBrowse }: LabelRouteState) => {
   const router = useRouter();
+  const tokenLabelStub = React.useMemo(
+    () => getTokenLabelStub(tagType, tagName, slug),
+    [ slug, tagName, tagType ],
+  );
   const accountsHref = React.useMemo(() => {
     const query = new URLSearchParams();
 
@@ -202,7 +214,7 @@ const AccountsLabelTokenSearch = ({ slug, tagType, tagName, isCategoryBrowse }: 
     options: {
       enabled: Boolean(tagType),
       placeholderData: generateListStub<'general:tokens_metadata_search'>(
-        TOKEN_LABEL_STUB,
+        tokenLabelStub,
         50,
         {
           next_page_params: null,
@@ -233,11 +245,19 @@ const AccountsLabelTokenSearch = ({ slug, tagType, tagName, isCategoryBrowse }: 
   ) : null;
 
   const label = tagName || slug || 'Meme';
+  const labelTagFromResults = data?.items
+    .flatMap((item) => getTokenLabelTags(item))
+    .find((tag) =>
+      tag.tagType === tagType &&
+      (isCategoryBrowse || tag.slug === slug || tag.name === tagName) &&
+      tag.meta,
+    );
   const labelTag: TEntityTag = {
     tagType: (tagType || 'meme') as EntityTagType,
     slug: slug || 'meme',
     name: label,
     ordinal: 0,
+    meta: labelTagFromResults?.meta,
   };
 
   const text = (() => {
@@ -312,7 +332,7 @@ const AccountsLabelSearch = () => {
   const isCategoryBrowse = slug === CATEGORY_BROWSE_SLUG;
   const routeState = { slug, tagType, tagName, isCategoryBrowse };
 
-  if (tagType === 'meme' && view !== 'accounts') {
+  if (TOKEN_TRACKER_TAG_TYPES.has(tagType) && view !== 'accounts') {
     return <AccountsLabelTokenSearch { ...routeState }/>;
   }
 

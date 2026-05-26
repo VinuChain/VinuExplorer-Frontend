@@ -39,12 +39,13 @@ import SearchResultEntityTag from './SearchResultEntityTag';
 
 interface Props {
   data: SearchResultItem | SearchResultAppItem;
+  index: number;
   searchTerm: string;
   isLoading?: boolean;
   addressFormat?: AddressFormat;
 }
 
-const SearchResultListItem = ({ data, searchTerm, isLoading, addressFormat }: Props) => {
+const SearchResultListItem = ({ data, index, searchTerm, isLoading, addressFormat }: Props) => {
 
   const handleLinkClick = React.useCallback((e: React.MouseEvent<HTMLAnchorElement>) => {
     saveToRecentKeywords(searchTerm);
@@ -467,9 +468,12 @@ const SearchResultListItem = ({ data, searchTerm, isLoading, addressFormat }: Pr
 
   return (
     <ListItemMobile py={ 3 } textStyle="sm" rowGap={ 2 }>
-      <Grid templateColumns="1fr auto" w="100%" overflow="hidden">
+      <Grid templateColumns="1fr auto auto" w="100%" overflow="hidden" columnGap={ 2 }>
         { firstRow }
-        <Skeleton loading={ isLoading } color="text.secondary" ml={ 8 } textTransform="capitalize">
+        <Skeleton loading={ isLoading } color="text.secondary" whiteSpace="nowrap">
+          <span>#{ index }</span>
+        </Skeleton>
+        <Skeleton loading={ isLoading } color="text.secondary" textTransform="capitalize" whiteSpace="nowrap">
           <span>{ category ? searchItemTitles[category].itemTitleShort : '' }</span>
         </Skeleton>
       </Grid>

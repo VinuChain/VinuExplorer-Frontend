@@ -2,10 +2,8 @@ import type { CctxListItem } from '@blockscout/zetachain-cctx-types';
 import { getFeaturePayload } from 'configs/app/features/types';
 import type { MarketplaceApp } from 'types/client/marketplace';
 import type { QuickSearchResultItem } from 'types/client/search';
-import type { EntityTagType } from 'ui/shared/EntityTags/types';
 
 import config from 'configs/app';
-import { isCategoryTagType } from 'ui/shared/EntityTags/utils';
 
 const nameServicesFeature = config.features.nameServices;
 
@@ -102,19 +100,15 @@ export function getItemCategory(item: QuickSearchResultItem | SearchResultAppIte
       return 'block';
     }
     case 'label': {
-      // Backend emits `type: "label"` for any `address_tags` row that
-      // matched the query, regardless of whether the matched tag is
-      // a specific name (e.g., "VIR Ecosystem Wallet" → tag_type='name')
-      // or a category label (e.g., "Project" → tag_type='project').
-      // The product treats those as two distinct UI categories:
-      //   - Tag chip / Public tag bucket → tag_type === 'name'
-      //   - Label chip / Labels bucket   → tag_type ∈ CATEGORY_LABELS
-      // Anything else (older rows pre-tag_type, unknown types) falls
-      // back to Public tags so the search dropdown never silently
-      // drops a result.
-      if (item.tag_type && isCategoryTagType(item.tag_type as EntityTagType)) {
-        return 'label';
-      }
+      // Backend distinguishes category-expansion hits ('label') from
+      // tsvector-only specific-name hits ('tag'). The categorisation
+      // itself lives there: if the user searched for "Project" it
+      // expanded to every address with `tag_type='project'`; if they
+      // searched for "VIR" it stayed as specific tsvector matches on
+      // display_name. We just route the two types into their buckets.
+      return 'label';
+    }
+    case 'tag': {
       return 'public_tag';
     }
     case 'transaction': {

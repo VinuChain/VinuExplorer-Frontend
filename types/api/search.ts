@@ -13,6 +13,7 @@ export const SEARCH_RESULT_TYPES = {
   ens_domain: 'ens_domain',
   cluster: 'cluster',
   label: 'label',
+  tag: 'tag',
   user_operation: 'user_operation',
   blob: 'blob',
   metadata_tag: 'metadata_tag',
@@ -95,8 +96,13 @@ export interface SearchResultCluster extends SearchResultAddressData {
   };
 }
 
-export interface SearchResultLabel {
-  type: 'label';
+// Backend emits `type: "label"` for category-expansion search hits
+// (the search term matched a curated category name like "Project") and
+// `type: "tag"` for tsvector-only hits on the specific display_name
+// (e.g., "VIR Ecosystem Wallet"). The frontend buckets the two into
+// the Labels vs Public tags categories of the search dropdown; the
+// payload shape is identical so they share one TS interface.
+interface SearchResultTagLikeBase {
   address_hash: string;
   filecoin_robust_address?: string | null;
   name: string;
@@ -106,6 +112,14 @@ export interface SearchResultLabel {
   tag_label?: string;
   tag_type?: string;
   metadata?: AddressMetadataTagApi['meta'] | null;
+}
+
+export interface SearchResultLabel extends SearchResultTagLikeBase {
+  type: 'label';
+}
+
+export interface SearchResultTag extends SearchResultTagLikeBase {
+  type: 'tag';
 }
 
 export interface SearchResultBlock {
@@ -143,6 +157,7 @@ export type SearchResultItem =
   SearchResultBlock |
   SearchResultTx |
   SearchResultLabel |
+  SearchResultTag |
   SearchResultUserOp |
   SearchResultBlob |
   SearchResultDomain |

@@ -126,6 +126,7 @@ const SearchResultListItem = ({ data, index, searchTerm, isLoading, addressForma
         );
       }
 
+      case 'tag':
       case 'label': {
         return (
           <Flex alignItems="center">
@@ -389,6 +390,7 @@ const SearchResultListItem = ({ data, index, searchTerm, isLoading, addressForma
           <Text color="text.secondary">{ dayjs(data.timestamp).format('llll') }</Text>
         );
       }
+      case 'tag':
       case 'label': {
         const hash = data.filecoin_robust_address || (addressFormat === 'bech32' ? toBech32Address(data.address_hash) : data.address_hash);
 

@@ -17,6 +17,7 @@ const TEMPLATE_MAP: Record<Route['pathname'], string> = {
   '/block/countdown/[height]': DEFAULT_TEMPLATE,
   '/accounts': DEFAULT_TEMPLATE,
   '/accounts/label/[slug]': DEFAULT_TEMPLATE,
+  '/labels': 'Browse VinuChain addresses by label category — exchanges, liquidity pools, projects, stablecoins and more.',
   '/address/[hash]': 'View the account balance, transactions, and other data for %hash% on the %network_title%',
   '/verified-contracts': DEFAULT_TEMPLATE,
   '/contract-verification': DEFAULT_TEMPLATE,

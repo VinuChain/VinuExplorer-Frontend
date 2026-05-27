@@ -258,6 +258,12 @@ export default function useNavItems(): ReturnType {
         icon: 'dex-tracker',
         isActive: pathname === '/pools' || pathname.startsWith('/pool/'),
       },
+      {
+        text: 'Labels',
+        nextRoute: { pathname: '/labels' as const },
+        icon: 'publictags_slim' as const,
+        isActive: pathname === '/labels' || pathname.startsWith('/accounts/label/'),
+      },
     ].filter(Boolean);
 
     const validatorsNavItems = [

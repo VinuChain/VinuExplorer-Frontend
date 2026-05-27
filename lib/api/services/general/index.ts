@@ -20,6 +20,8 @@ import type {
   GeneralApiContractResourceName,
   GeneralApiContractResourcePayload,
 } from './contract';
+import type { GeneralApiLabelResourceName, GeneralApiLabelResourcePayload } from './label';
+import { GENERAL_API_LABEL_RESOURCES } from './label';
 import type {
   GeneralApiMiscPaginationFilters,
   GeneralApiMiscPaginationSorting,
@@ -51,6 +53,7 @@ export const GENERAL_API_RESOURCES = {
   ...GENERAL_API_ADDRESS_RESOURCES,
   ...GENERAL_API_BLOCK_RESOURCES,
   ...GENERAL_API_CONTRACT_RESOURCES,
+  ...GENERAL_API_LABEL_RESOURCES,
   ...GENERAL_API_MISC_RESOURCES,
   ...GENERAL_API_ROLLUP_RESOURCES,
   ...GENERAL_API_TOKEN_RESOURCES,
@@ -66,6 +69,7 @@ R extends GeneralApiAccountResourceName ? GeneralApiAccountResourcePayload<R> :
 R extends GeneralApiAddressResourceName ? GeneralApiAddressResourcePayload<R> :
 R extends GeneralApiBlockResourceName ? GeneralApiBlockResourcePayload<R> :
 R extends GeneralApiContractResourceName ? GeneralApiContractResourcePayload<R> :
+R extends GeneralApiLabelResourceName ? GeneralApiLabelResourcePayload<R> :
 R extends GeneralApiMiscResourceName ? GeneralApiMiscResourcePayload<R> :
 R extends GeneralApiRollupResourceName ? GeneralApiRollupResourcePayload<R> :
 R extends GeneralApiTokenResourceName ? GeneralApiTokenResourcePayload<R> :

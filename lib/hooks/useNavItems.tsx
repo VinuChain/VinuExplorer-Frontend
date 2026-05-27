@@ -258,12 +258,6 @@ export default function useNavItems(): ReturnType {
         icon: 'dex-tracker',
         isActive: pathname === '/pools' || pathname.startsWith('/pool/'),
       },
-      {
-        text: 'Labels',
-        nextRoute: { pathname: '/labels' as const },
-        icon: 'publictags_slim' as const,
-        isActive: pathname === '/labels' || pathname.startsWith('/accounts/label/'),
-      },
     ].filter(Boolean);
 
     const validatorsNavItems = [
@@ -341,6 +335,11 @@ export default function useNavItems(): ReturnType {
         text: 'Gas tracker',
         nextRoute: { pathname: '/gas-tracker' as const },
         isActive: pathname.startsWith('/gas-tracker'),
+      },
+      {
+        text: 'Labels',
+        nextRoute: { pathname: '/labels' as const },
+        isActive: pathname === '/labels' || pathname.startsWith('/accounts/label/'),
       },
       config.features.publicTagsSubmission.isEnabled && {
         text: 'Submit public tag',

@@ -2,7 +2,7 @@ import { Grid, Text, Flex } from '@chakra-ui/react';
 import React from 'react';
 
 import type { ItemsProps } from './types';
-import type { SearchResultLabel } from 'types/api/search';
+import type { SearchResultLabel, SearchResultTag } from 'types/api/search';
 
 import { toBech32Address } from 'lib/address/bech32';
 import highlightText from 'lib/highlightText';
@@ -10,7 +10,10 @@ import { Image } from 'toolkit/chakra/image';
 import HashStringShortenDynamic from 'ui/shared/HashStringShortenDynamic';
 import IconSvg from 'ui/shared/IconSvg';
 
-const SearchBarSuggestLabel = ({ data, isMobile, searchTerm, addressFormat }: ItemsProps<SearchResultLabel>) => {
+// Accepts both `SearchResultLabel` and `SearchResultTag` — they share
+// the same payload shape; the routing key differs but the dropdown
+// renders both with identical layout (icon + name + address row).
+const SearchBarSuggestLabel = ({ data, isMobile, searchTerm, addressFormat }: ItemsProps<SearchResultLabel | SearchResultTag>) => {
   const meta = data.metadata;
   const hash = data.filecoin_robust_address || (addressFormat === 'bech32' ? toBech32Address(data.address_hash) : data.address_hash);
 

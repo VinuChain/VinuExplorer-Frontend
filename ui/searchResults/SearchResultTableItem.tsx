@@ -179,6 +179,7 @@ const SearchResultTableItem = ({ data, index, searchTerm, isLoading, addressForm
         );
       }
 
+      case 'tag':
       case 'label': {
         const hash = data.filecoin_robust_address || (addressFormat === 'bech32' ? toBech32Address(data.address_hash) : data.address_hash);
 

@@ -74,6 +74,7 @@ function getSearchResultTextValue(item: SearchResultItem | SearchResultAppItem, 
       if (field === 'details') return item.address_hash;
       return item.is_smart_contract_verified ? 1 : 0;
     }
+    case 'tag':
     case 'label': {
       if (field === 'result') return item.name;
       if (field === 'details') return item.address_hash;

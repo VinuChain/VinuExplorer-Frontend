@@ -21,7 +21,7 @@ import { getTokenLabelTags } from 'ui/addressesLabelSearch/tokenLabelUtils';
 import { ACTION_BAR_HEIGHT_DESKTOP } from 'ui/shared/ActionBar';
 import DataListDisplay from 'ui/shared/DataListDisplay';
 import EntityTag from 'ui/shared/EntityTags/EntityTag';
-import { CATEGORY_BROWSE_SLUG, withFallbackLabelIcons } from 'ui/shared/EntityTags/utils';
+import { CATEGORY_BROWSE_SLUG, getCategoryLabel, withFallbackLabelIcons } from 'ui/shared/EntityTags/utils';
 import PageTitle from 'ui/shared/Page/PageTitle';
 import useQueryWithPages from 'ui/shared/pagination/useQueryWithPages';
 import StickyPaginationWithText from 'ui/shared/StickyPaginationWithText';
@@ -106,6 +106,40 @@ function getTokenLabelSearchValue(row: TokenLabelSearchRow, field: TokenLabelSea
 function compareTokenLabelRows(a: TokenLabelSearchRow, b: TokenLabelSearchRow, field: TokenLabelSearchSortField) {
   const result = compareLabelSearchValues(getTokenLabelSearchValue(a, field), getTokenLabelSearchValue(b, field));
   return result === 0 ? a.rank - b.rank : result;
+}
+
+// Pick a user-facing display string for the label-search header that
+// never leaks the `_category` browse sentinel. Precedence:
+//   1. explicit ?tagName=… query param (set by EntityTag links)
+//   2. curated category label for the tag_type (so direct nav like
+//      /accounts/label/_category?tagType=meme reads "Meme", not "_category")
+//   3. raw slug, unless it's the sentinel, in which case fall back to
+//      a titlecased tag_type or empty string
+function resolveDisplayName({
+  isCategoryBrowse,
+  tagName,
+  slug,
+  tagType,
+}: {
+  isCategoryBrowse: boolean;
+  tagName: string;
+  slug: string;
+  tagType: string;
+}): string {
+  if (tagName) {
+    return tagName;
+  }
+
+  const category = tagType ? getCategoryLabel(tagType as EntityTagType) : undefined;
+  if (category) {
+    return category;
+  }
+
+  if (isCategoryBrowse || slug === CATEGORY_BROWSE_SLUG) {
+    return tagType ? tagType.replace(/[_-]/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase()) : '';
+  }
+
+  return slug;
 }
 
 function getTokenLabelStub(tagType: string, tagName: string, slug: string) {
@@ -248,7 +282,7 @@ const AccountsLabelAddressSearch = ({ slug, tagType, tagName, isCategoryBrowse }
       // tagType — without the override the badge would always read
       // "Liquidity Pool" even when the user navigated to a specific
       // exchange tag.
-      name: tagName || slug,
+      name: resolveDisplayName({ isCategoryBrowse, tagName, slug, tagType }),
       ordinal: 0,
       meta: labelTagFromResults?.meta,
     };
@@ -370,7 +404,7 @@ const AccountsLabelTokenSearch = ({ slug, tagType, tagName, isCategoryBrowse }: 
     </>
   ) : null;
 
-  const label = tagName || slug || 'Meme';
+  const label = resolveDisplayName({ isCategoryBrowse, tagName, slug, tagType }) || 'Meme';
   const labelTagFromResults = data?.items
     .flatMap((item) => getTokenLabelTags(item))
     .find((tag) =>

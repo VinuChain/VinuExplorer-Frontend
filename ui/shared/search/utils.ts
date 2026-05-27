@@ -2,8 +2,10 @@ import type { CctxListItem } from '@blockscout/zetachain-cctx-types';
 import { getFeaturePayload } from 'configs/app/features/types';
 import type { MarketplaceApp } from 'types/client/marketplace';
 import type { QuickSearchResultItem } from 'types/client/search';
+import type { EntityTagType } from 'ui/shared/EntityTags/types';
 
 import config from 'configs/app';
+import { isCategoryTagType } from 'ui/shared/EntityTags/utils';
 
 const nameServicesFeature = config.features.nameServices;
 
@@ -14,6 +16,7 @@ export type ApiCategory =
   'nft' |
   'address' |
   'public_tag' |
+  'label' |
   'transaction' |
   'block' |
   'user_operation' |
@@ -37,6 +40,7 @@ export const searchCategories: Array<{ id: Category; title: string; tabTitle: st
   { id: 'token', title: `Tokens (${ config.chain.tokenStandard }-20)`, tabTitle: 'Tokens' },
   { id: 'nft', title: `NFTs (${ config.chain.tokenStandard }-721 & 1155)`, tabTitle: 'NFTs' },
   { id: 'address', title: 'Addresses', tabTitle: 'Addresses' },
+  { id: 'label', title: 'Labels', tabTitle: 'Labels' },
   { id: 'public_tag', title: 'Public tags', tabTitle: 'Public tags' },
   { id: 'transaction', title: 'Transactions', tabTitle: 'Transactions' },
   { id: 'block', title: 'Blocks', tabTitle: 'Blocks' },
@@ -71,6 +75,7 @@ export const searchItemTitles: Record<Category, { itemTitle: string; itemTitleSh
   token: { itemTitle: 'Token', itemTitleShort: 'Token' },
   nft: { itemTitle: 'NFT', itemTitleShort: 'NFT' },
   address: { itemTitle: 'Address', itemTitleShort: 'Address' },
+  label: { itemTitle: 'Label', itemTitleShort: 'Label' },
   public_tag: { itemTitle: 'Public tag', itemTitleShort: 'Tag' },
   transaction: { itemTitle: 'Transaction', itemTitleShort: 'Txn' },
   block: { itemTitle: 'Block', itemTitleShort: 'Block' },
@@ -97,6 +102,19 @@ export function getItemCategory(item: QuickSearchResultItem | SearchResultAppIte
       return 'block';
     }
     case 'label': {
+      // Backend emits `type: "label"` for any `address_tags` row that
+      // matched the query, regardless of whether the matched tag is
+      // a specific name (e.g., "VIR Ecosystem Wallet" → tag_type='name')
+      // or a category label (e.g., "Project" → tag_type='project').
+      // The product treats those as two distinct UI categories:
+      //   - Tag chip / Public tag bucket → tag_type === 'name'
+      //   - Label chip / Labels bucket   → tag_type ∈ CATEGORY_LABELS
+      // Anything else (older rows pre-tag_type, unknown types) falls
+      // back to Public tags so the search dropdown never silently
+      // drops a result.
+      if (item.tag_type && isCategoryTagType(item.tag_type as EntityTagType)) {
+        return 'label';
+      }
       return 'public_tag';
     }
     case 'transaction': {

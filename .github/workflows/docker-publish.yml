@@ -23,8 +23,21 @@ permissions:
 # SHA tag is per-commit so there's no race on the artifact name.
 
 jobs:
+  # Quality gate for the production deploy path.
+  #
+  # Pushes to `main` go straight to image build + backend redeploy, so the
+  # ESLint / TypeScript / envs-validator / Vitest gate that runs on PRs must
+  # also run here — otherwise a direct push (or a squashed merge that skipped
+  # PR checks) can reach production without ever passing them. `checks.yml`
+  # already exposes `workflow_call`; reuse it verbatim so there is a single
+  # source of truth for the gate.
+  checks:
+    uses: ./.github/workflows/checks.yml
+    secrets: inherit
+
   build-and-push:
     name: Build and push
+    needs: [ checks ]
     runs-on: ubuntu-latest
     steps:
       - name: Checkout

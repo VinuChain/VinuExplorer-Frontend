@@ -68,3 +68,6 @@ yarn-error.log*
 /toolkit/package/dist
 .claude/
 .omc/
+
+# editor / agent tool state
+.serena/

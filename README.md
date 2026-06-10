@@ -1,4 +1,31 @@
-<h1 align="center">Blockscout frontend</h1>
+<h1 align="center">VinuExplorer Frontend</h1>
+
+<p align="center">
+    <span>VinuChain fork of </span>
+    <a href="https://github.com/blockscout/frontend">blockscout/frontend</a>
+    <span> — the frontend for </span>
+    <a href="https://vinuexplorer.org">vinuexplorer.org</a>
+</p>
+
+> **VinuChain fork.** This repository is a fork of the upstream Blockscout frontend,
+> customized for VinuChain (public labels/tags, VNS, external auth, gas-stats
+> enrichment, footer build SHAs). For the fork delta, deployment pipeline, runtime
+> env location, and rollback procedure, see **[`docs/FORK.md`](./docs/FORK.md)**.
+>
+> | | |
+> | --- | --- |
+> | Upstream base | `blockscout/frontend` v2.6.0 (merge-base `fba6438be`) |
+> | Networks | mainnet chain ID **207** · RPC `vinuchain-rpc.com` · explorer `vinuexplorer.org` |
+> | | testnet chain ID **206** · RPC `vinufoundation-rpc.com` · explorer `testnet.vinuexplorer.org` |
+> | Image | `ghcr.io/vinuchain/vinuexplorer-frontend:{latest,<short-sha>}` |
+> | Deploy | push to `main` → build image → trigger `VinuChain/vinuexplorer-backend` `deploy.yml` |
+> | Rollback | `gh workflow run deploy.yml --repo VinuChain/vinuexplorer-backend --ref master -f frontend_image_tag=<old-sha>` |
+
+The remainder of this README is upstream Blockscout documentation.
+
+---
+
+<h2 align="center">Blockscout frontend (upstream docs)</h2>
 
 <p align="center">
     <span>Frontend application for </span>

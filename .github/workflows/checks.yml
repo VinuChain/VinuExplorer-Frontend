@@ -19,8 +19,12 @@ on:
 #   cancel-in-progress: true
 
 permissions:
+  # No job here writes to PRs — the label gate only READS
+  # github.event.pull_request.labels from the webhook payload, which needs no
+  # token scope. Declaring only contents:read means callers (docker-publish.yml,
+  # pre-release.yml) don't have to grant pull-requests:write to satisfy a
+  # reusable-workflow permission contract for a scope nothing uses.
   contents: read
-  pull-requests: write
 
 jobs:
   code_quality:
@@ -247,14 +251,15 @@ jobs:
   pw_tests:
     name: 'Playwright tests / Project: ${{ matrix.project }}'
     needs: [ code_quality, envs_validation, pw_affected_tests ]
-    # Playwright is a PR-only gate. When checks.yml is reused via workflow_call
-    # from the deploy pipeline (push to main), github.event_name is the caller's
-    # `push`, so this stays skipped — the production gate is the lightweight
-    # lint/tsc/envs/Vitest set, not the full browser suite, and a deploy is
-    # never blocked waiting on Playwright.
+    # Playwright runs on PRs and on manual workflow_dispatch only. When
+    # checks.yml is reused via workflow_call from the deploy pipeline (push to
+    # main) or pre-release (tag push), github.event_name is the caller's
+    # push/tag event, so this stays skipped — the production gate is the
+    # lightweight lint/tsc/envs/Vitest set and a deploy is never blocked
+    # waiting on the browser suite (pre-release runs e2e separately).
     if: |
       always() &&
-      github.event_name == 'pull_request' &&
+      (github.event_name == 'pull_request' || github.event_name == 'workflow_dispatch') &&
       needs.code_quality.result == 'success' &&
       needs.envs_validation.result == 'success' &&
       (needs.pw_affected_tests.result == 'success' || needs.pw_affected_tests.result == 'skipped')

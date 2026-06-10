@@ -34,15 +34,6 @@ jobs:
   checks:
     uses: ./.github/workflows/checks.yml
     secrets: inherit
-    # checks.yml declares `pull-requests: write` (for its PR-only comment step).
-    # A reusable workflow cannot elevate the GITHUB_TOKEN above the caller, so
-    # this caller job must grant at least what the callee requests or the run
-    # fails validation before build-and-push. On the push/deploy path the PR
-    # step never executes (it is pull_request-gated), so this scope is unused
-    # here — it only satisfies the permission contract.
-    permissions:
-      contents: read
-      pull-requests: write
 
   build-and-push:
     name: Build and push

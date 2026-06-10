@@ -15,10 +15,10 @@ Prepare the next release of the application.
         - "<upcoming>" -> "v1.2.3+"
 
 3. **Create release notes**
-    - Use `./RELEASE_NOTES.md` as a reference and this release notes [link](https://github.com/blockscout/frontend/releases/tag/v2.3.0) as an example.
+    - Use a recent upstream release as the section template — e.g. this release notes [link](https://github.com/blockscout/frontend/releases/tag/v2.3.0) — since this fork does not vendor a local `RELEASE_NOTES.md` template.
     - Get all commits between the head of the remote main branch and the latest release tag.
     - Use the GitHub API to draft the next release notes using the main branch as a target. Parse the response to obtain the list of pull requests and new contributors.
-    - Copy `./RELEASE_NOTES.md` into a new file named `./RELEASE_NOTES_<release-tag>.md`.
+    - Create a new file named `./RELEASE_NOTES_<release-tag>.md` using the upstream release's section layout.
     - For every section (except "Changes in ENV variables") in the file, add the appropriate pull requests from previous steps using the pattern for each line: `- <pull-request-name> by <pull-request-author> in <link-to-pull-request>`. Example: "- API documentation page by @tom2drum in https://github.com/blockscout/frontend/pull/2725". Capitalize first letter in the PR name if needed.
     - To determine the correct section in the release notes file, use the labels assigned to each pull request (which need to be fetched separately from the GitHub API alongside the pull request description, as the description will be used in the next step) and the table below. If a pull request belongs to several sections, mention it in each section. If a pull request lacks labels or its section cannot be determined, place it in the "Other Changes" section.
 

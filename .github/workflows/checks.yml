@@ -247,11 +247,17 @@ jobs:
   pw_tests:
     name: 'Playwright tests / Project: ${{ matrix.project }}'
     needs: [ code_quality, envs_validation, pw_affected_tests ]
+    # Playwright is a PR-only gate. When checks.yml is reused via workflow_call
+    # from the deploy pipeline (push to main), github.event_name is the caller's
+    # `push`, so this stays skipped — the production gate is the lightweight
+    # lint/tsc/envs/Vitest set, not the full browser suite, and a deploy is
+    # never blocked waiting on Playwright.
     if: |
       always() &&
-      needs.code_quality.result == 'success' && 
-      needs.envs_validation.result == 'success' && 
-      (needs.pw_affected_tests.result == 'success' || needs.pw_affected_tests.result == 'skipped') 
+      github.event_name == 'pull_request' &&
+      needs.code_quality.result == 'success' &&
+      needs.envs_validation.result == 'success' &&
+      (needs.pw_affected_tests.result == 'success' || needs.pw_affected_tests.result == 'skipped')
     runs-on: ubuntu-latest
     container:
       image: mcr.microsoft.com/playwright:v1.57.0-noble

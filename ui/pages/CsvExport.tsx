@@ -5,6 +5,7 @@ import React from 'react';
 import { AddressFromToFilterValues } from 'types/api/address';
 import type { CsvExportParams } from 'types/client/address';
 
+import config from 'configs/app';
 import type { ResourceName } from 'lib/api/resources';
 import useApiQuery from 'lib/api/useApiQuery';
 import { useMultichainContext } from 'lib/contexts/multichain';
@@ -85,10 +86,13 @@ const CsvExport = () => {
   const router = useRouter();
   const isMobile = useIsMobile();
   const multichainContext = useMultichainContext();
+  const chainConfig = multichainContext?.chain.app_config || config;
 
   const addressHash = router.query.address?.toString() || '';
   const exportTypeParam = router.query.type?.toString() || '';
-  const exportType = isCorrectExportType(exportTypeParam) ? EXPORT_TYPES[exportTypeParam] : null;
+  const exportTypeKey = isCorrectExportType(exportTypeParam) ? exportTypeParam : null;
+  const isExportTypeEnabled = Boolean(exportTypeKey && (exportTypeKey !== 'epoch-rewards' || chainConfig.features.celo.isEnabled));
+  const exportType = exportTypeKey && isExportTypeEnabled ? EXPORT_TYPES[exportTypeKey] : null;
   const filterTypeFromQuery = router.query.filterType?.toString() || null;
   const filterValueFromQuery = router.query.filterValue?.toString();
   const periodFromQuery = router.query.period?.toString() || null;
@@ -100,7 +104,7 @@ const CsvExport = () => {
     },
   });
 
-  const isTokenScopedExport = isCorrectExportType(exportTypeParam) && TOKEN_SCOPED_EXPORT_TYPES.has(exportTypeParam);
+  const isTokenScopedExport = Boolean(exportTypeKey && isExportTypeEnabled && TOKEN_SCOPED_EXPORT_TYPES.has(exportTypeKey));
 
   const tokenQuery = useApiQuery('general:token', {
     pathParams: { hash: addressHash },
@@ -148,7 +152,7 @@ const CsvExport = () => {
       <CsvExportForm
         hash={ addressHash }
         resource={ exportType.resource }
-        exportType={ isCorrectExportType(exportTypeParam) ? exportTypeParam : undefined }
+        exportType={ exportTypeKey && isExportTypeEnabled ? exportTypeKey : undefined }
         filterType={ filterType }
         filterValue={ filterValue }
         fileNameTemplate={ exportType.fileNameTemplate }

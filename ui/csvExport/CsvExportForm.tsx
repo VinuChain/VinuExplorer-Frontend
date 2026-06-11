@@ -51,11 +51,11 @@ const CsvExportForm = ({ hash, resource, filterType, filterValue, fileNameTempla
   const apiFetchFactory = React.useCallback((data: FormFields) => {
     return async(recaptchaToken?: string) => {
       const url = buildUrl(resource, { hash } as never, {
-        from_period: hasDateRange ? dayjs(data.from).toISOString() : null,
-        to_period: hasDateRange ? dayjs(data.to).toISOString() : null,
-        filter_type: filterType,
-        filter_value: filterValue,
-        period: exportType === 'holder-chart' && period ? period : null,
+        from_period: hasDateRange ? dayjs(data.from).toISOString() : undefined,
+        to_period: hasDateRange ? dayjs(data.to).toISOString() : undefined,
+        filter_type: filterType || undefined,
+        filter_value: filterValue || undefined,
+        period: exportType === 'holder-chart' && period ? period : undefined,
         recaptcha_response: recaptchaToken,
       }, undefined, multichainContext?.chain);
 

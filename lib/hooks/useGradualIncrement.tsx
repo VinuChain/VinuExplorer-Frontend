@@ -2,11 +2,19 @@ import React from 'react';
 
 const DURATION = 300;
 
-export default function useGradualIncrement(initialValue: number): [number, (inc: number) => void] {
+export default function useGradualIncrement(initialValue: number): [number, (inc: number) => void, () => void] {
   const [ num, setNum ] = React.useState(initialValue);
   const queue = React.useRef<number>(0);
   const timeoutId = React.useRef(0);
   const delay = React.useRef(0);
+
+  const reset = React.useCallback(() => {
+    queue.current = 0;
+    delay.current = 0;
+    window.clearTimeout(timeoutId.current);
+    timeoutId.current = 0;
+    setNum(0);
+  }, []);
 
   const incrementDelayed = React.useCallback(() => {
     if (queue.current === 0) {
@@ -48,5 +56,5 @@ export default function useGradualIncrement(initialValue: number): [number, (inc
     };
   }, []);
 
-  return [ num, increment ];
+  return [ num, increment, reset ];
 }

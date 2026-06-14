@@ -47,17 +47,39 @@ test.describe('socket', () => {
     },
   };
 
-  test('new item', async({ render, mockApiResponse, createSocket }) => {
+  // The global new-transaction socket event only carries a count, so on a new
+  // tx the list refetches its first page and the new transaction appears live,
+  // without a manual page reload (mirrors the live behavior of latest blocks).
+  test('new item', async({ render, mockApiResponse, page, createSocket }) => {
     await mockApiResponse('general:homepage_txs', [
+      txMock.base,
+      txMock.withContractCreation,
+      txMock.withTokenTransfer,
+    ], { times: 1 });
+
+    await render(<LatestTxs/>, { hooksConfig }, { withSocket: true });
+
+    // Connect the mock socket and wait for the component to join the channel
+    // before sending; the hook only joins once the initial fetch resolves.
+    const socket = await createSocket();
+    const channel = await socketServer.joinChannel(socket, 'transactions:new_transaction');
+
+    // LatestTxs renders both a mobile and a desktop copy of each row; scope to
+    // the visible (desktop, at the default viewport) one.
+    await expect(page.locator(`a[href*="/tx/${ txMock.base.hash }"]:visible`).first()).toBeVisible();
+
+    // A new-tx signal makes the list refetch its first page; serve a refreshed
+    // page that includes a brand-new transaction at the top.
+    const newTxHash = '0x0000000000000000000000000000000000000000000000000000000000001234';
+    await mockApiResponse('general:homepage_txs', [
+      { ...txMock.base, hash: newTxHash },
       txMock.base,
       txMock.withContractCreation,
       txMock.withTokenTransfer,
     ]);
 
-    const component = await render(<LatestTxs/>, { hooksConfig }, { withSocket: true });
-    const socket = await createSocket();
-    const channel = await socketServer.joinChannel(socket, 'transactions:new_transaction');
     socketServer.sendMessage(socket, channel, 'transaction', { transaction: 1 });
-    await expect(component).toHaveScreenshot();
+
+    await expect(page.locator(`a[href*="/tx/${ newTxHash }"]:visible`).first()).toBeVisible();
   });
 });

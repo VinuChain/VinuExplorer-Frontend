@@ -23,6 +23,15 @@ const TxsSocketNoticeTypeAll = ({ type, place, isLoading }: Props) => {
     return null;
   }
 
+  // The list now auto-refreshes on each new-tx socket signal (see
+  // useTxsSocketTypeAll), so the perpetual "scanning new transactions..." /
+  // "N more transactions have come in" notice is redundant and reads as if the
+  // page is stuck. Only surface the connection-error state; otherwise let the
+  // list update silently like the latest-blocks widget.
+  if (!showErrorAlert) {
+    return null;
+  }
+
   const url = (() => {
     if (type === 'txs_home' && multichainContext) {
       return route({ pathname: '/txs', query: { tab: 'txs_local', chain_id: multichainContext.chain.id } });

@@ -36,7 +36,12 @@ const LatestTxs = () => {
     const txsUrl = route({ pathname: `/txs`, query: zetachainFeature.isEnabled ? { tab: 'evm' } : undefined });
     return (
       <>
-        <SocketNewItemsNotice borderBottomRadius={ 0 } url={ txsUrl } num={ num } showErrorAlert={ showErrorAlert } isLoading={ isPlaceholderData }/>
+        { /* The list auto-refreshes on each new-tx socket signal, so only show
+            the notice when live updates are broken; otherwise it would sit on a
+            misleading perpetual "scanning new transactions..." message. */ }
+        { showErrorAlert && (
+          <SocketNewItemsNotice borderBottomRadius={ 0 } url={ txsUrl } num={ num } showErrorAlert={ showErrorAlert } isLoading={ isPlaceholderData }/>
+        ) }
         <Box mb={ 3 } display={{ base: 'block', lg: 'none' }} textStyle="sm">
           { data.slice(0, txsCount).map(((tx, index) => (
             <LatestTxsItemMobile

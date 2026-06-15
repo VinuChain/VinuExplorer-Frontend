@@ -21,7 +21,7 @@ const TxDetailsActionsInterpretation = ({ hash, isTxDataLoading }: Props) => {
     },
   });
 
-  const actions = txInterpretationQuery.data?.data.summaries;
+  const actions = txInterpretationQuery.data?.data?.summaries;
 
   if (!actions || actions.length < 2) {
     return null;

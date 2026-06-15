@@ -21,7 +21,7 @@ const UserOpDetailsActions = ({ hash, isUserOpDataLoading }: Props) => {
     },
   });
 
-  const actions = interpretationQuery.data?.data.summaries;
+  const actions = interpretationQuery.data?.data?.summaries;
 
   if (!actions || actions.length < 2) {
     return null;

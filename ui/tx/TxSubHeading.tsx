@@ -55,10 +55,10 @@ const TxSubHeading = ({ hash, hasTag, txQuery }: Props) => {
     (novesInterpretationQuery.isPlaceholderData || Boolean(novesInterpretationQuery.data?.classificationData.description));
 
   const hasInternalInterpretation = (hasInterpretationFeature && !isNovesInterpretation) &&
-  (txInterpretationQuery.isPlaceholderData || Boolean(txInterpretationQuery.data?.data.summaries.length));
+  (txInterpretationQuery.isPlaceholderData || Boolean(txInterpretationQuery.data?.data?.summaries?.length));
 
   const hasViewAllInterpretationsLink =
-    !txInterpretationQuery.isPlaceholderData && txInterpretationQuery.data?.data.summaries && txInterpretationQuery.data?.data.summaries.length > 1;
+    !txInterpretationQuery.isPlaceholderData && txInterpretationQuery.data?.data?.summaries && txInterpretationQuery.data?.data?.summaries.length > 1;
 
   const addressDataMap: Record<string, AddressParam> = {};
   [ txQuery.data?.from, txQuery.data?.to ]
@@ -85,7 +85,7 @@ const TxSubHeading = ({ hash, hasTag, txQuery }: Props) => {
       return (
         <Flex mr={{ base: 0, lg: 2 }} flexWrap="wrap" alignItems="center">
           <TxInterpretation
-            summary={ txInterpretationQuery.data?.data.summaries[0] }
+            summary={ txInterpretationQuery.data?.data?.summaries?.[0] }
             isLoading={ txInterpretationQuery.isPlaceholderData || txQuery.isPlaceholderData }
             addressDataMap={ addressDataMap }
             fontSize="lg"

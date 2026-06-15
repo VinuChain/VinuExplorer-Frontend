@@ -144,6 +144,20 @@ test.describe('blockscout provider', () => {
     const component = await render(<TxSubHeading hash={ hash } hasTag={ false } txQuery={ txPendingQuery }/>);
     await expect(component).toHaveScreenshot();
   });
+
+  // Regression: the blockscout interpretation endpoint can return a payload that
+  // lacks the expected `data.summaries` shape (e.g. `{ summary: {...} }`). The
+  // page must degrade gracefully, not crash on `data.summaries`.
+  test('renders when interpretation payload has no data.summaries', async({ render, mockApiResponse }) => {
+    await mockApiResponse(
+      'general:tx_interpretation',
+      { summary: { summary_template: '', summary_template_variables: {} } } as unknown as typeof txInterpretation,
+      { pathParams: { hash } },
+    );
+    const component = await render(<TxSubHeading hash={ hash } hasTag={ false } txQuery={ txQuery }/>);
+    await expect(component).toBeVisible();
+    await expect(component).not.toContainText(/something went wrong/i);
+  });
 });
 
 test.describe('noves provider', () => {

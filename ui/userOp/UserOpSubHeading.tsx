@@ -33,16 +33,16 @@ const UserOpSubHeading = ({ hash }: Props) => {
   });
 
   const hasInterpretation = hasInterpretationFeature &&
-    (txInterpretationQuery.isPlaceholderData || Boolean(txInterpretationQuery.data?.data.summaries.length));
+    (txInterpretationQuery.isPlaceholderData || Boolean(txInterpretationQuery.data?.data?.summaries?.length));
 
   const hasViewAllInterpretationsLink =
-      !txInterpretationQuery.isPlaceholderData && txInterpretationQuery.data?.data.summaries && txInterpretationQuery.data?.data.summaries.length > 1;
+      !txInterpretationQuery.isPlaceholderData && txInterpretationQuery.data?.data?.summaries && txInterpretationQuery.data?.data?.summaries.length > 1;
 
   if (hasInterpretation) {
     return (
       <Flex mr={{ base: 0, lg: 6 }} flexWrap="wrap" alignItems="center">
         <TxInterpretation
-          summary={ txInterpretationQuery.data?.data.summaries[0] }
+          summary={ txInterpretationQuery.data?.data?.summaries?.[0] }
           isLoading={ txInterpretationQuery.isPlaceholderData }
           fontSize="lg"
           mr={ hasViewAllInterpretationsLink ? 3 : 0 }

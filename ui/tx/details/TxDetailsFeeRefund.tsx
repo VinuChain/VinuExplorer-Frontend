@@ -5,6 +5,7 @@ import type { Transaction } from 'types/api/transaction';
 
 import * as DetailedInfo from 'ui/shared/DetailedInfo/DetailedInfo';
 import DetailedInfoNativeCoinValue from 'ui/shared/DetailedInfo/DetailedInfoNativeCoinValue';
+import TxFeeRefundBadge from 'ui/shared/tx/TxFeeRefundBadge';
 
 interface Props {
   isLoading: boolean;
@@ -23,6 +24,14 @@ const TxDetailsFeeRefund = ({ isLoading, data }: Props) => {
 
   return (
     <>
+      <DetailedInfo.ItemLabel
+        hint="Whether this transaction's fee was fully or partially covered by the sender's Payback quota"
+        isLoading={ isLoading }
+      >
+        Feeless status
+      </DetailedInfo.ItemLabel>
+      <TxFeeRefundBadge tx={ data } isLoading={ isLoading }/>
+
       <DetailedInfo.ItemLabel
         hint="Gas fee returned to the sender from Payback quota"
         isLoading={ isLoading }

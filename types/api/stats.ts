@@ -23,6 +23,8 @@ export type HomeStats = {
   celo?: {
     epoch_number: number;
   };
+  total_fee_refunded?: string | null;
+  feeless_tx_percentage?: number | null;
 };
 
 export type GasPrices = {

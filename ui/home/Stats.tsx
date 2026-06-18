@@ -213,6 +213,14 @@ const Stats = () => {
         href: { pathname: '/epochs/[number]' as const, query: { number: String(apiData.celo.epoch_number) } },
         isLoading,
       },
+      (apiData?.total_fee_refunded && apiData.feeless_tx_percentage != null) && {
+        id: 'feeless_txs' as const,
+        icon: 'gas' as const,
+        label: 'Feeless txs',
+        value: `${ apiData.feeless_tx_percentage.toFixed(1) }%`,
+        hint: `${ BigNumber(apiData.total_fee_refunded).div(WEI).dp(2).toFormat() } VC total refunded`,
+        isLoading,
+      },
     ]
       .filter(Boolean)
       .filter(isHomeStatsItemEnabled)

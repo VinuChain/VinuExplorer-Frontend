@@ -12,6 +12,7 @@ export const HOME_STATS_WIDGET_IDS = [
   'gas_tracker',
   'btc_locked',
   'current_epoch',
+  'feeless_txs',
 ] as const;
 export type HomeStatsWidgetId = typeof HOME_STATS_WIDGET_IDS[number];
 

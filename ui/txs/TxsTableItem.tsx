@@ -17,6 +17,7 @@ import ChainIcon from 'ui/shared/externalChains/ChainIcon';
 import TxStatus from 'ui/shared/statusTag/TxStatus';
 import TimeWithTooltip from 'ui/shared/time/TimeWithTooltip';
 import TxFee from 'ui/shared/tx/TxFee';
+import TxFeeRefundBadge from 'ui/shared/tx/TxFeeRefundBadge';
 import TxWatchListTags from 'ui/shared/tx/TxWatchListTags';
 import NativeCoinValue from 'ui/shared/value/NativeCoinValue';
 import TxAdditionalInfo from 'ui/txs/TxAdditionalInfo';
@@ -152,6 +153,7 @@ const TxsTableItem = ({
             layout="vertical"
             rowGap={ 3 }
           />
+          <TxFeeRefundBadge tx={ tx } isLoading={ isLoading } compact mt={ 1 }/>
         </TableCell>
       ) }
     </TableRow>

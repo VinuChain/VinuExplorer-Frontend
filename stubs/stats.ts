@@ -40,6 +40,8 @@ export const HOMEPAGE_STATS: HomeStats = {
   total_transactions: '193823272',
   transactions_today: '0',
   tvl: '1767425.102766552',
+  total_fee_refunded: '12500000000000000000000',
+  feeless_tx_percentage: 73.4,
 };
 
 const STATS_CHART_INFO: stats.LineChartInfo = {

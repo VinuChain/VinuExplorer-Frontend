@@ -8,6 +8,16 @@ import { test, expect, devices } from 'playwright/lib';
 
 import SearchBarMobile from './SearchBarMobile';
 
+const encodedDomainName = 'foo/bar.vinu';
+const encodedDomainHref = '/name-services/domains/foo%2Fbar.vinu';
+const domainWithEncodedName = {
+  ...searchMock.domain1,
+  ens_info: {
+    ...searchMock.domain1.ens_info,
+    name: encodedDomainName,
+  },
+};
+
 // Helper function to open search drawer and wait for input
 const openSearchDrawer = async(page: Page, isHeroBanner = false) => {
   if (isHeroBanner) {
@@ -195,6 +205,21 @@ test('search by domain name', async({ render, page, mockApiResponse, mockEnvs })
   await page.waitForResponse(apiUrl);
 
   await expect(page).toHaveScreenshot({ clip: { x: 0, y: 0, width: 1200, height: 600 } });
+});
+
+test('search by encoded domain name links to domain details', async({ render, page, mockApiResponse, mockEnvs }) => {
+  await mockEnvs(ENVS_MAP.nameService);
+  const apiUrl = await mockApiResponse('general:quick_search', [
+    domainWithEncodedName,
+  ], { queryParams: { q: '**' } });
+
+  await render(<SearchBarMobile/>);
+  await openSearchDrawer(page);
+  await getSearchInput(page).fill(encodedDomainName);
+  await page.waitForResponse(apiUrl);
+
+  await expect(page.locator(`a[href="${ encodedDomainHref }"]`).first()).toHaveAttribute('href', encodedDomainHref);
+  await expect(page.locator(`a[href="/address/${ domainWithEncodedName.address_hash }"]`)).toHaveCount(0);
 });
 
 test('search by user op hash', async({ render, page, mockApiResponse, mockEnvs }) => {

@@ -14,6 +14,7 @@ import { Heading } from 'toolkit/chakra/heading';
 import { Skeleton } from 'toolkit/chakra/skeleton';
 import GasTrackerChart from 'ui/gasTracker/GasTrackerChart';
 import GasTrackerFaq from 'ui/gasTracker/GasTrackerFaq';
+import GasTrackerFeelessStats from 'ui/gasTracker/GasTrackerFeelessStats';
 import GasTrackerNetworkUtilization from 'ui/gasTracker/GasTrackerNetworkUtilization';
 import GasTrackerPrices from 'ui/gasTracker/GasTrackerPrices';
 import { enrichGasStats } from 'ui/shared/gas/enrichGasData';
@@ -82,6 +83,9 @@ const GasTracker = () => {
   })();
 
   const faq = config.meta.seo.enhancedDataEnabled ? <GasTrackerFaq/> : null;
+  const heading = config.meta.seo.enhancedDataEnabled ?
+    `Track ${ config.chain.name } gas and Payback refunds` :
+    `Track ${ config.chain.name } gas fees`;
 
   return (
     <>
@@ -90,7 +94,12 @@ const GasTracker = () => {
         secondRow={ titleSecondRow }
         withTextAd
       />
-      <Heading level="2" mt={ 8 } mb={ 4 }>{ `Track ${ config.chain.name } gas fees` }</Heading>
+      <Heading level="2" mt={ 8 } mb={ 4 }>{ heading }</Heading>
+      <GasTrackerFeelessStats
+        totalFeeRefunded={ enrichedData?.total_fee_refunded }
+        feelessTxPercentage={ enrichedData?.feeless_tx_percentage }
+        isLoading={ isLoading }
+      />
       { snippets }
       { config.features.stats.isEnabled && (
         <Box mt={ 12 } _empty={{ display: 'none' }}>

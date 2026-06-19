@@ -7,6 +7,8 @@ import { test, expect } from 'playwright/lib';
 
 import SearchBarDesktop from './SearchBarDesktop';
 
+const domainHref = '/name-services/domains/vitalik.eth';
+
 test.beforeEach(async({ mockAssetResponse, mockEnvs, mockTextAd }) => {
   await mockTextAd();
   await mockAssetResponse(searchMock.token1.icon_url as string, './playwright/mocks/image_s.jpg');
@@ -158,6 +160,20 @@ test('search by domain name', async({ render, page, mockApiResponse, mockEnvs })
   await page.waitForResponse(apiUrl);
 
   await expect(page).toHaveScreenshot({ clip: { x: 0, y: 0, width: 1200, height: 300 } });
+});
+
+test('search by domain name links to domain details', async({ render, page, mockApiResponse, mockEnvs }) => {
+  await mockEnvs(ENVS_MAP.nameService);
+  const apiUrl = await mockApiResponse('general:quick_search', [
+    searchMock.domain1,
+  ], { queryParams: { q: searchMock.domain1.ens_info.name } });
+
+  await render(<SearchBarDesktop/>);
+  await page.getByPlaceholder(/search/i).fill(searchMock.domain1.ens_info.name);
+  await page.waitForResponse(apiUrl);
+
+  await expect(page.locator(`a[href="${ domainHref }"]`).first()).toHaveAttribute('href', domainHref);
+  await expect(page.locator(`a[href="/address/${ searchMock.domain1.address_hash }"]`)).toHaveCount(0);
 });
 
 test('search by user op hash', async({ render, page, mockApiResponse, mockEnvs }) => {

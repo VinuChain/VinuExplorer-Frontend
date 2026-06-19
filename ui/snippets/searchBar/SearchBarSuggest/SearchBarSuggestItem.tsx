@@ -7,6 +7,7 @@ import { route } from 'nextjs/routes';
 
 import multichainConfig from 'configs/multichain';
 import { isEvmAddress } from 'lib/address/isEvmAddress';
+import { encodeVnsName } from 'lib/vns/encodeVnsName';
 
 import SearchBarSuggestAddress from './SearchBarSuggestAddress';
 import SearchBarSuggestBlob from './SearchBarSuggestBlob';
@@ -71,7 +72,10 @@ const SearchBarSuggestItem = ({ data, isMobile, searchTerm, onClick, addressForm
         return route({ pathname: '/blobs/[hash]', query: { hash: data.blob_hash } });
       }
       case 'ens_domain': {
-        return route({ pathname: '/address/[hash]', query: { hash: data.address_hash } });
+        return route({
+          pathname: '/name-services/domains/[name]',
+          query: { name: encodeVnsName(data.ens_info.name) },
+        });
       }
       case 'cluster': {
         return route({ pathname: '/address/[hash]', query: { hash: data.address_hash } });

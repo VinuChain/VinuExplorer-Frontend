@@ -12,6 +12,7 @@ import dayjs from 'lib/date/dayjs';
 import highlightText from 'lib/highlightText';
 import * as mixpanel from 'lib/mixpanel/index';
 import { saveToRecentKeywords } from 'lib/recentSearchKeywords';
+import { encodeVnsName } from 'lib/vns/encodeVnsName';
 import { useColorMode } from 'toolkit/chakra/color-mode';
 import { Image } from 'toolkit/chakra/image';
 import { Link } from 'toolkit/chakra/link';
@@ -446,7 +447,7 @@ const SearchResultTableItem = ({ data, index, searchTerm, isLoading, addressForm
               <EnsEntity.Container>
                 <EnsEntity.Icon protocol={ data.ens_info.protocol }/>
                 <Link
-                  href={ route({ pathname: '/address/[hash]', query: { hash: data.address_hash } }) }
+                  href={ route({ pathname: '/name-services/domains/[name]', query: { name: encodeVnsName(data.ens_info.name) } }) }
                   fontWeight={ 700 }
                   wordBreak="break-all"
                   loading={ isLoading }

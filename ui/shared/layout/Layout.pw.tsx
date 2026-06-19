@@ -1,3 +1,5 @@
+/* eslint-disable playwright/no-skipped-test -- Existing flaky visual snapshots are intentionally parked. */
+
 import React from 'react';
 
 import { indexingStatus } from 'mocks/stats/index';

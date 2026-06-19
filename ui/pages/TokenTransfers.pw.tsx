@@ -1,3 +1,5 @@
+/* eslint-disable playwright/no-skipped-test -- Existing flaky visual snapshot is intentionally parked. */
+
 import React from 'react';
 
 import * as tokenInstanceMock from 'mocks/tokens/tokenInstance';

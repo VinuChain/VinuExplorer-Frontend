@@ -1,3 +1,5 @@
+/* eslint-disable playwright/no-skipped-test -- Existing flaky visual snapshot is intentionally parked. */
+
 import { Box } from '@chakra-ui/react';
 import React from 'react';
 

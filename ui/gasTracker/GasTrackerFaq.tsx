@@ -16,16 +16,26 @@ const FAQ_ITEMS = [
   {
     question: `How can I check ${ config.chain.name } gas fees?`,
     // eslint-disable-next-line max-len
-    answer: `You can easily check live ${ config.chain.name } gas fees on Blockscout by visiting our gas tracker. It displays current gas fees in ${ currencyUnits.gwei } for all ${ config.chain.name } transactions.`,
+    answer: `You can check live ${ config.chain.name } gas fees on VinuExplorer by visiting the gas tracker. It displays current raw gas prices in ${ currencyUnits.gwei } for ${ config.chain.name } transactions.`,
   },
   {
     question: `What is the average gas fee for ${ config.chain.name } transactions?`,
     // eslint-disable-next-line max-len
-    answer: `The average gas fee for ${ config.chain.name } transactions depends on network congestion and transaction complexity. Blockscout provides real-time gas fee estimations to help users make informed decisions.`,
+    answer: `The average gas fee for ${ config.chain.name } transactions depends on network congestion and transaction complexity. VinuExplorer provides real-time gas fee estimations to help users understand the raw network fee before any Payback refund.`,
   },
   {
-    question: 'How does Blockscout calculate gas fees?',
-    answer: 'Blockscout calculates gas fees based on the average price of gas fees spent for the last 200 blocks.',
+    question: 'How does VinuExplorer calculate gas fees?',
+    answer: 'VinuExplorer calculates gas fees based on the average price of gas fees spent for the last 200 blocks.',
+  },
+  {
+    question: 'How do Payback refunds affect transaction fees?',
+    // eslint-disable-next-line max-len
+    answer: 'Gross gas is still measured on-chain, and Payback quota can refund all or part of the transaction fee. When fee refund data is present, transaction pages show whether the transaction was Gas-Free or Quota-Subsidized, plus the refund amount and net transaction fee.',
+  },
+  {
+    question: 'Why are gas tracker prices still useful on VinuChain?',
+    // eslint-disable-next-line max-len
+    answer: 'Gas tracker prices show the raw network fee before Payback refunds. That baseline is still useful for understanding congestion, transaction complexity, and the difference between gross gas cost and net fee after refunds.',
   },
 ];
 

@@ -3,6 +3,7 @@ import { useRouter } from 'next/router';
 import React from 'react';
 
 import type { ItemProps } from './types';
+import { getFeaturePayload } from 'configs/app/features/types';
 
 import config from 'configs/app';
 import * as mixpanel from 'lib/mixpanel/index';
@@ -15,6 +16,7 @@ import IconSvg from 'ui/shared/IconSvg';
 import MetadataUpdateMenuItem from './items/MetadataUpdateMenuItem';
 import PrivateTagMenuItem from './items/PrivateTagMenuItem';
 import PublicTagMenuItem from './items/PublicTagMenuItem';
+import RevokeApprovalsMenuItem from './items/RevokeApprovalsMenuItem';
 import TokenInfoMenuItem from './items/TokenInfoMenuItem';
 
 interface Props {
@@ -27,9 +29,12 @@ const AccountActionsMenu = ({ isLoading, className, showUpdateMetadataItem }: Pr
   const router = useRouter();
 
   const hash = getQueryParamString(router.query.hash);
+  const isAddressPage = router.pathname === '/address/[hash]';
   const isTokenPage = router.pathname === '/token/[hash]';
   const isTokenInstancePage = router.pathname === '/token/[hash]/instance/[id]';
   const isTxPage = router.pathname === '/tx/[hash]';
+  const revokeConfig = getFeaturePayload(config.features.marketplace)?.essentialDapps?.revoke;
+  const isRevokeEnabledForCurrentChain = Boolean(config.chain.id && revokeConfig?.chains.includes(config.chain.id));
 
   const handleButtonClick = React.useCallback(() => {
     mixpanel.logEvent(mixpanel.EventTypes.PAGE_WIDGET, { Type: 'Address actions (more button)' });
@@ -43,6 +48,10 @@ const AccountActionsMenu = ({ isLoading, className, showUpdateMetadataItem }: Pr
     {
       render: (props: ItemProps) => <TokenInfoMenuItem { ...props }/>,
       enabled: config.features.account.isEnabled && isTokenPage && config.features.addressVerification.isEnabled,
+    },
+    {
+      render: (props: ItemProps) => <RevokeApprovalsMenuItem { ...props }/>,
+      enabled: isAddressPage && isRevokeEnabledForCurrentChain,
     },
     {
       render: (props: ItemProps) => <PrivateTagMenuItem { ...props } entityType={ isTxPage ? 'tx' : 'address' }/>,

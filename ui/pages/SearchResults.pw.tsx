@@ -8,6 +8,16 @@ import { test, expect } from 'playwright/lib';
 
 import SearchResults from './SearchResults';
 
+const encodedDomainName = 'foo/bar.vinu';
+const encodedDomainHref = '/name-services/domains/foo%2Fbar.vinu';
+const domainWithEncodedName = {
+  ...searchMock.domain1,
+  ens_info: {
+    ...searchMock.domain1.ens_info,
+    name: encodedDomainName,
+  },
+};
+
 // Might not be the best solution but simply scrolling to the top doesn't work
 async function resetScroll(page: Page) {
   await page.evaluate(() => window.scrollTo(0, 0));
@@ -203,6 +213,25 @@ test('search by domain name +@mobile', async({ render, mockApiResponse, mockEnvs
   await resetScroll(page);
 
   await expect(component.locator('main')).toHaveScreenshot();
+});
+
+test('search by encoded domain result links to domain details', async({ render, mockApiResponse, mockEnvs, page }) => {
+  const hooksConfig = {
+    router: {
+      query: { q: encodedDomainName },
+    },
+  };
+  const data = {
+    items: [ domainWithEncodedName ],
+    next_page_params: null,
+  };
+  await mockEnvs(ENVS_MAP.nameService);
+  await mockApiResponse('general:search', data, { queryParams: { q: encodedDomainName } });
+  const component = await render(<SearchResults/>, { hooksConfig });
+  await resetScroll(page);
+
+  await expect(component.locator(`a[href="${ encodedDomainHref }"]`).first()).toHaveAttribute('href', encodedDomainHref);
+  await expect(component.locator(`a[href="/address/${ domainWithEncodedName.address_hash }"]`)).toHaveCount(0);
 });
 
 test('search by user op hash +@mobile', async({ render, mockApiResponse, mockEnvs, page }) => {

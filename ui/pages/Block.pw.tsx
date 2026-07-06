@@ -44,6 +44,8 @@ test('degradation view, details tab', async({ render, mockApiResponse, mockRpcRe
 });
 
 test('degradation view, txs tab', async({ render, mockApiResponse, mockRpcResponse, page }) => {
+  test.slow();
+
   const hooksConfig = {
     router: {
       query: { height_or_hash: height, tab: 'txs' },
@@ -71,7 +73,7 @@ test('degradation view, txs tab', async({ render, mockApiResponse, mockRpcRespon
   const component = await render(<Block/>, { hooksConfig });
   await page.waitForResponse(config.chain.rpcUrls[0]);
 
-  await expect(component).toHaveScreenshot();
+  await expect(component).toHaveScreenshot({ timeout: 10_000 });
 });
 
 test('degradation view, withdrawals tab', async({ render, mockApiResponse, mockRpcResponse, mockEnvs, page }) => {

@@ -18,10 +18,33 @@
 > | Networks | mainnet chain ID **207** · RPC `vinuchain-rpc.com` · explorer `vinuexplorer.org` |
 > | | testnet chain ID **206** · RPC `vinufoundation-rpc.com` · explorer `testnet.vinuexplorer.org` |
 > | Image | `ghcr.io/vinuchain/vinuexplorer-frontend:{latest,<short-sha>}` |
-> | Deploy | push to `main` → build image → trigger `VinuChain/vinuexplorer-backend` `deploy.yml` |
-> | Rollback | `gh workflow run deploy.yml --repo VinuChain/vinuexplorer-backend --ref master -f frontend_image_tag=<old-sha>` |
+> | Deploy | push to `main` → build image → trigger `VinuChain/VinuExplorer-Backend` `deploy.yml` |
+> | Rollback | `gh workflow run deploy.yml --repo VinuChain/VinuExplorer-Backend --ref master -f frontend_image_tag=<old-sha>` |
 
-The remainder of this README is upstream Blockscout documentation.
+## VinuExplorer fork quick start
+
+Use the VinuChain image when running this fork from a container:
+
+```sh
+docker run -p 3000:3000 --env-file <path-to-your-env-file> ghcr.io/vinuchain/vinuexplorer-frontend:latest
+```
+
+Production runtime environment files live in
+[`VinuChain/VinuExplorer-Backend`](https://github.com/VinuChain/VinuExplorer-Backend);
+see [`docs/FORK.md`](./docs/FORK.md#5-where-runtime-config-lives) before changing
+chain IDs, API hosts, feature flags, or deployment inputs.
+
+For lightweight local verification, use the pinned Yarn 1 package manager
+(`yarn@1.22.22`) and run the focused script for the change:
+
+```sh
+yarn lint:eslint
+yarn lint:tsc
+yarn test:vitest
+```
+
+The remainder of this README is upstream Blockscout documentation unless a
+VinuExplorer fork note says otherwise.
 
 ---
 
@@ -34,6 +57,11 @@ The remainder of this README is upstream Blockscout documentation.
 </p>
 
 ## Running and configuring the app
+
+> **VinuExplorer fork note.** The upstream Blockscout image below is for the
+> original `blockscout/frontend` package. For this repository, use
+> `ghcr.io/vinuchain/vinuexplorer-frontend:{latest,<short-sha>}` and the runtime
+> env source described in [`docs/FORK.md`](./docs/FORK.md).
 
 App is distributed as a docker image. Here you can find information about the [package](https://github.com/blockscout/frontend/pkgs/container/frontend) and its recent [releases](https://github.com/blockscout/frontend/releases).
 

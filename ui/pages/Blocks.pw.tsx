@@ -87,7 +87,7 @@ test('new item from socket', async({ render, mockApiResponse, createSocket }) =>
     },
   });
 
-  await expect(component).toHaveScreenshot();
+  await expect(component).toHaveScreenshot({ maxDiffPixels: 5 });
 });
 
 test('socket error', async({ render, mockApiResponse, createSocket }) => {

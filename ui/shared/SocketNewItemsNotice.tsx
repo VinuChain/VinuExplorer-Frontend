@@ -8,6 +8,7 @@ import { Skeleton } from 'toolkit/chakra/skeleton';
 import { TableCell, TableRow } from 'toolkit/chakra/table';
 
 const flashblocksFeature = config.features.flashblocks;
+const LinkButton = chakra('button');
 
 interface InjectedProps {
   content: React.ReactNode;
@@ -28,6 +29,42 @@ const SocketNewItemsNotice = chakra(({ children, className, url, num, showErrorA
   const handleLinkClick = React.useCallback(() => {
     onLinkClick ? onLinkClick() : window.location.reload();
   }, [ onLinkClick ]);
+
+  const renderAction = React.useCallback((content: React.ReactNode) => {
+    if (url) {
+      return <Link href={ url }>{ content }</Link>;
+    }
+
+    return (
+      <LinkButton
+        type="button"
+        appearance="none"
+        bg="transparent"
+        borderWidth={ 0 }
+        color="link.primary"
+        cursor="pointer"
+        display="inline"
+        fontFamily="inherit"
+        fontSize="inherit"
+        fontWeight="inherit"
+        lineHeight="inherit"
+        m={ 0 }
+        p={ 0 }
+        textAlign="inherit"
+        verticalAlign="baseline"
+        _hover={{ color: 'link.primary.hover', textDecoration: 'none' }}
+        _focusVisible={{
+          outlineColor: 'focus',
+          outlineOffset: '2px',
+          outlineStyle: 'solid',
+          outlineWidth: '2px',
+        }}
+        onClick={ handleLinkClick }
+      >
+        { content }
+      </LinkButton>
+    );
+  }, [ handleLinkClick, url ]);
 
   const alertContent = (() => {
     if (showErrorAlert) {
@@ -65,14 +102,12 @@ const SocketNewItemsNotice = chakra(({ children, className, url, num, showErrorA
     }
 
     if (type === 'cross_chain_transaction') {
-      return (
-        <Link href={ url } onClick={ !url ? handleLinkClick : undefined }>More { name }s available</Link>
-      );
+      return renderAction(<>More { name }s available</>);
     }
 
     return (
       <>
-        <Link href={ url } onClick={ !url ? handleLinkClick : undefined }>{ num.toLocaleString() } more { name }{ num > 1 ? 's' : '' }</Link>
+        { renderAction(<>{ num.toLocaleString() } more { name }{ num > 1 ? 's' : '' }</>) }
         <Text whiteSpace="pre"> ha{ num > 1 ? 've' : 's' } come in</Text>
       </>
     );

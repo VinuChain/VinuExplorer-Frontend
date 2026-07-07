@@ -12,6 +12,7 @@ import dayjs from 'lib/date/dayjs';
 import highlightText from 'lib/highlightText';
 import * as mixpanel from 'lib/mixpanel/index';
 import { saveToRecentKeywords } from 'lib/recentSearchKeywords';
+import getSearchResultTxHash from 'lib/search/getSearchResultTxHash';
 import { encodeVnsName } from 'lib/vns/encodeVnsName';
 import { useColorMode } from 'toolkit/chakra/color-mode';
 import { Image } from 'toolkit/chakra/image';
@@ -202,17 +203,19 @@ const SearchResultListItem = ({ data, index, searchTerm, isLoading, addressForma
       }
 
       case 'transaction': {
+        const txHash = getSearchResultTxHash(data);
+
         return (
           <TxEntity.Container>
             <TxEntity.Icon/>
             <TxEntity.Link
               isLoading={ isLoading }
-              hash={ data.transaction_hash }
+              hash={ txHash }
               onClick={ handleLinkClick }
             >
               <TxEntity.Content
                 asProp="mark"
-                hash={ data.transaction_hash }
+                hash={ txHash }
                 textStyle="sm"
                 fontWeight={ 700 }
               />

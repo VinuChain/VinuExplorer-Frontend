@@ -161,6 +161,30 @@ test('search by tx hash +@mobile', async({ render, mockApiResponse, page }) => {
   await expect(component.locator('main')).toHaveScreenshot();
 });
 
+test('search by tx_hash payload links to transaction page', async({ render, mockApiResponse, page }) => {
+  const txHash = searchMock.tx1.transaction_hash;
+  const hooksConfig = {
+    router: {
+      query: { q: txHash },
+    },
+  };
+  const data = {
+    items: [ {
+      type: 'transaction' as const,
+      tx_hash: txHash,
+      timestamp: searchMock.tx1.timestamp,
+      url: searchMock.tx1.url,
+    } ],
+    next_page_params: null,
+  };
+  await mockApiResponse('general:search', data, { queryParams: { q: txHash } });
+  const component = await render(<SearchResults/>, { hooksConfig });
+  await resetScroll(page);
+
+  await expect(component.locator(`a[href="/tx/${ txHash }"]`).first()).toHaveAttribute('href', `/tx/${ txHash }`);
+  await expect(component.locator('a[href="/tx/undefined"]')).toHaveCount(0);
+});
+
 test('search by tac operation hash +@mobile', async({ render, mockApiResponse, mockEnvs, page }) => {
   await mockEnvs(ENVS_MAP.tac);
   const hooksConfig = {

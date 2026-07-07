@@ -7,6 +7,7 @@ import { route } from 'nextjs/routes';
 
 import multichainConfig from 'configs/multichain';
 import { isEvmAddress } from 'lib/address/isEvmAddress';
+import getSearchResultTxHash from 'lib/search/getSearchResultTxHash';
 import { encodeVnsName } from 'lib/vns/encodeVnsName';
 
 import SearchBarSuggestAddress from './SearchBarSuggestAddress';
@@ -53,7 +54,7 @@ const SearchBarSuggestItem = ({ data, isMobile, searchTerm, onClick, addressForm
         return route({ pathname: '/address/[hash]', query: { hash: data.address_hash } });
       }
       case 'transaction': {
-        return route({ pathname: '/tx/[hash]', query: { hash: data.transaction_hash } }, multichainContext);
+        return route({ pathname: '/tx/[hash]', query: { hash: getSearchResultTxHash(data) } }, multichainContext);
       }
       case 'block': {
         const isFutureBlock = 'timestamp' in data && data.timestamp === undefined;

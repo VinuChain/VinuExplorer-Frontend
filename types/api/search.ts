@@ -131,12 +131,15 @@ export interface SearchResultBlock {
   url?: string; // not used by the frontend, we build the url ourselves
 }
 
-export interface SearchResultTx {
+type SearchResultTxHash =
+  { transaction_hash: string; tx_hash?: string } |
+  { transaction_hash?: string; tx_hash: string };
+
+export type SearchResultTx = SearchResultTxHash & {
   type: 'transaction';
-  transaction_hash: string;
   timestamp: string;
   url?: string; // not used by the frontend, we build the url ourselves
-}
+};
 
 export interface SearchResultBlob {
   type: 'blob';

@@ -10,6 +10,7 @@ import config from 'configs/app';
 import { useSettingsContext } from 'lib/contexts/settings';
 import getQueryParamString from 'lib/router/getQueryParamString';
 import removeQueryParam from 'lib/router/removeQueryParam';
+import getSearchResultTxHash from 'lib/search/getSearchResultTxHash';
 import { Skeleton } from 'toolkit/chakra/skeleton';
 import { TableBody, TableColumnHeaderSortable, TableHeaderSticky, TableRoot, TableRow } from 'toolkit/chakra/table';
 import { ContentLoader } from 'toolkit/components/loaders/ContentLoader';
@@ -91,7 +92,7 @@ function getSearchResultTextValue(item: SearchResultItem | SearchResultAppItem, 
       return getTimestampValue(item.timestamp);
     }
     case 'transaction': {
-      if (field === 'result' || field === 'details') return item.transaction_hash;
+      if (field === 'result' || field === 'details') return getSearchResultTxHash(item);
       return getTimestampValue(item.timestamp);
     }
     case 'zetaChainCCTX': {

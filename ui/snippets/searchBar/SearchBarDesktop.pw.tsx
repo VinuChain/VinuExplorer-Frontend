@@ -126,6 +126,19 @@ test('search by tx hash', async({ render, page, mockApiResponse }) => {
   await expect(page).toHaveScreenshot({ clip: { x: 0, y: 0, width: 1200, height: 300 } });
 });
 
+test('search by tx hash from tx_hash payload links to transaction page', async({ render, page, mockApiResponse }) => {
+  const txHash = searchMock.tx1.transaction_hash;
+  const apiUrl = await mockApiResponse('general:quick_search', [
+    searchMock.txHashOnly,
+  ], { queryParams: { q: txHash } });
+  await render(<SearchBarDesktop/>);
+  await page.getByPlaceholder(/search/i).fill(txHash);
+  await page.waitForResponse(apiUrl);
+
+  await expect(page.locator(`a[href="/tx/${ txHash }"]`).first()).toHaveAttribute('href', `/tx/${ txHash }`);
+  await expect(page.locator('a[href="/tx/undefined"]')).toHaveCount(0);
+});
+
 test('search by tac operation hash', async({ render, page, mockApiResponse }) => {
   const apiUrl = await mockApiResponse('general:quick_search', [
     searchMock.tacOperation1,

@@ -126,6 +126,13 @@ export const tx1 = {
   url: '/tx/0x349d4025d03c6faec117ee10ac0bce7c7a805dd2cbff7a9f101304d9a8a525dd',
 } satisfies SearchResultTx;
 
+export const txHashOnly = {
+  tx_hash: tx1.transaction_hash,
+  type: 'transaction' as const,
+  timestamp: tx1.timestamp,
+  url: tx1.url,
+} satisfies SearchResultTx;
+
 export const userOp1: SearchResultUserOp = {
   timestamp: '2024-01-11T14:15:48.000000Z',
   type: 'user_operation',

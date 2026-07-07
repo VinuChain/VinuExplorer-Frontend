@@ -170,14 +170,8 @@ test('search by tx hash', async({ render, page, mockApiResponse }) => {
 
 test('search by tx hash from tx_hash payload links to transaction page', async({ render, page, mockApiResponse }) => {
   const txHash = searchMock.tx1.transaction_hash;
-  const txResult = {
-    type: 'transaction' as const,
-    tx_hash: txHash,
-    timestamp: searchMock.tx1.timestamp,
-    url: searchMock.tx1.url,
-  };
   const apiUrl = await mockApiResponse('general:quick_search', [
-    txResult,
+    searchMock.txHashOnly,
   ], { queryParams: { q: txHash } });
   await render(<SearchBarMobile/>);
   await openSearchDrawer(page);

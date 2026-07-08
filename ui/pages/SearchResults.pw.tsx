@@ -169,12 +169,7 @@ test('search by tx_hash payload links to transaction page', async({ render, mock
     },
   };
   const data = {
-    items: [ {
-      type: 'transaction' as const,
-      tx_hash: txHash,
-      timestamp: searchMock.tx1.timestamp,
-      url: searchMock.tx1.url,
-    } ],
+    items: [ searchMock.txHashOnly ],
     next_page_params: null,
   };
   await mockApiResponse('general:search', data, { queryParams: { q: txHash } });

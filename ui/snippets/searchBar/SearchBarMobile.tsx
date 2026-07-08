@@ -1,4 +1,4 @@
-import { Box } from '@chakra-ui/react';
+import { Box, chakra } from '@chakra-ui/react';
 import { useRouter } from 'next/router';
 import type { FormEvent } from 'react';
 import React from 'react';
@@ -97,7 +97,8 @@ const SearchBarMobile = ({ isHeroBanner, onGoToSearchResults }: Props) => {
           isHeroBanner={ isHeroBanner }
           readOnly={ true }
         />
-        <Box
+        <chakra.button
+          type="button"
           onClick={ handleOverlayClick }
           aria-label="Search"
           cursor="pointer"
@@ -107,6 +108,15 @@ const SearchBarMobile = ({ isHeroBanner, onGoToSearchResults }: Props) => {
           left={ 0 }
           right={ 0 }
           bottom={ 0 }
+          p={ 0 }
+          border={ 0 }
+          borderRadius="base"
+          bg="transparent"
+          _focusVisible={{
+            outline: '2px solid',
+            outlineColor: 'input.border.focus',
+            outlineOffset: '2px',
+          }}
         />
       </Box>
     );

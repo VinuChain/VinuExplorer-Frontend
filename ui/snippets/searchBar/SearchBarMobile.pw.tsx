@@ -92,6 +92,21 @@ test('search by name homepage +@dark-mode', async({ render, page, mockApiRespons
   await expect(page).toHaveScreenshot({ clip: { x: 0, y: 0, width: 1200, height: 700 } });
 });
 
+for (const key of [ 'Enter', 'Space' ]) {
+  test(`hero search trigger opens drawer with ${ key }`, async({ render, page }) => {
+    await render(<SearchBarMobile isHeroBanner/>);
+
+    const heroSearchTrigger = page.getByRole('button', { name: 'Search' }).first();
+    await expect(heroSearchTrigger).toBeVisible();
+
+    await page.keyboard.press('Tab');
+    await expect(heroSearchTrigger).toBeFocused();
+
+    await page.keyboard.press(key);
+    await page.getByPlaceholder(/search/i).last().waitFor({ state: 'visible' });
+  });
+}
+
 test('search by tag', async({ render, page, mockApiResponse }) => {
   const apiUrl = await mockApiResponse('general:quick_search', [
     searchMock.label1,

@@ -463,11 +463,11 @@ This feature is **enabled by default**. To switch it off pass `NEXT_PUBLIC_ADVAN
 
 ### Banner ads
 
-Ads are enabled by default on all self-hosted instances. If you would like to disable ads, you can do so using the [Autoscout hosted service](https://docs.blockscout.com/using-blockscout/autoscout).
+Ads are disabled unless an ad provider is explicitly configured. Hosted instances can manage ad settings using the [Autoscout hosted service](https://docs.blockscout.com/using-blockscout/autoscout).
 
 | Variable | Type| Description | Compulsoriness  | Default value | Example value | Version |
 | --- | --- | --- | --- | --- | --- | --- |
-| NEXT_PUBLIC_AD_BANNER_PROVIDER | `slise` \| `adbutler` \| `coinzilla` \| `none` | Ads provider  | - | `slise` | `coinzilla` | v1.0.x+ |
+| NEXT_PUBLIC_AD_BANNER_PROVIDER | `slise` \| `adbutler` \| `coinzilla` \| `none` | Ads provider. Omit or set to `none` to keep banner ads disabled. | - | `none` | `coinzilla` | v1.0.x+ |
 | NEXT_PUBLIC_AD_BANNER_ADDITIONAL_PROVIDER | `adbutler` | Additional ads provider to mix with the main one | - | - | `adbutler` | v1.28.0+ |
 | NEXT_PUBLIC_AD_ADBUTLER_CONFIG_DESKTOP | `{ id: string; width: string; height: string }` | Placement config for desktop Adbutler banner | - | - | `{'id':'123456','width':'728','height':'90'}` | v1.3.0+ |
 | NEXT_PUBLIC_AD_ADBUTLER_CONFIG_MOBILE | `{ id: string; width: number; height: number }` | Placement config for mobile Adbutler banner | - | - | `{'id':'654321','width':'300','height':'100'}` | v1.3.0+ |
@@ -477,11 +477,11 @@ Ads are enabled by default on all self-hosted instances. If you would like to di
 
 ### Text ads
 
-Ads are enabled by default on all self-hosted instances. If you would like to disable ads, you can do so using the [Autoscout hosted service](https://docs.blockscout.com/using-blockscout/autoscout).
+Text ads are disabled unless an ad provider is explicitly configured. Hosted instances can manage ad settings using the [Autoscout hosted service](https://docs.blockscout.com/using-blockscout/autoscout).
 
 | Variable | Type| Description | Compulsoriness  | Default value | Example value | Version |
 | --- | --- | --- | --- | --- | --- | --- |
-| NEXT_PUBLIC_AD_TEXT_PROVIDER | `coinzilla` \| `none` | Ads provider | - | `coinzilla` | `none` | v1.0.x+ |
+| NEXT_PUBLIC_AD_TEXT_PROVIDER | `coinzilla` \| `none` | Ads provider. Omit or set to `none` to keep text ads disabled. | - | `none` | `coinzilla` | v1.0.x+ |
 
 &nbsp;
 
@@ -547,7 +547,7 @@ Ads are enabled by default on all self-hosted instances. If you would like to di
 
 | Variable | Type| Description | Compulsoriness  | Default value | Example value | Version |
 | --- | --- | --- | --- | --- | --- | --- |
-| NEXT_PUBLIC_GOOGLE_ANALYTICS_PROPERTY_ID | `string` | Property ID for [Google Analytics](https://analytics.google.com/) service | true | - | `UA-XXXXXX-X` | v1.0.x+ |
+| NEXT_PUBLIC_GOOGLE_ANALYTICS_PROPERTY_ID | `string` | Property ID for [Google Analytics](https://analytics.google.com/) service. If omitted, Google Analytics is disabled. | - | - | `UA-XXXXXX-X` | v1.0.x+ |
 
 &nbsp;
 
@@ -564,7 +564,7 @@ Ads are enabled by default on all self-hosted instances. If you would like to di
 
 | Variable | Type| Description | Compulsoriness  | Default value | Example value | Version |
 | --- | --- | --- | --- | --- | --- | --- |
-| NEXT_PUBLIC_GROWTH_BOOK_CLIENT_KEY | `string` | Client SDK key for [GrowthBook](https://www.growthbook.io/) service | true | - | `<your-secret>` | v1.22.0+ |
+| NEXT_PUBLIC_GROWTH_BOOK_CLIENT_KEY | `string` | Client SDK key for [GrowthBook](https://www.growthbook.io/) service. If omitted, GrowthBook is disabled. | - | - | `<your-secret>` | v1.22.0+ |
 
 &nbsp;
 
@@ -581,10 +581,10 @@ Ads are enabled by default on all self-hosted instances. If you would like to di
 
 | Variable | Type| Description | Compulsoriness  | Default value | Example value | Version |
 | --- | --- | --- | --- | --- | --- | --- |
-| NEXT_PUBLIC_MARKETPLACE_ENABLED | `boolean` | `true` means that the marketplace page will be enabled | Required | - | `true` | v1.24.1+ |
-| NEXT_PUBLIC_MARKETPLACE_CONFIG_URL | `string` | URL of configuration file (`.json` format only) which contains list of apps that will be shown on the marketplace page. See [below](#marketplace-app-configuration-properties) list of available properties for an app. Can be replaced with NEXT_PUBLIC_ADMIN_SERVICE_API_HOST | Required | - | `https://example.com/marketplace_config.json` | v1.0.x+ |
+| NEXT_PUBLIC_MARKETPLACE_ENABLED | `boolean` | `true` means that the marketplace page will be enabled. If omitted, marketplace is disabled. | - | `false` | `true` | v1.24.1+ |
+| NEXT_PUBLIC_MARKETPLACE_CONFIG_URL | `string` | URL of configuration file (`.json` format only) which contains list of apps that will be shown on the marketplace page. See [below](#marketplace-app-configuration-properties) list of available properties for an app. Can be replaced with NEXT_PUBLIC_ADMIN_SERVICE_API_HOST when marketplace is enabled. | Required when marketplace is enabled and NEXT_PUBLIC_ADMIN_SERVICE_API_HOST is not set | - | `https://example.com/marketplace_config.json` | v1.0.x+ |
 | NEXT_PUBLIC_ADMIN_SERVICE_API_HOST | `string` | Admin Service API endpoint url. Can be used instead of NEXT_PUBLIC_MARKETPLACE_CONFIG_URL | - | - | `https://admin-rs.services.blockscout.com` | v1.1.0+ |
-| NEXT_PUBLIC_MARKETPLACE_SUBMIT_FORM | `string` | Link to form where authors can submit their dapps to the marketplace | Required | - | `https://airtable.com/shrqUAcjgGJ4jU88C` | v1.0.x+ |
+| NEXT_PUBLIC_MARKETPLACE_SUBMIT_FORM | `string` | Link to form where authors can submit their dapps to the marketplace | Required when marketplace is enabled | - | `https://airtable.com/shrqUAcjgGJ4jU88C` | v1.0.x+ |
 | NEXT_PUBLIC_MARKETPLACE_SUGGEST_IDEAS_FORM | `string` | Link to form where users can suggest ideas for the marketplace | - | - | `https://airtable.com/appiy5yijZpMMSKjT/pag3t82DUCyhGRZZO/form` | v1.24.0+ |
 | NEXT_PUBLIC_NETWORK_RPC_URL | `string` | See in [Blockchain parameters](#blockchain-parameters) section | Required | - | `https://core.poa.network` | v1.0.x+ |
 | NEXT_PUBLIC_MARKETPLACE_CATEGORIES_URL | `string` | URL of configuration file (`.json` format only) which contains the list of categories to be displayed on the marketplace page in the specified order. If no URL is provided, then the list of categories will be compiled based on the `categories` fields from the marketplace (apps) configuration file | - | - | `https://example.com/marketplace_categories.json` | v1.23.0+ |

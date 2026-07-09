@@ -10,6 +10,11 @@ const TARGET_FILE = path.resolve(ROOT_DIR, './playwright/affected-tests.txt');
 
 const NON_EXISTENT_DEPS = [];
 
+const DETECTIVE_CONFIG = {
+  ts: { skipTypeImports: true },
+  tsx: { skipTypeImports: true },
+};
+
 const DIRECTORIES_WITH_TESTS = [
   path.resolve(ROOT_DIR, './ui'),
 ];
@@ -38,6 +43,7 @@ function getFileDeps(filename, changedNpmModules) {
       return false;
     },
     tsConfig: path.resolve(ROOT_DIR, './tsconfig.json'),
+    detective: DETECTIVE_CONFIG,
     nonExistent: NON_EXISTENT_DEPS,
     visited: VISITED,
   });

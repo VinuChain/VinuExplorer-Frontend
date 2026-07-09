@@ -31,6 +31,7 @@ export default function generate<Pathname extends Route['pathname']>(route: Rout
   const description = compileValue(templates.description.make(route.pathname, Boolean(apiData)), params);
 
   const pageOgType = getPageOgType(route.pathname);
+  const shouldUseDefaultOg = pageOgType === 'Homepage' || pageOgType === 'Root page';
   const jsonLd = generateProductSchema(route, apiData);
   const siteJsonLd = generateSiteSchema(route.pathname);
 
@@ -39,8 +40,8 @@ export default function generate<Pathname extends Route['pathname']>(route: Rout
     description,
     opengraph: {
       title: title,
-      description: pageOgType !== 'Regular page' ? config.meta.og.description : '',
-      imageUrl: pageOgType !== 'Regular page' ? config.meta.og.imageUrl : '',
+      description: shouldUseDefaultOg ? config.meta.og.description : '',
+      imageUrl: shouldUseDefaultOg ? config.meta.og.imageUrl : '',
     },
     canonical: getCanonicalUrl(route.pathname),
     jsonLd,

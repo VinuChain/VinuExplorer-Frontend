@@ -463,15 +463,15 @@ This feature is **enabled by default**. To switch it off pass `NEXT_PUBLIC_ADVAN
 
 ### Banner ads
 
-Ads are disabled unless an ad provider is explicitly configured. Hosted instances can manage ad settings using the [Autoscout hosted service](https://docs.blockscout.com/using-blockscout/autoscout).
+Ads are disabled unless an ad provider, Specify, or an additional AdButler banner with valid placement configs is explicitly configured. An explicit `NEXT_PUBLIC_AD_BANNER_PROVIDER=none` always disables banner ads. Hosted instances can manage ad settings using the [Autoscout hosted service](https://docs.blockscout.com/using-blockscout/autoscout).
 
 | Variable | Type| Description | Compulsoriness  | Default value | Example value | Version |
 | --- | --- | --- | --- | --- | --- | --- |
-| NEXT_PUBLIC_AD_BANNER_PROVIDER | `slise` \| `adbutler` \| `coinzilla` \| `none` | Ads provider. Omit or set to `none` to keep banner ads disabled. | - | `none` | `coinzilla` | v1.0.x+ |
-| NEXT_PUBLIC_AD_BANNER_ADDITIONAL_PROVIDER | `adbutler` | Additional ads provider to mix with the main one | - | - | `adbutler` | v1.28.0+ |
+| NEXT_PUBLIC_AD_BANNER_PROVIDER | `slise` \| `adbutler` \| `coinzilla` \| `none` | Ads provider. Omit it to keep banner ads disabled unless Specify or an additional AdButler banner with valid placement configs is explicitly enabled; those cases use Slise as the main fallback. Set `none` to disable banners explicitly. | - | `none` | `coinzilla` | v1.0.x+ |
+| NEXT_PUBLIC_AD_BANNER_ADDITIONAL_PROVIDER | `adbutler` | Additional ads provider to mix with the main one; without a primary provider value and with valid placement configs, uses the explicit Slise fallback | - | - | `adbutler` | v1.28.0+ |
 | NEXT_PUBLIC_AD_ADBUTLER_CONFIG_DESKTOP | `{ id: string; width: string; height: string }` | Placement config for desktop Adbutler banner | - | - | `{'id':'123456','width':'728','height':'90'}` | v1.3.0+ |
 | NEXT_PUBLIC_AD_ADBUTLER_CONFIG_MOBILE | `{ id: string; width: number; height: number }` | Placement config for mobile Adbutler banner | - | - | `{'id':'654321','width':'300','height':'100'}` | v1.3.0+ |
-| NEXT_PUBLIC_AD_BANNER_ENABLE_SPECIFY | `boolean` | Enables Specify ads in addition to the main ad banner provider | - | - | `true` | v2.4.0+ |
+| NEXT_PUBLIC_AD_BANNER_ENABLE_SPECIFY | `boolean` | Enables Specify ads in addition to the main ad banner provider; without a primary provider value, uses the explicit Slise fallback | - | - | `true` | v2.4.0+ |
 
 &nbsp;
 

@@ -124,6 +124,75 @@ describe('VinuExplorer monetization feature defaults', () => {
     });
   });
 
+  it('keeps explicit Specify and secondary AdButler banner contracts enabled', async() => {
+    await expect(loadAdsBanner({ NEXT_PUBLIC_AD_BANNER_ENABLE_SPECIFY: 'true' })).resolves.toMatchObject({
+      isEnabled: true,
+      provider: 'slise',
+      isSpecifyEnabled: true,
+    });
+
+    const desktopConfig = JSON.stringify({ id: 'desktop-placement', width: '728', height: '90' });
+    const mobileConfig = JSON.stringify({ id: 'mobile-placement', width: '300', height: '100' });
+
+    await expect(loadAdsBanner({
+      NEXT_PUBLIC_AD_BANNER_ADDITIONAL_PROVIDER: 'adbutler',
+      NEXT_PUBLIC_AD_ADBUTLER_CONFIG_DESKTOP: desktopConfig,
+      NEXT_PUBLIC_AD_ADBUTLER_CONFIG_MOBILE: mobileConfig,
+    })).resolves.toMatchObject({
+      isEnabled: true,
+      provider: 'slise',
+      additionalProvider: 'adbutler',
+      adButler: {
+        config: {
+          desktop: JSON.parse(desktopConfig),
+          mobile: JSON.parse(mobileConfig),
+        },
+      },
+      isSpecifyEnabled: false,
+    });
+
+    await expect(loadAdsBanner({
+      NEXT_PUBLIC_AD_BANNER_PROVIDER: 'none',
+      NEXT_PUBLIC_AD_BANNER_ENABLE_SPECIFY: 'true',
+    })).resolves.toEqual({
+      title: 'Banner ads',
+      isEnabled: false,
+    });
+
+    await expect(loadAdsBanner({ NEXT_PUBLIC_AD_BANNER_ADDITIONAL_PROVIDER: 'adbutler' })).resolves.toEqual({
+      title: 'Banner ads',
+      isEnabled: false,
+    });
+
+    await expect(loadAdsBanner({
+      NEXT_PUBLIC_AD_BANNER_ADDITIONAL_PROVIDER: 'adbutler',
+      NEXT_PUBLIC_AD_ADBUTLER_CONFIG_DESKTOP: 'not-json',
+      NEXT_PUBLIC_AD_ADBUTLER_CONFIG_MOBILE: mobileConfig,
+    })).resolves.toEqual({
+      title: 'Banner ads',
+      isEnabled: false,
+    });
+
+    await expect(loadAdsBanner({
+      NEXT_PUBLIC_AD_BANNER_ADDITIONAL_PROVIDER: 'adbutler',
+      NEXT_PUBLIC_AD_ADBUTLER_CONFIG_DESKTOP: '{}',
+      NEXT_PUBLIC_AD_ADBUTLER_CONFIG_MOBILE: '{}',
+    })).resolves.toEqual({
+      title: 'Banner ads',
+      isEnabled: false,
+    });
+
+    await expect(loadAdsBanner({
+      NEXT_PUBLIC_AD_BANNER_PROVIDER: 'slise',
+      NEXT_PUBLIC_AD_BANNER_ADDITIONAL_PROVIDER: 'adbutler',
+    })).resolves.toEqual({
+      title: 'Banner ads',
+      isEnabled: true,
+      provider: 'slise',
+      isSpecifyEnabled: false,
+    });
+  });
+
   it('keeps marketplace disabled unless the enable flag and required sources are explicit', async() => {
     const marketplaceSources = {
       NEXT_PUBLIC_NETWORK_RPC_URL: 'https://rpc.vinuexplorer.example',

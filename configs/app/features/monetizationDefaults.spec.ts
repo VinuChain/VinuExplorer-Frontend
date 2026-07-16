@@ -1,3 +1,5 @@
+import { readFileSync } from 'node:fs';
+
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
 /* eslint-disable no-restricted-properties -- Feature modules read env at import time, so these tests control process.env before dynamic imports. */
@@ -89,6 +91,13 @@ afterEach(() => {
 });
 
 describe('VinuExplorer monetization feature defaults', () => {
+  it('keeps Playwright monetization fixtures explicit', () => {
+    const playwrightEnv = readFileSync(new URL('../../envs/.env.pw', import.meta.url), 'utf8');
+
+    expect(playwrightEnv).toMatch(/^NEXT_PUBLIC_AD_BANNER_PROVIDER=slise$/m);
+    expect(playwrightEnv).toMatch(/^NEXT_PUBLIC_AD_TEXT_PROVIDER=coinzilla$/m);
+  });
+
   it('keeps text ads disabled unless a supported provider is explicit', async() => {
     await expect(loadAdsText()).resolves.toEqual({
       title: 'Text ads',

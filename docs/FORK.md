@@ -89,9 +89,11 @@ Key properties:
   (Added in the audit remediation;
   previously the push→deploy path had no test/lint gate.)
 - **Trusted workflow boundary.** `workflow-boundary.yml` runs from the default
-  branch via `pull_request_target`, reads proposed workflow files through the
-  GitHub API, and never checks out or executes pull-request code. Its required
-  `Workflow boundary` context cannot be skipped with the `skip checks` label.
+  branch via `pull_request_target`, reads the synthetic merge-result workflows
+  through the GitHub API, and parses them as data with its protected policy. It
+  never checks out or executes pull-request code. The workflow and policy are
+  immutable to ordinary PRs, and its required `Workflow boundary` context cannot
+  be skipped with the `skip checks` label.
 - Upstream's `deploy-main.yml` is demoted to manual-only ("Legacy private image publish").
 
 ### Dockerfile COPY-list contract

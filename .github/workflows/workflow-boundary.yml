@@ -13,127 +13,109 @@ jobs:
     name: Workflow boundary
     runs-on: ubuntu-latest
     steps:
-      - name: Inspect pull-request workflows without executing pull-request code
+      - name: Checkout immutable default-branch policy
+        uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
+        with:
+          ref: ${{ github.event.repository.default_branch }}
+          sparse-checkout: .github/workflow-policy
+          persist-credentials: false
+
+      - name: Collect the synthetic merge-result workflows as data
+        id: collect
         uses: actions/github-script@f28e40c7f34bde8b3046d885e986cb6290c5673b # v7
         with:
           script: |
+            const fs = require('node:fs');
+            const path = require('node:path');
             const owner = context.repo.owner;
             const repo = context.repo.repo;
             const pullNumber = context.payload.pull_request.number;
-            const headSha = context.payload.pull_request.head.sha;
-            const headOwner = context.payload.pull_request.head.repo.owner.login;
-            const headRepo = context.payload.pull_request.head.repo.name;
-            const protectedPolicy = '.github/workflows/workflow-boundary.yml';
-            const violations = [];
+            const protectedPolicies = new Set([
+              '.github/workflows/workflow-boundary.yml',
+              '.github/workflow-policy/verify.rb',
+            ]);
 
             const changedFiles = await github.paginate(
               github.rest.pulls.listFiles,
               { owner, repo, pull_number: pullNumber, per_page: 100 },
             );
-            if (changedFiles.some((file) =>
-              file.filename === protectedPolicy || file.previous_filename === protectedPolicy
-            )) {
-              violations.push(
-                `${protectedPolicy} is the default-branch trust anchor and cannot be modified by pull-request code`,
+            const protectedChange = changedFiles.find((file) =>
+              protectedPolicies.has(file.filename) ||
+              protectedPolicies.has(file.previous_filename)
+            );
+            if (protectedChange) {
+              core.setFailed(
+                `${protectedChange.filename} is a default-branch trust anchor and cannot be modified, deleted, or renamed by pull-request code`,
               );
+              return;
+            }
+
+            const pull = await github.rest.pulls.get({
+              owner,
+              repo,
+              pull_number: pullNumber,
+            });
+            const mergeSha = pull.data.merge_commit_sha;
+            if (!mergeSha) {
+              core.setFailed('A current synthetic merge commit is required for workflow policy evaluation');
+              return;
             }
 
             const directory = await github.rest.repos.getContent({
-              owner: headOwner,
-              repo: headRepo,
+              owner,
+              repo,
               path: '.github/workflows',
-              ref: headSha,
+              ref: mergeSha,
             });
             if (!Array.isArray(directory.data)) {
-              throw new Error('Expected .github/workflows to be a directory');
+              core.setFailed('Expected .github/workflows to be a directory in the synthetic merge result');
+              return;
             }
+
+            const outputDirectory = path.join(
+              process.env.RUNNER_TEMP,
+              `workflow-boundary-${context.runId}-${context.runAttempt}`,
+            );
+            fs.rmSync(outputDirectory, { recursive: true, force: true });
+            fs.mkdirSync(outputDirectory, { recursive: true });
 
             const workflowFiles = directory.data.filter(
               (entry) => entry.type === 'file' && /\.(?:yml|yaml)$/.test(entry.name),
             );
-            const sources = new Map();
             for (const entry of workflowFiles) {
+              if (path.basename(entry.name) !== entry.name) {
+                core.setFailed(`Unsafe workflow filename ${entry.name}`);
+                return;
+              }
               const response = await github.rest.repos.getContent({
-                owner: headOwner,
-                repo: headRepo,
+                owner,
+                repo,
                 path: entry.path,
-                ref: headSha,
+                ref: mergeSha,
               });
               if (Array.isArray(response.data) || response.data.type !== 'file') {
-                throw new Error(`Expected ${entry.path} to be a file`);
+                core.setFailed(`Expected ${entry.path} to be a file`);
+                return;
               }
-              sources.set(
-                entry.name,
-                Buffer.from(response.data.content, response.data.encoding).toString('utf8').replaceAll('\r\n', '\n'),
-              );
+              const source = Buffer.from(
+                response.data.content,
+                response.data.encoding,
+              ).toString('utf8');
+              fs.writeFileSync(path.join(outputDirectory, entry.name), source, {
+                encoding: 'utf8',
+                flag: 'wx',
+              });
             }
 
-            const productionArtifact = sources.get('docker-publish.yml');
-            if (!productionArtifact) {
-              violations.push('docker-publish.yml is required');
-            } else {
-              for (const forbidden of [
-                'Trigger backend deployment',
-                'gh workflow run deploy.yml',
-                'BACKEND_DEPLOY_TOKEN',
-              ]) {
-                if (productionArtifact.includes(forbidden)) {
-                  violations.push(
-                    `docker-publish.yml must publish an immutable image only; found ${JSON.stringify(forbidden)}`,
-                  );
-                }
-              }
-              if (/ghcr\.io\/vinuchain\/vinuexplorer-frontend:latest(?:\s|$)/.test(productionArtifact)) {
-                violations.push(
-                  'docker-publish.yml must not publish the mutable latest image before a controller deployment permit',
-                );
-              }
-            }
+            core.setOutput('directory', outputDirectory);
+            core.info(
+              `Collected ${workflowFiles.length} workflow files from synthetic merge ${mergeSha}.`,
+            );
 
-            const upstreamOnlyJobs = {
-              'cleanup.yml': [
-                'cleanup_release',
-                'cleanup_l2_release',
-                'cleanup_docker_image',
-              ],
-              'deploy-main.yml': [ 'publish_image' ],
-              'deploy-review.yml': [ 'make_slug', 'publish_image', 'deploy_review' ],
-              'deploy-review-l2.yml': [ 'make_slug', 'publish_image', 'deploy_review_l2' ],
-              'e2e-tests.yml': [ 'publish_image', 'deploy_e2e', 'test' ],
-              'publish-image.yml': [ 'run' ],
-            };
-            const upstreamProviderPattern =
-              /blockscout\/actions|vault\.k8s\.blockscout\.com|ghcr\.io\/blockscout/;
+      - name: Set up trusted policy runtime
+        uses: ruby/setup-ruby@003a5c4d8d6321bd302e38f6f0ec593f77f06600 # v1
+        with:
+          ruby-version: '3.3'
 
-            for (const [ file, jobs ] of Object.entries(upstreamOnlyJobs)) {
-              const source = sources.get(file);
-              if (!source) {
-                violations.push(`${file} is required by the owner-gated workflow allowlist`);
-                continue;
-              }
-              for (const job of jobs) {
-                const guardedJob = new RegExp(
-                  `^([ \\t]+)${job}:\\n\\1(?:  |    )if: github\\.repository_owner == 'blockscout'$`,
-                  'm',
-                );
-                if (!guardedJob.test(source)) {
-                  violations.push(
-                    `${file} job ${job} is not restricted to the upstream Blockscout owner`,
-                  );
-                }
-              }
-            }
-
-            for (const [ file, source ] of sources) {
-              if (upstreamProviderPattern.test(source) && !(file in upstreamOnlyJobs)) {
-                violations.push(
-                  `${file} references an upstream Blockscout provider but is not in the explicit owner-gated allowlist`,
-                );
-              }
-            }
-
-            if (violations.length > 0) {
-              core.setFailed(`Workflow boundary violations:\n- ${violations.join('\n- ')}`);
-            } else {
-              core.info(`Trusted policy inspected ${workflowFiles.length} workflow files at ${headSha}.`);
-            }
+      - name: Parse and enforce workflow policy
+        run: ruby .github/workflow-policy/verify.rb '${{ steps.collect.outputs.directory }}'

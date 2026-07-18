@@ -47,7 +47,9 @@ def reject_ambiguous_yaml!(node, location)
       reject_ambiguous_yaml!(value, "#{location}.#{key.value}")
     end
   else
-    node.children.each { |child| reject_ambiguous_yaml!(child, location) } if node.respond_to?(:children)
+    Array(node.children).each do |child|
+      reject_ambiguous_yaml!(child, location)
+    end
   end
 end
 

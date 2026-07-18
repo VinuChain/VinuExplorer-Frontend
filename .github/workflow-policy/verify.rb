@@ -3,6 +3,7 @@
 
 require 'json'
 require 'psych'
+require 'set'
 
 REQUIRED_OWNER_GUARDS = {
   'cleanup.yml' => %w[cleanup_release cleanup_l2_release cleanup_docker_image],
@@ -22,12 +23,29 @@ UPSTREAM_PROVIDER_PATTERN =
   %r{blockscout/actions|vault\.k8s\.blockscout\.com|ghcr\.io/blockscout}i
 MUTABLE_LATEST_PATTERN =
   %r!ghcr\.io/vinuchain/vinuexplorer-frontend:latest!i
-PRIVILEGED_WORKFLOW_PATTERN =
-  /^\s*packages:\s*write\s*(?:#.*)?$|docker\/(?:login|build-push)-action@/i
-REPO_LOCAL_EXECUTION_PATTERN =
-  %r!(?:\A|\n)\s*(?:\.[/\\]|scripts[/\\]|(?:bash|sh|node|ruby|python\d*|pwsh|powershell)\s+(?:\.[/\\]|scripts[/\\]))|[;&|)]\s+(?:\.[/\\]|scripts[/\\]|(?:bash|sh|node|ruby|python\d*|pwsh|powershell)\s+(?:\.[/\\]|scripts[/\\]))|(?:\$\(|`)\s*(?:\.[/\\]|scripts[/\\]|(?:bash|sh|node|ruby|python\d*|pwsh|powershell)\s+(?:\.[/\\]|scripts[/\\]))!i
-PACKAGE_SCRIPT_PATTERN =
-  /(?:\A|\n)\s*(?:npm(?:\s+run)?|npx|yarn|pnpm|bun|deno)\b|[;&|)]\s+(?:npm(?:\s+run)?|npx|yarn|pnpm|bun|deno)\b|(?:\$\(|`)\s*(?:npm(?:\s+run)?|npx|yarn|pnpm|bun|deno)\b/i
+VINUEXPLORER_IMAGE_BASE_PATTERN =
+  %r!ghcr\.io/vinuchain/vinuexplorer-frontend!i
+RAW_LATEST_METADATA_PATTERN =
+  /\btype\s*=\s*raw\s*,\s*value\s*=\s*latest\b/i
+DOCKER_PUBLISH_ACTION_PATTERN =
+  %r!docker/(?:login|build-push)-action@!i
+LOCAL_REUSABLE_WORKFLOW_PATTERN =
+  %r!\A\./\.github/workflows/([^/]+\.(?:yml|yaml))\z!i
+LOCAL_PATH_SOURCE = '(?:\.[/\\\\]|scripts[/\\\\])'
+INTERPRETER_SOURCE = '(?:bash|sh|node|ruby|python\d*|pwsh|powershell)'
+LOCAL_COMMAND_SOURCE =
+  "(?:#{LOCAL_PATH_SOURCE}|#{INTERPRETER_SOURCE}\\b[^\\n;&|]*?['\"]?#{LOCAL_PATH_SOURCE})"
+PACKAGE_COMMAND_SOURCE = '(?:npm(?:\s+run)?|npx|yarn|pnpm|bun|deno)\b'
+REPO_LOCAL_EXECUTION_PATTERN = Regexp.new(
+  "(?:\\A|\\n)\\s*#{LOCAL_COMMAND_SOURCE}|[;&|)]\\s+#{LOCAL_COMMAND_SOURCE}|" \
+  "(?:\\$\\(|`)\\s*#{LOCAL_COMMAND_SOURCE}",
+  Regexp::IGNORECASE
+)
+PACKAGE_SCRIPT_PATTERN = Regexp.new(
+  "(?:\\A|\\n)\\s*#{PACKAGE_COMMAND_SOURCE}|[;&|)]\\s+#{PACKAGE_COMMAND_SOURCE}|" \
+  "(?:\\$\\(|`)\\s*#{PACKAGE_COMMAND_SOURCE}",
+  Regexp::IGNORECASE
+)
 FORBIDDEN_DEPLOYMENT_PATTERNS = {
   /BACKEND_DEPLOY_TOKEN/i => 'BACKEND_DEPLOY_TOKEN',
   %r{vinuchain/vinuexplorer-backend}i => 'VinuChain/vinuexplorer-backend',
@@ -71,9 +89,21 @@ def upstream_owner_guard?(value)
   normalized.match?(/\Agithub\.repository_owner\s*==\s*(['"])blockscout\1\z/)
 end
 
+def package_privileged_permissions?(permissions)
+  permissions.to_s == 'write-all' ||
+    (permissions.is_a?(Hash) && permissions['packages'].to_s == 'write')
+end
+
+def directly_privileged_job?(job)
+  package_privileged_permissions?(job['permissions']) ||
+    JSON.generate(job).match?(DOCKER_PUBLISH_ACTION_PATTERN)
+end
+
 directory = File.expand_path(ARGV.fetch(0))
 files = Dir.children(directory).select { |name| name.match?(/\.(?:yml|yaml)\z/) }.sort
 violations = []
+workflow_sources = {}
+workflows = {}
 
 REQUIRED_WORKFLOWS.each do |file|
   violations << "required workflow #{file} is missing" unless files.include?(file)
@@ -82,6 +112,7 @@ end
 files.each do |file|
   path = File.join(directory, file)
   source = File.binread(path).encode('UTF-8', invalid: :replace, undef: :replace)
+  workflow_sources[file] = source
 
   begin
     document = Psych.parse(source, filename: path)
@@ -96,10 +127,48 @@ files.each do |file|
       filename: path
     )
     raise "#{file}: workflow root must be a mapping" unless parsed.is_a?(Hash)
+    workflows[file] = parsed
   rescue Psych::Exception, ArgumentError, RuntimeError => error
     violations << error.message
-    next
   end
+end
+
+privileged_files = Set.new
+workflows.each do |file, parsed|
+  privileged_files << file if package_privileged_permissions?(parsed['permissions'])
+end
+missing_local_workflows = Set.new
+privilege_changed = true
+while privilege_changed
+  privilege_changed = false
+  workflows.each do |file, parsed|
+    jobs = parsed['jobs']
+    next unless jobs.is_a?(Hash)
+
+    jobs.each_value do |job|
+      next unless job.is_a?(Hash)
+      next unless privileged_files.include?(file) || directly_privileged_job?(job)
+
+      local = job['uses'].to_s.strip.match(LOCAL_REUSABLE_WORKFLOW_PATTERN)
+      next unless local
+
+      target = local[1]
+      unless workflows.key?(target)
+        missing_local_workflows <<
+          "#{file} references missing local reusable workflow #{target}"
+        next
+      end
+      unless privileged_files.include?(target)
+        privileged_files << target
+        privilege_changed = true
+      end
+    end
+  end
+end
+violations.concat(missing_local_workflows.to_a)
+
+workflows.each do |file, parsed|
+  source = workflow_sources.fetch(file)
 
   # This file and the Ruby policy are immutable under the pull-request gate.
   # The policy workflow necessarily contains the forbidden detector strings.
@@ -110,7 +179,9 @@ files.each do |file|
       violations << "#{file} contains forbidden deployment authority: #{label}"
     end
   end
-  if source.match?(MUTABLE_LATEST_PATTERN)
+  if source.match?(MUTABLE_LATEST_PATTERN) ||
+     (source.match?(VINUEXPLORER_IMAGE_BASE_PATTERN) &&
+      source.match?(RAW_LATEST_METADATA_PATTERN))
     violations << "#{file} publishes the mutable VinuExplorer latest image"
   end
 
@@ -139,24 +210,23 @@ files.each do |file|
     end
   end
 
-  if source.match?(PRIVILEGED_WORKFLOW_PATTERN)
-    jobs.each do |id, job|
-      next unless job.is_a?(Hash)
+  jobs.each do |id, job|
+    next unless job.is_a?(Hash)
+    next unless privileged_files.include?(file) || directly_privileged_job?(job)
 
-      Array(job['steps']).each_with_index do |step, index|
-        next unless step.is_a?(Hash)
+    Array(job['steps']).each_with_index do |step, index|
+      next unless step.is_a?(Hash)
 
-        uses = step['uses'].to_s.strip
-        if uses.start_with?('./')
-          violations << "#{file} job #{id} step #{index + 1} uses a repo-local action from a privileged workflow"
-        end
-        run = step['run'].to_s.strip
-        if run.match?(REPO_LOCAL_EXECUTION_PATTERN)
-          violations << "#{file} job #{id} step #{index + 1} uses repo-local executable indirection from a privileged workflow"
-        end
-        if run.match?(PACKAGE_SCRIPT_PATTERN)
-          violations << "#{file} job #{id} step #{index + 1} uses package-script indirection from a privileged workflow"
-        end
+      uses = step['uses'].to_s.strip
+      if uses.start_with?('./')
+        violations << "#{file} job #{id} step #{index + 1} uses a repo-local action from a privileged workflow"
+      end
+      run = step['run'].to_s.strip
+      if run.match?(REPO_LOCAL_EXECUTION_PATTERN)
+        violations << "#{file} job #{id} step #{index + 1} uses repo-local executable indirection from a privileged workflow"
+      end
+      if run.match?(PACKAGE_SCRIPT_PATTERN)
+        violations << "#{file} job #{id} step #{index + 1} uses package-script indirection from a privileged workflow"
       end
     end
   end

@@ -23,12 +23,22 @@ const UPSTREAM_PROVIDER_PATTERN =
   /blockscout\/actions|vault\.k8s\.blockscout\.com|ghcr\.io\/blockscout/i;
 const MUTABLE_LATEST_PATTERN =
   /ghcr\.io\/vinuchain\/vinuexplorer-frontend:latest/i;
+const VINUEXPLORER_IMAGE_BASE_PATTERN =
+  /ghcr\.io\/vinuchain\/vinuexplorer-frontend/i;
+const RAW_LATEST_METADATA_PATTERN =
+  /\btype\s*=\s*raw\s*,\s*value\s*=\s*latest\b/i;
 const YAML_MERGE_KEY_PATTERN = /^\s*<<\s*:/m;
-const PRIVILEGED_WORKFLOW_PATTERN =
-  /^\s*packages:\s*write\s*(?:#.*)?$|docker\/(?:login|build-push)-action@/im;
+const PRIVILEGED_SCOPE_PATTERN =
+  /^\s*(?:permissions:\s*write-all|packages:\s*write)\s*(?:#.*)?$|docker\/(?:login|build-push)-action@/im;
 const REPO_LOCAL_ACTION_PATTERN =
   /^\s*(?:-\s*)?uses:\s*['"]?\.\/(?!\.github\/workflows\/)/im;
-const LOCAL_COMMAND_TARGET = String.raw`(?:\.[/\\]|scripts[/\\]|(?:bash|sh|node|ruby|python\d*|pwsh|powershell)\s+(?:\.[/\\]|scripts[/\\]))`;
+const LOCAL_PATH_TARGET = String.raw`(?:\.[/\\]|scripts[/\\])`;
+const INTERPRETER_TARGET =
+  String.raw`(?:bash|sh|node|ruby|python\d*|pwsh|powershell)`;
+const LOCAL_COMMAND_TARGET = [
+  LOCAL_PATH_TARGET,
+  String.raw`${ INTERPRETER_TARGET }\b[^\n;&|]*?['"]?${ LOCAL_PATH_TARGET }`,
+].join('|');
 const PACKAGE_COMMAND_TARGET =
   String.raw`(?:npm(?:\s+run)?|npx|yarn|pnpm|bun|deno)\b`;
 const commandBoundaryPattern = (target) => new RegExp(
@@ -42,6 +52,8 @@ const commandBoundaryPattern = (target) => new RegExp(
 const REPO_LOCAL_EXECUTION_PATTERN =
   commandBoundaryPattern(LOCAL_COMMAND_TARGET);
 const PACKAGE_SCRIPT_PATTERN = commandBoundaryPattern(PACKAGE_COMMAND_TARGET);
+const LOCAL_REUSABLE_WORKFLOW_PATTERN =
+  /^\.\/\.github\/workflows\/([^/]+\.(?:yml|yaml))$/i;
 const FORBIDDEN_DEPLOYMENT_PATTERNS = [
   [ /BACKEND_DEPLOY_TOKEN/i, 'BACKEND_DEPLOY_TOKEN' ],
   [
@@ -93,6 +105,7 @@ export function parseWorkflowJobs(source) {
       current = {
         id: jobMatch[1],
         guard: null,
+        uses: null,
         propertyIndent: null,
         lines: [ line ],
       };
@@ -113,6 +126,9 @@ export function parseWorkflowJobs(source) {
         const value = property.slice(3).trim();
         const comment = value.indexOf(' #');
         current.guard = comment < 0 ? value : value.slice(0, comment).trim();
+      }
+      if (property.startsWith('uses:')) {
+        current.uses = property.slice(5).trim().replace(/^(['"])(.*)\1$/, '$2');
       }
     }
   }
@@ -153,6 +169,40 @@ export function loadWorkflowSources(root = process.cwd()) {
 
 export function findWorkflowBoundaryViolations(sources) {
   const violations = [];
+  const jobsByFile = new Map(
+    [ ...sources ].map(([ file, source ]) => [ file, parseWorkflowJobs(source) ]),
+  );
+  const inheritedPrivilegeFiles = new Set(
+    [ ...sources ]
+      .filter(([ file, source ]) =>
+        file !== TRUSTED_POLICY_WORKFLOW &&
+        PRIVILEGED_SCOPE_PATTERN.test(source.split(/^jobs:\s*$/m)[0]))
+      .map(([ file ]) => file),
+  );
+  const missingLocalWorkflows = new Set();
+
+  let privilegeChanged = true;
+  while (privilegeChanged) {
+    privilegeChanged = false;
+    for (const [ file, jobs ] of jobsByFile) {
+      for (const job of jobs.values()) {
+        const jobIsPrivileged =
+          inheritedPrivilegeFiles.has(file) ||
+          PRIVILEGED_SCOPE_PATTERN.test(job.source);
+        if (!jobIsPrivileged) continue;
+        const local = job.uses?.match(LOCAL_REUSABLE_WORKFLOW_PATTERN);
+        if (!local) continue;
+        const target = local[1];
+        if (!sources.has(target)) {
+          missingLocalWorkflows.add(`${ file } references missing local reusable workflow ${ target }`);
+        } else if (!inheritedPrivilegeFiles.has(target)) {
+          inheritedPrivilegeFiles.add(target);
+          privilegeChanged = true;
+        }
+      }
+    }
+  }
+  violations.push(...missingLocalWorkflows);
 
   for (const file of REQUIRED_WORKFLOWS) {
     if (!sources.has(file)) violations.push(`required workflow ${ file } is missing`);
@@ -170,25 +220,20 @@ export function findWorkflowBoundaryViolations(sources) {
           );
         }
       }
-      if (MUTABLE_LATEST_PATTERN.test(source)) {
+      if (
+        MUTABLE_LATEST_PATTERN.test(source) ||
+        (
+          VINUEXPLORER_IMAGE_BASE_PATTERN.test(source) &&
+          RAW_LATEST_METADATA_PATTERN.test(source)
+        )
+      ) {
         violations.push(
           `${ file } publishes the mutable VinuExplorer latest image`,
         );
       }
-      if (PRIVILEGED_WORKFLOW_PATTERN.test(source)) {
-        if (REPO_LOCAL_ACTION_PATTERN.test(source)) {
-          violations.push(`${ file } uses a repo-local action from a privileged workflow`);
-        }
-        if (REPO_LOCAL_EXECUTION_PATTERN.test(source)) {
-          violations.push(`${ file } uses repo-local executable indirection from a privileged workflow`);
-        }
-        if (PACKAGE_SCRIPT_PATTERN.test(source)) {
-          violations.push(`${ file } uses package-script indirection from a privileged workflow`);
-        }
-      }
     }
 
-    const jobs = parseWorkflowJobs(source);
+    const jobs = jobsByFile.get(file);
     const requiredJobs = REQUIRED_OWNER_GUARDS[file] || [];
     for (const id of requiredJobs) {
       const job = jobs.get(id);
@@ -200,6 +245,20 @@ export function findWorkflowBoundaryViolations(sources) {
     }
 
     for (const job of jobs.values()) {
+      const jobIsPrivileged =
+        inheritedPrivilegeFiles.has(file) ||
+        PRIVILEGED_SCOPE_PATTERN.test(job.source);
+      if (jobIsPrivileged) {
+        if (REPO_LOCAL_ACTION_PATTERN.test(job.source)) {
+          violations.push(`${ file } uses a repo-local action from a privileged workflow`);
+        }
+        if (REPO_LOCAL_EXECUTION_PATTERN.test(job.source)) {
+          violations.push(`${ file } uses repo-local executable indirection from a privileged workflow`);
+        }
+        if (PACKAGE_SCRIPT_PATTERN.test(job.source)) {
+          violations.push(`${ file } uses package-script indirection from a privileged workflow`);
+        }
+      }
       if (
         UPSTREAM_PROVIDER_PATTERN.test(job.source) &&
         !hasUpstreamOwnerGuard(job.guard)

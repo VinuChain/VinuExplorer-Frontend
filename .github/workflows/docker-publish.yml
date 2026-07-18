@@ -6,7 +6,6 @@ on:
 
 permissions:
   contents: read
-  packages: write
 
 # No workflow-level `concurrency:` block here.
 #
@@ -31,12 +30,17 @@ jobs:
   # source of truth for the gate.
   checks:
     uses: ./.github/workflows/checks.yml
+    permissions:
+      contents: read
     secrets: inherit
 
   build-and-push:
     name: Build and push
     needs: [checks]
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
     steps:
       - name: Checkout
         uses: actions/checkout@v6

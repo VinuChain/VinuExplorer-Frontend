@@ -116,6 +116,105 @@ test('rejects package scripts and local actions in package-write workflows', () 
   assert.match(violations, /privileged-indirection\.yaml uses a repo-local action/);
 });
 
+test('treats write-all workflows as privileged', () => {
+  const sources = withWorkflow(
+    'write-all.yaml',
+    workflow(
+      'name: Write all bypass',
+      'permissions: write-all',
+      'jobs:',
+      '  publish:',
+      '    runs-on: ubuntu-latest',
+      '    steps:',
+      '      - run: yarn publish-image',
+    ),
+  );
+  assert.match(
+    findWorkflowBoundaryViolations(sources).join('\n'),
+    /write-all\.yaml uses package-script indirection/,
+  );
+});
+
+test('rejects split Vinu image and raw latest metadata', () => {
+  const sources = withWorkflow(
+    'split-latest.yaml',
+    workflow(
+      'name: Split latest bypass',
+      'jobs:',
+      '  publish:',
+      '    runs-on: ubuntu-latest',
+      '    steps:',
+      '      - uses: docker/metadata-action@v5',
+      '        with:',
+      '          images: ghcr.io/vinuchain/vinuexplorer-frontend',
+      '          tags: type=raw, value=latest',
+    ),
+  );
+  assert.match(
+    findWorkflowBoundaryViolations(sources).join('\n'),
+    /split-latest\.yaml publishes the mutable VinuExplorer latest image/,
+  );
+});
+
+test('propagates package authority through nested local reusable workflows', () => {
+  const sources = cleanSources();
+  sources.set(
+    'privileged-caller.yml',
+    workflow(
+      'name: Privileged caller',
+      'permissions:',
+      '  packages: write',
+      'jobs:',
+      '  call:',
+      '    uses: ./.github/workflows/middle.yml',
+    ),
+  );
+  sources.set(
+    'middle.yml',
+    workflow(
+      'name: Middle',
+      'jobs:',
+      '  call:',
+      '    uses: ./.github/workflows/local-callee.yml',
+    ),
+  );
+  sources.set(
+    'local-callee.yml',
+    workflow(
+      'name: Local callee',
+      'jobs:',
+      '  publish:',
+      '    runs-on: ubuntu-latest',
+      '    steps:',
+      '      - run: yarn publish-image',
+    ),
+  );
+  assert.match(
+    findWorkflowBoundaryViolations(sources).join('\n'),
+    /local-callee\.yml uses package-script indirection/,
+  );
+});
+
+test('rejects shell-wrapped repo-local scripts in privileged workflows', () => {
+  const sources = withWorkflow(
+    'wrapped-script.yaml',
+    workflow(
+      'name: Wrapped script bypass',
+      'permissions:',
+      '  packages: write',
+      'jobs:',
+      '  publish:',
+      '    runs-on: ubuntu-latest',
+      '    steps:',
+      '      - run: bash -c \'./scripts/push-release.sh\'',
+    ),
+  );
+  assert.match(
+    findWorkflowBoundaryViolations(sources).join('\n'),
+    /wrapped-script\.yaml uses repo-local executable indirection/,
+  );
+});
+
 test('rejects backend dispatch authority in any workflow', () => {
   const sources = withWorkflow(
     'alternate-deploy.yaml',

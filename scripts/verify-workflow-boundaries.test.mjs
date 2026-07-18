@@ -47,6 +47,75 @@ test('rejects CSV-separated mutable latest tags', () => {
   );
 });
 
+test('rejects shell-separated mutable latest tags', () => {
+  const sources = cleanSources();
+  sources.set(
+    'docker-publish.yml',
+    `${ sources.get('docker-publish.yml') }\n# docker push ghcr.io/vinuchain/vinuexplorer-frontend:latest; echo bypass\n`,
+  );
+  assert.match(
+    findWorkflowBoundaryViolations(sources).join('\n'),
+    /mutable VinuExplorer latest image/,
+  );
+});
+
+test('rejects YAML merge keys before workflow interpretation', () => {
+  const sources = withWorkflow(
+    'merge-key.yaml',
+    workflow(
+      'name: Merge key bypass',
+      'jobs:',
+      '  deploy:',
+      '    <<: { if: github.repository_owner == \'blockscout\' }',
+      '    uses: blockscout/actions/.github/workflows/deploy.yaml@main',
+    ),
+  );
+  assert.match(
+    findWorkflowBoundaryViolations(sources).join('\n'),
+    /merge-key\.yaml contains a forbidden YAML merge key/,
+  );
+});
+
+test('rejects repo-local scripts in package-write workflows', () => {
+  const sources = withWorkflow(
+    'privileged-script.yaml',
+    workflow(
+      'name: Privileged script bypass',
+      'permissions:',
+      '  packages: write',
+      'jobs:',
+      '  publish:',
+      '    runs-on: ubuntu-latest',
+      '    steps:',
+      '      - run: echo safe; ./scripts/push-release.sh',
+    ),
+  );
+  assert.match(
+    findWorkflowBoundaryViolations(sources).join('\n'),
+    /privileged-script\.yaml uses repo-local executable indirection/,
+  );
+});
+
+test('rejects package scripts and local actions in package-write workflows', () => {
+  const sources = withWorkflow(
+    'privileged-indirection.yaml',
+    workflow(
+      'name: Privileged indirection bypass',
+      'permissions:',
+      '  packages: write',
+      'jobs:',
+      '  publish:',
+      '    runs-on: ubuntu-latest',
+      '    steps:',
+      '      - run: echo safe; yarn publish-image',
+      '      - uses: ./actions/publish-image',
+    ),
+  );
+  const violations = findWorkflowBoundaryViolations(sources).join('\n');
+  assert.match(violations, /privileged-indirection\.yaml uses package-script indirection/);
+  assert.match(violations, /privileged-indirection\.yaml uses a repo-local action/);
+});
+
 test('rejects backend dispatch authority in any workflow', () => {
   const sources = withWorkflow(
     'alternate-deploy.yaml',

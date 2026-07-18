@@ -21,7 +21,13 @@ TRUSTED_POLICY_WORKFLOW = 'workflow-boundary.yml'
 UPSTREAM_PROVIDER_PATTERN =
   %r{blockscout/actions|vault\.k8s\.blockscout\.com|ghcr\.io/blockscout}i
 MUTABLE_LATEST_PATTERN =
-  %r!ghcr\.io/vinuchain/vinuexplorer-frontend:latest(?=\s|,|\z|[\]}'"])!i
+  %r!ghcr\.io/vinuchain/vinuexplorer-frontend:latest!i
+PRIVILEGED_WORKFLOW_PATTERN =
+  /^\s*packages:\s*write\s*(?:#.*)?$|docker\/(?:login|build-push)-action@/i
+REPO_LOCAL_EXECUTION_PATTERN =
+  %r!(?:\A|\n)\s*(?:\.[/\\]|scripts[/\\]|(?:bash|sh|node|ruby|python\d*|pwsh|powershell)\s+(?:\.[/\\]|scripts[/\\]))|[;&|)]\s+(?:\.[/\\]|scripts[/\\]|(?:bash|sh|node|ruby|python\d*|pwsh|powershell)\s+(?:\.[/\\]|scripts[/\\]))|(?:\$\(|`)\s*(?:\.[/\\]|scripts[/\\]|(?:bash|sh|node|ruby|python\d*|pwsh|powershell)\s+(?:\.[/\\]|scripts[/\\]))!i
+PACKAGE_SCRIPT_PATTERN =
+  /(?:\A|\n)\s*(?:npm(?:\s+run)?|npx|yarn|pnpm|bun|deno)\b|[;&|)]\s+(?:npm(?:\s+run)?|npx|yarn|pnpm|bun|deno)\b|(?:\$\(|`)\s*(?:npm(?:\s+run)?|npx|yarn|pnpm|bun|deno)\b/i
 FORBIDDEN_DEPLOYMENT_PATTERNS = {
   /BACKEND_DEPLOY_TOKEN/i => 'BACKEND_DEPLOY_TOKEN',
   %r{vinuchain/vinuexplorer-backend}i => 'VinuChain/vinuexplorer-backend',
@@ -39,6 +45,7 @@ def reject_ambiguous_yaml!(node, location)
       unless key.is_a?(Psych::Nodes::Scalar)
         raise "#{location}: mapping keys must be scalar values"
       end
+      raise "#{location}: YAML merge keys are not allowed" if key.value == '<<'
 
       identity = [key.tag, key.value]
       raise "#{location}: duplicate YAML key #{key.value.inspect}" if seen[identity]
@@ -129,6 +136,28 @@ files.each do |file|
        !upstream_owner_guard?(job['if'])
       violations <<
         "#{file} job #{id} references an upstream Blockscout provider without the owner guard"
+    end
+  end
+
+  if source.match?(PRIVILEGED_WORKFLOW_PATTERN)
+    jobs.each do |id, job|
+      next unless job.is_a?(Hash)
+
+      Array(job['steps']).each_with_index do |step, index|
+        next unless step.is_a?(Hash)
+
+        uses = step['uses'].to_s.strip
+        if uses.start_with?('./')
+          violations << "#{file} job #{id} step #{index + 1} uses a repo-local action from a privileged workflow"
+        end
+        run = step['run'].to_s.strip
+        if run.match?(REPO_LOCAL_EXECUTION_PATTERN)
+          violations << "#{file} job #{id} step #{index + 1} uses repo-local executable indirection from a privileged workflow"
+        end
+        if run.match?(PACKAGE_SCRIPT_PATTERN)
+          violations << "#{file} job #{id} step #{index + 1} uses package-script indirection from a privileged workflow"
+        end
+      end
     end
   end
 

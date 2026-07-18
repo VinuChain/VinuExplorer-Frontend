@@ -22,7 +22,26 @@ const REQUIRED_OWNER_GUARDS = {
 const UPSTREAM_PROVIDER_PATTERN =
   /blockscout\/actions|vault\.k8s\.blockscout\.com|ghcr\.io\/blockscout/i;
 const MUTABLE_LATEST_PATTERN =
-  /ghcr\.io\/vinuchain\/vinuexplorer-frontend:latest(?:[\s,\]}'"]|$)/i;
+  /ghcr\.io\/vinuchain\/vinuexplorer-frontend:latest/i;
+const YAML_MERGE_KEY_PATTERN = /^\s*<<\s*:/m;
+const PRIVILEGED_WORKFLOW_PATTERN =
+  /^\s*packages:\s*write\s*(?:#.*)?$|docker\/(?:login|build-push)-action@/im;
+const REPO_LOCAL_ACTION_PATTERN =
+  /^\s*(?:-\s*)?uses:\s*['"]?\.\/(?!\.github\/workflows\/)/im;
+const LOCAL_COMMAND_TARGET = String.raw`(?:\.[/\\]|scripts[/\\]|(?:bash|sh|node|ruby|python\d*|pwsh|powershell)\s+(?:\.[/\\]|scripts[/\\]))`;
+const PACKAGE_COMMAND_TARGET =
+  String.raw`(?:npm(?:\s+run)?|npx|yarn|pnpm|bun|deno)\b`;
+const commandBoundaryPattern = (target) => new RegExp(
+  [
+    String.raw`(?:^|\n)\s*(?:(?:-\s*)?run:\s*['"]?)?${ target }`,
+    String.raw`[;&|)]\s+${ target }`,
+    String.raw`(?:\$\(|\x60)\s*${ target }`,
+  ].join('|'),
+  'im',
+);
+const REPO_LOCAL_EXECUTION_PATTERN =
+  commandBoundaryPattern(LOCAL_COMMAND_TARGET);
+const PACKAGE_SCRIPT_PATTERN = commandBoundaryPattern(PACKAGE_COMMAND_TARGET);
 const FORBIDDEN_DEPLOYMENT_PATTERNS = [
   [ /BACKEND_DEPLOY_TOKEN/i, 'BACKEND_DEPLOY_TOKEN' ],
   [
@@ -140,6 +159,9 @@ export function findWorkflowBoundaryViolations(sources) {
   }
 
   for (const [ file, source ] of sources) {
+    if (YAML_MERGE_KEY_PATTERN.test(source)) {
+      violations.push(`${ file } contains a forbidden YAML merge key`);
+    }
     if (file !== TRUSTED_POLICY_WORKFLOW) {
       for (const [ pattern, label ] of FORBIDDEN_DEPLOYMENT_PATTERNS) {
         if (pattern.test(source)) {
@@ -152,6 +174,17 @@ export function findWorkflowBoundaryViolations(sources) {
         violations.push(
           `${ file } publishes the mutable VinuExplorer latest image`,
         );
+      }
+      if (PRIVILEGED_WORKFLOW_PATTERN.test(source)) {
+        if (REPO_LOCAL_ACTION_PATTERN.test(source)) {
+          violations.push(`${ file } uses a repo-local action from a privileged workflow`);
+        }
+        if (REPO_LOCAL_EXECUTION_PATTERN.test(source)) {
+          violations.push(`${ file } uses repo-local executable indirection from a privileged workflow`);
+        }
+        if (PACKAGE_SCRIPT_PATTERN.test(source)) {
+          violations.push(`${ file } uses package-script indirection from a privileged workflow`);
+        }
       }
     }
 

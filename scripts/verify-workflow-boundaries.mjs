@@ -27,6 +27,11 @@ const VINUEXPLORER_IMAGE_BASE_PATTERN =
   /ghcr\.io\/vinuchain\/vinuexplorer-frontend/i;
 const RAW_LATEST_METADATA_PATTERN =
   /\btype\s*=\s*raw\s*,\s*value\s*=\s*latest\b/i;
+const GITHUB_WORKFLOW_DISPATCH_PATTERN = /\bgh\s+workflow\s+run\b/i;
+const PULL_REQUEST_TARGET_PATTERN =
+  /(?:^|\n)\s*(?:(?:-\s*)?['"]?pull_request_target['"]?\s*(?::|(?:#.*)?$)|['"]?on['"]?\s*:[^\n]*\bpull_request_target\b)/im;
+const IMMUTABLE_VINUEXPLORER_IMAGE_PATTERN =
+  /ghcr\.io\/vinuchain\/vinuexplorer-frontend:\$\{\{\s*env\.SHORT_SHA\s*\}\}/gi;
 const YAML_MERGE_KEY_PATTERN = /^\s*<<\s*:/m;
 const PRIVILEGED_SCOPE_PATTERN =
   /^\s*(?:permissions:\s*write-all|packages:\s*write)\s*(?:#.*)?$|docker\/(?:login|build-push)-action@/im;
@@ -55,6 +60,7 @@ const PACKAGE_SCRIPT_PATTERN = commandBoundaryPattern(PACKAGE_COMMAND_TARGET);
 const LOCAL_REUSABLE_WORKFLOW_PATTERN =
   /^\.\/\.github\/workflows\/([^/]+\.(?:yml|yaml))$/i;
 const FORBIDDEN_DEPLOYMENT_PATTERNS = [
+  [ GITHUB_WORKFLOW_DISPATCH_PATTERN, 'GitHub workflow dispatch' ],
   [ /BACKEND_DEPLOY_TOKEN/i, 'BACKEND_DEPLOY_TOKEN' ],
   [
     /vinuchain\/vinuexplorer-backend/i,
@@ -213,6 +219,9 @@ export function findWorkflowBoundaryViolations(sources) {
       violations.push(`${ file } contains a forbidden YAML merge key`);
     }
     if (file !== TRUSTED_POLICY_WORKFLOW) {
+      if (PULL_REQUEST_TARGET_PATTERN.test(source)) {
+        violations.push(`${ file } is not allowed to use pull_request_target`);
+      }
       for (const [ pattern, label ] of FORBIDDEN_DEPLOYMENT_PATTERNS) {
         if (pattern.test(source)) {
           violations.push(
@@ -229,6 +238,15 @@ export function findWorkflowBoundaryViolations(sources) {
       ) {
         violations.push(
           `${ file } publishes the mutable VinuExplorer latest image`,
+        );
+      }
+      if (
+        VINUEXPLORER_IMAGE_BASE_PATTERN.test(
+          source.replace(IMMUTABLE_VINUEXPLORER_IMAGE_PATTERN, ''),
+        )
+      ) {
+        violations.push(
+          `${ file } publishes a non-immutable VinuExplorer image tag`,
         );
       }
     }

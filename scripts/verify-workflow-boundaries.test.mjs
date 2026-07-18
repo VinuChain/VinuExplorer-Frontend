@@ -231,6 +231,124 @@ test('rejects backend dispatch authority in any workflow', () => {
   assert.match(result, /alternate-deploy\.yaml contains forbidden deployment authority/);
 });
 
+test('rejects variable-based GitHub workflow dispatches', () => {
+  const sources = withWorkflow(
+    'variable-dispatch.yaml',
+    workflow(
+      'name: Variable dispatch bypass',
+      'jobs:',
+      '  deploy:',
+      '    runs-on: ubuntu-latest',
+      '    steps:',
+      '      - run: |',
+      '          workflow=deploy.yml',
+      '          repository="VinuChain/vinuexplorer-$(echo backend)"',
+      '          gh workflow run "$workflow" --repo "$repository"',
+    ),
+  );
+  assert.match(
+    findWorkflowBoundaryViolations(sources).join('\n'),
+    /variable-dispatch\.yaml contains forbidden deployment authority: GitHub workflow dispatch/,
+  );
+});
+
+test('rejects additional pull_request_target workflows', () => {
+  const sources = withWorkflow(
+    'unsafe-target.yaml',
+    workflow(
+      'name: Unsafe target',
+      'on: pull_request_target',
+      'permissions:',
+      '  contents: write',
+      'jobs:',
+      '  execute:',
+      '    runs-on: ubuntu-latest',
+      '    steps:',
+      '      - uses: actions/checkout@v4',
+      '        with:',
+      '          ref: ${{ github.event.pull_request.head.sha }}',
+      '      - run: ./pwn.sh',
+    ),
+  );
+  assert.match(
+    findWorkflowBoundaryViolations(sources).join('\n'),
+    /unsafe-target\.yaml is not allowed to use pull_request_target/,
+  );
+
+  sources.set(
+    'unsafe-target.yaml',
+    workflow(
+      'name: Unsafe quoted target',
+      '"on": [push, pull_request_target]',
+      'jobs:',
+      '  execute:',
+      '    runs-on: ubuntu-latest',
+      '    steps:',
+      '      - run: echo unsafe',
+    ),
+  );
+  assert.match(
+    findWorkflowBoundaryViolations(sources).join('\n'),
+    /unsafe-target\.yaml is not allowed to use pull_request_target/,
+  );
+
+  sources.set(
+    'unsafe-target.yaml',
+    workflow(
+      'name: Unsafe sequence target',
+      'on:',
+      '  - push',
+      '  - pull_request_target',
+      'jobs:',
+      '  execute:',
+      '    runs-on: ubuntu-latest',
+      '    steps:',
+      '      - run: echo unsafe',
+    ),
+  );
+  assert.match(
+    findWorkflowBoundaryViolations(sources).join('\n'),
+    /unsafe-target\.yaml is not allowed to use pull_request_target/,
+  );
+});
+
+test('rejects every mutable VinuExplorer frontend image alias', () => {
+  const directAlias = withWorkflow(
+    'mutable-main.yaml',
+    workflow(
+      'name: Mutable main alias',
+      'jobs:',
+      '  publish:',
+      '    runs-on: ubuntu-latest',
+      '    steps:',
+      '      - run: docker push ghcr.io/vinuchain/vinuexplorer-frontend:main',
+    ),
+  );
+  assert.match(
+    findWorkflowBoundaryViolations(directAlias).join('\n'),
+    /mutable-main\.yaml publishes a non-immutable VinuExplorer image tag/,
+  );
+
+  const branchMetadata = withWorkflow(
+    'mutable-ref.yaml',
+    workflow(
+      'name: Mutable branch metadata',
+      'jobs:',
+      '  publish:',
+      '    runs-on: ubuntu-latest',
+      '    steps:',
+      '      - uses: docker/metadata-action@v5',
+      '        with:',
+      '          images: ghcr.io/vinuchain/vinuexplorer-frontend',
+      '          tags: type=ref,event=branch',
+    ),
+  );
+  assert.match(
+    findWorkflowBoundaryViolations(branchMetadata).join('\n'),
+    /mutable-ref\.yaml publishes a non-immutable VinuExplorer image tag/,
+  );
+});
+
 test('rejects case-variant providers in unguarded jobs', () => {
   const sources = withWorkflow(
     'case-bypass.yaml',

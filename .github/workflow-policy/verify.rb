@@ -27,6 +27,11 @@ VINUEXPLORER_IMAGE_BASE_PATTERN =
   %r!ghcr\.io/vinuchain/vinuexplorer-frontend!i
 RAW_LATEST_METADATA_PATTERN =
   /\btype\s*=\s*raw\s*,\s*value\s*=\s*latest\b/i
+GITHUB_WORKFLOW_DISPATCH_PATTERN = /\bgh\s+workflow\s+run\b/i
+PULL_REQUEST_TARGET_PATTERN =
+  /(?:\A|\n)\s*(?:(?:-\s*)?['"]?pull_request_target['"]?\s*(?::|(?:#.*)?$)|['"]?on['"]?\s*:[^\n]*\bpull_request_target\b)/i
+IMMUTABLE_VINUEXPLORER_IMAGE_PATTERN =
+  %r!ghcr\.io/vinuchain/vinuexplorer-frontend:\$\{\{\s*env\.SHORT_SHA\s*\}\}!i
 DOCKER_PUBLISH_ACTION_PATTERN =
   %r!docker/(?:login|build-push)-action@!i
 LOCAL_REUSABLE_WORKFLOW_PATTERN =
@@ -47,6 +52,7 @@ PACKAGE_SCRIPT_PATTERN = Regexp.new(
   Regexp::IGNORECASE
 )
 FORBIDDEN_DEPLOYMENT_PATTERNS = {
+  GITHUB_WORKFLOW_DISPATCH_PATTERN => 'GitHub workflow dispatch',
   /BACKEND_DEPLOY_TOKEN/i => 'BACKEND_DEPLOY_TOKEN',
   %r{vinuchain/vinuexplorer-backend}i => 'VinuChain/vinuexplorer-backend',
   /\bgh\s+workflow\s+run\s+(?:[^\s'"\\]+\/)?deploy\.ya?ml\b/i =>
@@ -174,6 +180,10 @@ workflows.each do |file, parsed|
   # The policy workflow necessarily contains the forbidden detector strings.
   next if file == TRUSTED_POLICY_WORKFLOW
 
+  if source.match?(PULL_REQUEST_TARGET_PATTERN)
+    violations << "#{file} is not allowed to use pull_request_target"
+  end
+
   FORBIDDEN_DEPLOYMENT_PATTERNS.each do |pattern, label|
     if source.match?(pattern)
       violations << "#{file} contains forbidden deployment authority: #{label}"
@@ -183,6 +193,10 @@ workflows.each do |file, parsed|
      (source.match?(VINUEXPLORER_IMAGE_BASE_PATTERN) &&
       source.match?(RAW_LATEST_METADATA_PATTERN))
     violations << "#{file} publishes the mutable VinuExplorer latest image"
+  end
+  if source.gsub(IMMUTABLE_VINUEXPLORER_IMAGE_PATTERN, '')
+           .match?(VINUEXPLORER_IMAGE_BASE_PATTERN)
+    violations << "#{file} publishes a non-immutable VinuExplorer image tag"
   end
 
   jobs = parsed['jobs']

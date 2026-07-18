@@ -18,11 +18,20 @@ const TEST_URLS: Record<AdBannerProviders, string> = {
   none: DEFAULT_URL,
 };
 
-const feature = config.features.adsBanner;
+export function getAdblockDetectProvider(
+  adsBanner: typeof config.features.adsBanner,
+  adsText: typeof config.features.adsText,
+): AdBannerProviders | undefined {
+  if (adsBanner.isEnabled) {
+    return adsBanner.provider;
+  }
+
+  return adsText.isEnabled ? adsText.provider : undefined;
+}
 
 export default function useAdblockDetect() {
   const hasAdblockCookie = cookies.get(cookies.NAMES.ADBLOCK_DETECTED, useAppContext().cookies);
-  const provider = feature.isEnabled && feature.provider;
+  const provider = getAdblockDetectProvider(config.features.adsBanner, config.features.adsText);
 
   useEffect(() => {
     if (isBrowser() && !hasAdblockCookie && provider) {

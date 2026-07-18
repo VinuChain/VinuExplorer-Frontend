@@ -252,6 +252,26 @@ test('rejects variable-based GitHub workflow dispatches', () => {
   );
 });
 
+test('rejects API-based workflow dispatches even when targets are assembled indirectly', () => {
+  const sources = withWorkflow(
+    'api-dispatch.yaml',
+    workflow(
+      'name: API dispatch bypass',
+      'jobs:',
+      '  deploy:',
+      '    runs-on: ubuntu-latest',
+      '    steps:',
+      '      - run: |',
+      '          endpoint="repos/VinuChain/vinuexplorer-$(echo backend)/actions/workflows/deploy.yml/dispatches"',
+      '          gh api --method POST "$endpoint" -f ref=main',
+    ),
+  );
+  assert.match(
+    findWorkflowBoundaryViolations(sources).join('\n'),
+    /api-dispatch\.yaml contains forbidden deployment authority: GitHub API access/,
+  );
+});
+
 test('rejects additional pull_request_target workflows', () => {
   const sources = withWorkflow(
     'unsafe-target.yaml',
@@ -272,7 +292,7 @@ test('rejects additional pull_request_target workflows', () => {
   );
   assert.match(
     findWorkflowBoundaryViolations(sources).join('\n'),
-    /unsafe-target\.yaml is not allowed to use pull_request_target/,
+    /unsafe-target\.yaml is not allowed to use privileged PR trigger pull_request_target/,
   );
 
   sources.set(
@@ -289,7 +309,7 @@ test('rejects additional pull_request_target workflows', () => {
   );
   assert.match(
     findWorkflowBoundaryViolations(sources).join('\n'),
-    /unsafe-target\.yaml is not allowed to use pull_request_target/,
+    /unsafe-target\.yaml is not allowed to use privileged PR trigger pull_request_target/,
   );
 
   sources.set(
@@ -308,7 +328,81 @@ test('rejects additional pull_request_target workflows', () => {
   );
   assert.match(
     findWorkflowBoundaryViolations(sources).join('\n'),
-    /unsafe-target\.yaml is not allowed to use pull_request_target/,
+    /unsafe-target\.yaml is not allowed to use privileged PR trigger pull_request_target/,
+  );
+});
+
+test('rejects parsed-equivalent privileged PR follow-up triggers', () => {
+  const encodedTarget = withWorkflow(
+    'encoded-target.yaml',
+    workflow(
+      'name: Encoded target bypass',
+      '"on": [push, "pull_request_\\x74arget"]',
+      'jobs:',
+      '  execute:',
+      '    runs-on: ubuntu-latest',
+      '    steps:',
+      '      - run: echo unsafe',
+    ),
+  );
+  assert.match(
+    findWorkflowBoundaryViolations(encodedTarget).join('\n'),
+    /encoded-target\.yaml is not allowed to use privileged PR trigger pull_request_target/,
+  );
+
+  const workflowRun = withWorkflow(
+    'workflow-run.yaml',
+    workflow(
+      'name: Workflow run bypass',
+      'on:',
+      '  workflow_run:',
+      '    workflows: [Checks]',
+      '    types: [completed]',
+      'jobs:',
+      '  execute:',
+      '    runs-on: ubuntu-latest',
+      '    steps:',
+      '      - run: echo unsafe',
+    ),
+  );
+  assert.match(
+    findWorkflowBoundaryViolations(workflowRun).join('\n'),
+    /workflow-run\.yaml is not allowed to use privileged PR trigger workflow_run/,
+  );
+});
+
+test('requires SHORT_SHA to be derived exactly once from GITHUB_SHA', () => {
+  const sources = cleanSources();
+  sources.set(
+    'docker-publish.yml',
+    sources.get('docker-publish.yml').replace(
+      'SHORT_SHA=$(echo $GITHUB_SHA | cut -c1-8)',
+      'SHORT_SHA=latest',
+    ),
+  );
+  assert.match(
+    findWorkflowBoundaryViolations(sources).join('\n'),
+    /docker-publish\.yml does not bind SHORT_SHA to GITHUB_SHA in one executable step/,
+  );
+});
+
+test('does not accept a commented producer with a SHORT_SHA env override', () => {
+  const sources = cleanSources();
+  sources.set(
+    'docker-publish.yml',
+    sources.get('docker-publish.yml')
+      .replace(
+        '      - name: Set SHORT_SHA',
+        '      - name: Set SHORT_SHA\n        env: { SHORT_SHA: latest }',
+      )
+      .replace(
+        '        run: echo "SHORT_SHA=$(echo $GITHUB_SHA | cut -c1-8)" >> $GITHUB_ENV',
+        '        # run: echo "SHORT_SHA=$(echo $GITHUB_SHA | cut -c1-8)" >> $GITHUB_ENV',
+      ),
+  );
+  assert.match(
+    findWorkflowBoundaryViolations(sources).join('\n'),
+    /docker-publish\.yml does not bind SHORT_SHA to GITHUB_SHA in one executable step/,
   );
 });
 

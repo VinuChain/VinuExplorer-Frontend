@@ -11,6 +11,7 @@ const BASE_SHA = '2222222222222222222222222222222222222222';
 const MERGE_SHA = '3333333333333333333333333333333333333333';
 const PROTECTED = [
   '.github/workflows/workflow-boundary.yml',
+  '.github/workflows/checks.yml',
   '.github/workflow-policy/verify.rb',
   'scripts/workflow-policy-collect.mjs',
 ];
@@ -57,6 +58,8 @@ function harness(options = {}) {
               data: {
                 type: 'file',
                 sha: anchorShas[`${ ref }:${ file }`] || `same-${ file }`,
+                encoding: 'base64',
+                content: Buffer.from('name: Checks\n').toString('base64'),
               },
             };
           }
@@ -196,6 +199,22 @@ test('compares protected paths directly without a capped changed-file list', asy
   try {
     await run.invoke();
     assert.match(run.failures.join('\n'), /default-branch trust anchor/);
+  } finally {
+    run.cleanup();
+  }
+});
+
+test('protects the exact-head checks workflow as a trust anchor', async() => {
+  const changed = '.github/workflows/checks.yml';
+  const run = harness({
+    anchorShas: {
+      [`${ BASE_SHA }:${ changed }`]: 'base-checks',
+      [`${ MERGE_SHA }:${ changed }`]: 'changed-checks',
+    },
+  });
+  try {
+    await run.invoke();
+    assert.match(run.failures.join('\n'), /checks\.yml is a default-branch trust anchor/);
   } finally {
     run.cleanup();
   }

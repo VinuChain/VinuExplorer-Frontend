@@ -28,10 +28,16 @@ const VINUEXPLORER_IMAGE_BASE_PATTERN =
 const RAW_LATEST_METADATA_PATTERN =
   /\btype\s*=\s*raw\s*,\s*value\s*=\s*latest\b/i;
 const GITHUB_WORKFLOW_DISPATCH_PATTERN = /\bgh\s+workflow\s+run\b/i;
-const PULL_REQUEST_TARGET_PATTERN =
-  /(?:^|\n)\s*(?:(?:-\s*)?['"]?pull_request_target['"]?\s*(?::|(?:#.*)?$)|['"]?on['"]?\s*:[^\n]*\bpull_request_target\b)/im;
+const GITHUB_API_ACCESS_PATTERN =
+  /\bgh\s+api\b|api\.github\.com|createWorkflowDispatch|workflow_dispatches/i;
+const PRIVILEGED_PR_TRIGGERS = [ 'pull_request_target', 'workflow_run' ];
 const IMMUTABLE_VINUEXPLORER_IMAGE_PATTERN =
   /ghcr\.io\/vinuchain\/vinuexplorer-frontend:\$\{\{\s*env\.SHORT_SHA\s*\}\}/gi;
+const SHORT_SHA_ASSIGNMENT_PATTERN = /\bSHORT_SHA\s*=/gi;
+const TRUSTED_SHORT_SHA_RUN_PATTERN =
+  /^\s*(?:-\s*)?run:\s*echo "SHORT_SHA=\$\(echo \$GITHUB_SHA \| cut -c1-8\)" >> \$GITHUB_ENV\s*$/gm;
+const SHORT_SHA_ENV_BINDING_PATTERN =
+  /(?:^|\n)\s*(?:env:\s*\{[^}\n]*\bSHORT_SHA\s*:|SHORT_SHA\s*:)/im;
 const YAML_MERGE_KEY_PATTERN = /^\s*<<\s*:/m;
 const PRIVILEGED_SCOPE_PATTERN =
   /^\s*(?:permissions:\s*write-all|packages:\s*write)\s*(?:#.*)?$|docker\/(?:login|build-push)-action@/im;
@@ -61,6 +67,7 @@ const LOCAL_REUSABLE_WORKFLOW_PATTERN =
   /^\.\/\.github\/workflows\/([^/]+\.(?:yml|yaml))$/i;
 const FORBIDDEN_DEPLOYMENT_PATTERNS = [
   [ GITHUB_WORKFLOW_DISPATCH_PATTERN, 'GitHub workflow dispatch' ],
+  [ GITHUB_API_ACCESS_PATTERN, 'GitHub API access' ],
   [ /BACKEND_DEPLOY_TOKEN/i, 'BACKEND_DEPLOY_TOKEN' ],
   [
     /vinuchain\/vinuexplorer-backend/i,
@@ -81,6 +88,16 @@ const REQUIRED_WORKFLOWS = [
 
 export const isWorkflowFile = (name) =>
   name.endsWith('.yml') || name.endsWith('.yaml');
+
+const decodeYamlHexEscapes = (source) => source.replace(
+  /\\x([0-9a-f]{2})/gi,
+  (_match, hex) => String.fromCodePoint(Number.parseInt(hex, 16)),
+);
+
+const usesPrivilegedPrTrigger = (source, trigger) => new RegExp(
+  `(?:^|\\n)\\s*(?:(?:-\\s*)?['"]?${ trigger }['"]?\\s*(?::|(?:#.*)?$)|['"]?on['"]?\\s*:[^\\n]*\\b${ trigger }\\b)`,
+  'im',
+).test(decodeYamlHexEscapes(source));
 
 const indentation = (line) => line.match(/^[ \t]*/)?.[0].length ?? 0;
 
@@ -219,8 +236,12 @@ export function findWorkflowBoundaryViolations(sources) {
       violations.push(`${ file } contains a forbidden YAML merge key`);
     }
     if (file !== TRUSTED_POLICY_WORKFLOW) {
-      if (PULL_REQUEST_TARGET_PATTERN.test(source)) {
-        violations.push(`${ file } is not allowed to use pull_request_target`);
+      for (const trigger of PRIVILEGED_PR_TRIGGERS) {
+        if (usesPrivilegedPrTrigger(source, trigger)) {
+          violations.push(
+            `${ file } is not allowed to use privileged PR trigger ${ trigger }`,
+          );
+        }
       }
       for (const [ pattern, label ] of FORBIDDEN_DEPLOYMENT_PATTERNS) {
         if (pattern.test(source)) {
@@ -248,6 +269,25 @@ export function findWorkflowBoundaryViolations(sources) {
         violations.push(
           `${ file } publishes a non-immutable VinuExplorer image tag`,
         );
+      }
+      if (new RegExp(IMMUTABLE_VINUEXPLORER_IMAGE_PATTERN.source, 'i').test(source)) {
+        const executableSource = source
+          .split('\n')
+          .filter((line) => !/^\s*#/.test(line))
+          .join('\n');
+        const assignments =
+          executableSource.match(SHORT_SHA_ASSIGNMENT_PATTERN) || [];
+        const trustedRuns =
+          executableSource.match(TRUSTED_SHORT_SHA_RUN_PATTERN) || [];
+        if (
+          assignments.length !== 1 ||
+          trustedRuns.length !== 1 ||
+          SHORT_SHA_ENV_BINDING_PATTERN.test(executableSource)
+        ) {
+          violations.push(
+            `${ file } does not bind SHORT_SHA to GITHUB_SHA in one executable step`,
+          );
+        }
       }
     }
 

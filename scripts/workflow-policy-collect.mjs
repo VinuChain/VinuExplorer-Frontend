@@ -1,5 +1,6 @@
 const PROTECTED_POLICIES = [
   '.github/workflows/workflow-boundary.yml',
+  '.github/workflows/checks.yml',
   '.github/workflow-policy/verify.rb',
   'scripts/workflow-policy-collect.mjs',
 ];

@@ -28,10 +28,14 @@ VINUEXPLORER_IMAGE_BASE_PATTERN =
 RAW_LATEST_METADATA_PATTERN =
   /\btype\s*=\s*raw\s*,\s*value\s*=\s*latest\b/i
 GITHUB_WORKFLOW_DISPATCH_PATTERN = /\bgh\s+workflow\s+run\b/i
-PULL_REQUEST_TARGET_PATTERN =
-  /(?:\A|\n)\s*(?:(?:-\s*)?['"]?pull_request_target['"]?\s*(?::|(?:#.*)?$)|['"]?on['"]?\s*:[^\n]*\bpull_request_target\b)/i
+GITHUB_API_ACCESS_PATTERN =
+  /\bgh\s+api\b|api\.github\.com|createWorkflowDispatch|workflow_dispatches/i
+PRIVILEGED_PR_TRIGGERS = %w[pull_request_target workflow_run].freeze
 IMMUTABLE_VINUEXPLORER_IMAGE_PATTERN =
   %r!ghcr\.io/vinuchain/vinuexplorer-frontend:\$\{\{\s*env\.SHORT_SHA\s*\}\}!i
+SHORT_SHA_ASSIGNMENT_PATTERN = /\bSHORT_SHA\s*=/i
+TRUSTED_SHORT_SHA_RUN =
+  'echo "SHORT_SHA=$(echo $GITHUB_SHA | cut -c1-8)" >> $GITHUB_ENV'
 DOCKER_PUBLISH_ACTION_PATTERN =
   %r!docker/(?:login|build-push)-action@!i
 LOCAL_REUSABLE_WORKFLOW_PATTERN =
@@ -53,11 +57,66 @@ PACKAGE_SCRIPT_PATTERN = Regexp.new(
 )
 FORBIDDEN_DEPLOYMENT_PATTERNS = {
   GITHUB_WORKFLOW_DISPATCH_PATTERN => 'GitHub workflow dispatch',
+  GITHUB_API_ACCESS_PATTERN => 'GitHub API access',
   /BACKEND_DEPLOY_TOKEN/i => 'BACKEND_DEPLOY_TOKEN',
   %r{vinuchain/vinuexplorer-backend}i => 'VinuChain/vinuexplorer-backend',
   /\bgh\s+workflow\s+run\s+(?:[^\s'"\\]+\/)?deploy\.ya?ml\b/i =>
     'backend workflow dispatch'
 }.freeze
+
+def workflow_trigger_names(root)
+  return [] unless root.is_a?(Psych::Nodes::Mapping)
+
+  root.children.each_slice(2).flat_map do |key, value|
+    next [] unless key.is_a?(Psych::Nodes::Scalar) && key.value == 'on'
+
+    case value
+    when Psych::Nodes::Mapping
+      value.children.each_slice(2).filter_map do |trigger, _configuration|
+        trigger.value if trigger.is_a?(Psych::Nodes::Scalar)
+      end
+    when Psych::Nodes::Sequence
+      value.children.filter_map do |trigger|
+        trigger.value if trigger.is_a?(Psych::Nodes::Scalar)
+      end
+    when Psych::Nodes::Scalar
+      [value.value]
+    else
+      []
+    end
+  end
+end
+
+def short_sha_env_binding?(value)
+  case value
+  when Hash
+    value.any? do |key, nested|
+      (key.to_s == 'env' && nested.is_a?(Hash) &&
+        nested.keys.any? { |env_key| env_key.to_s == 'SHORT_SHA' }) ||
+        short_sha_env_binding?(nested)
+    end
+  when Array
+    value.any? { |nested| short_sha_env_binding?(nested) }
+  else
+    false
+  end
+end
+
+def valid_short_sha_binding?(workflow)
+  jobs = workflow['jobs']
+  return false unless jobs.is_a?(Hash)
+
+  runs = jobs.values.filter_map do |job|
+    next unless job.is_a?(Hash)
+
+    Array(job['steps']).filter_map do |step|
+      step['run'].to_s.strip if step.is_a?(Hash) && step.key?('run')
+    end
+  end.flatten
+  runs.count(TRUSTED_SHORT_SHA_RUN) == 1 &&
+    runs.count { |run| run.match?(SHORT_SHA_ASSIGNMENT_PATTERN) } == 1 &&
+    !short_sha_env_binding?(workflow)
+end
 
 def reject_ambiguous_yaml!(node, location)
   case node
@@ -110,6 +169,7 @@ files = Dir.children(directory).select { |name| name.match?(/\.(?:yml|yaml)\z/) 
 violations = []
 workflow_sources = {}
 workflows = {}
+workflow_triggers = {}
 
 REQUIRED_WORKFLOWS.each do |file|
   violations << "required workflow #{file} is missing" unless files.include?(file)
@@ -125,6 +185,7 @@ files.each do |file|
     raise "#{file}: workflow is empty" unless document&.root
 
     reject_ambiguous_yaml!(document.root, file)
+    workflow_triggers[file] = workflow_trigger_names(document.root)
     parsed = Psych.safe_load(
       source,
       permitted_classes: [],
@@ -180,8 +241,8 @@ workflows.each do |file, parsed|
   # The policy workflow necessarily contains the forbidden detector strings.
   next if file == TRUSTED_POLICY_WORKFLOW
 
-  if source.match?(PULL_REQUEST_TARGET_PATTERN)
-    violations << "#{file} is not allowed to use pull_request_target"
+  (workflow_triggers.fetch(file, []) & PRIVILEGED_PR_TRIGGERS).each do |trigger|
+    violations << "#{file} is not allowed to use privileged PR trigger #{trigger}"
   end
 
   FORBIDDEN_DEPLOYMENT_PATTERNS.each do |pattern, label|
@@ -197,6 +258,12 @@ workflows.each do |file, parsed|
   if source.gsub(IMMUTABLE_VINUEXPLORER_IMAGE_PATTERN, '')
            .match?(VINUEXPLORER_IMAGE_BASE_PATTERN)
     violations << "#{file} publishes a non-immutable VinuExplorer image tag"
+  end
+  if source.match?(IMMUTABLE_VINUEXPLORER_IMAGE_PATTERN)
+    unless valid_short_sha_binding?(parsed)
+      violations <<
+        "#{file} does not bind SHORT_SHA to GITHUB_SHA in one executable step"
+    end
   end
 
   jobs = parsed['jobs']

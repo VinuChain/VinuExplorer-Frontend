@@ -35,6 +35,9 @@ jobs:
       - name: Checkout repo
         uses: actions/checkout@v4
 
+      - name: Verify workflow provider and deployment boundaries
+        run: node scripts/verify-workflow-boundaries.mjs
+
       - name: Setup node
         uses: actions/setup-node@v4
         with:

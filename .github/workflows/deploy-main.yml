@@ -16,6 +16,7 @@ permissions:
 
 jobs:
   publish_image:
+    if: github.repository_owner == 'blockscout'
     name: Publish Docker image
     uses: './.github/workflows/publish-image.yml'
     secrets: inherit

@@ -16,16 +16,14 @@ permissions:
 # its own immutable :<short-sha> tag" promise and skips the backend deploy
 # trigger for the cancelled commit's image.
 #
-# Serialisation where it actually matters (the RPC-box deploy) is handled
-# by vinuexplorer-backend/.github/workflows/deploy.yml's own concurrency
-# block with cancel-in-progress:false. Letting these builds run in parallel
-# here is safe — GHA layer cache supports concurrent writes, and the SHORT
-# SHA tag is per-commit so there's no race on the artifact name.
+# Deployment is deliberately not triggered here. This workflow only publishes
+# the immutable image for the exact merge SHA; the Agency Control Plane owns
+# the later, reversible backend deployment permit and provider action.
 
 jobs:
-  # Quality gate for the production deploy path.
+  # Quality gate for the release artifact path.
   #
-  # Pushes to `main` go straight to image build + backend redeploy, so the
+  # Pushes to `main` create a release image, so the
   # ESLint / TypeScript / envs-validator / Vitest gate that runs on PRs must
   # also run here — otherwise a direct push (or a squashed merge that skipped
   # PR checks) can reach production without ever passing them. `checks.yml`
@@ -94,17 +92,3 @@ jobs:
           # by reusing the npm-install + next-build layers across runs.
           cache-from: type=gha
           cache-to: ${{ steps.cache-policy.outputs.cache_to }}
-
-      - name: Trigger backend deployment
-        if: success()
-        run: |
-          if [ -z "$GH_TOKEN" ]; then
-            echo "BACKEND_DEPLOY_TOKEN secret not set; cannot trigger backend deployment"
-            exit 1
-          fi
-          gh workflow run deploy.yml \
-            --repo VinuChain/vinuexplorer-backend \
-            --ref master \
-            -f frontend_image_tag="$SHORT_SHA"
-        env:
-          GH_TOKEN: ${{ secrets.BACKEND_DEPLOY_TOKEN }}

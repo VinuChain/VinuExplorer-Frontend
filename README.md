@@ -12,21 +12,21 @@
 > enrichment, footer build SHAs). For the fork delta, deployment pipeline, runtime
 > env location, and rollback procedure, see **[`docs/FORK.md`](./docs/FORK.md)**.
 >
-> | | |
-> | --- | --- |
-> | Upstream base | `blockscout/frontend` v2.6.0 (merge-base `fba6438be`) |
-> | Networks | mainnet chain ID **207** · RPC `vinuchain-rpc.com` · explorer `vinuexplorer.org` |
-> | | testnet chain ID **206** · RPC `vinufoundation-rpc.com` · explorer `testnet.vinuexplorer.org` |
-> | Image | `ghcr.io/vinuchain/vinuexplorer-frontend:{latest,<short-sha>}` |
-> | Deploy | push to `main` → build image → trigger `VinuChain/VinuExplorer-Backend` `deploy.yml` |
-> | Rollback | `gh workflow run deploy.yml --repo VinuChain/VinuExplorer-Backend --ref master -f frontend_image_tag=<old-sha>` |
+> |                     |                                                                                               |
+> | ------------------- | --------------------------------------------------------------------------------------------- |
+> | Upstream base       | `blockscout/frontend` v2.6.0 (merge-base `fba6438be`)                                         |
+> | Networks            | mainnet chain ID **207** · RPC `vinuchain-rpc.com` · explorer `vinuexplorer.org`              |
+> |                     | testnet chain ID **206** · RPC `vinufoundation-rpc.com` · explorer `testnet.vinuexplorer.org` |
+> | Image               | `ghcr.io/vinuchain/vinuexplorer-frontend:<short-sha>`                                         |
+> | Publish             | push to `main` → build the immutable short-SHA image                                          |
+> | Deploy and rollback | Agency Control Plane permit → trusted deployment adapter → exact served-SHA verification      |
 
 ## VinuExplorer fork quick start
 
 Use the VinuChain image when running this fork from a container:
 
 ```sh
-docker run -p 3000:3000 --env-file <path-to-your-env-file> ghcr.io/vinuchain/vinuexplorer-frontend:latest
+docker run -p 3000:3000 --env-file <path-to-your-env-file> ghcr.io/vinuchain/vinuexplorer-frontend:<short-sha>
 ```
 
 Production runtime environment files live in
@@ -60,7 +60,7 @@ VinuExplorer fork note says otherwise.
 
 > **VinuExplorer fork note.** The upstream Blockscout image below is for the
 > original `blockscout/frontend` package. For this repository, use
-> `ghcr.io/vinuchain/vinuexplorer-frontend:{latest,<short-sha>}` and the runtime
+> `ghcr.io/vinuchain/vinuexplorer-frontend:<short-sha>` and the runtime
 > env source described in [`docs/FORK.md`](./docs/FORK.md).
 
 App is distributed as a docker image. Here you can find information about the [package](https://github.com/blockscout/frontend/pkgs/container/frontend) and its recent [releases](https://github.com/blockscout/frontend/releases).
@@ -80,6 +80,7 @@ For more information on migrating from the previous frontend, please see the [fr
 See our [Contribution guide](./docs/CONTRIBUTING.md) for pull request protocol. We expect contributors to follow our [code of conduct](./CODE_OF_CONDUCT.md) when submitting code or comments.
 
 ## Resources
+
 - [App ENVs list](./docs/ENVS.md)
 - [Contribution guide](./docs/CONTRIBUTING.md)
 - [Making a custom build](./docs/CUSTOM_BUILD.md)

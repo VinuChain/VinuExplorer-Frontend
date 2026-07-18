@@ -35,7 +35,7 @@ jobs:
 
   build-and-push:
     name: Build and push
-    needs: [ checks ]
+    needs: [checks]
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
@@ -83,7 +83,6 @@ jobs:
           context: .
           push: true
           tags: |
-            ghcr.io/vinuchain/vinuexplorer-frontend:latest
             ghcr.io/vinuchain/vinuexplorer-frontend:${{ env.SHORT_SHA }}
           build-args: |
             GIT_COMMIT_SHA=${{ env.SHORT_SHA }}

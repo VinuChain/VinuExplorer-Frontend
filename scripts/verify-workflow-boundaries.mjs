@@ -10,6 +10,9 @@ const fail = (message) => {
   process.exitCode = 1;
 };
 
+export const isWorkflowFile = (name) =>
+  name.endsWith('.yml') || name.endsWith('.yaml');
+
 const productionArtifact = read('docker-publish.yml');
 for (const forbidden of [
   'Trigger backend deployment',
@@ -63,7 +66,7 @@ for (const [ file, jobs ] of Object.entries(upstreamOnlyJobs)) {
 
 for (const file of fs
   .readdirSync(workflows)
-  .filter((name) => name.endsWith('.yml'))) {
+  .filter(isWorkflowFile)) {
   const source = read(file);
   if (upstreamProviderPattern.test(source) && !(file in upstreamOnlyJobs)) {
     fail(

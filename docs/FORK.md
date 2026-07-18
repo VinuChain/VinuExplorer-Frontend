@@ -65,29 +65,33 @@ Design records for the tag/VNS features live in `docs/superpowers/`.
  .github/workflows/docker-publish.yml
    1. checks job  ── reuses checks.yml (ESLint + tsc + envs-validator + Vitest)
    2. build-and-push (needs: checks)
-        builds ghcr.io/vinuchain/vinuexplorer-frontend:{latest,<short-sha>}
+        builds ghcr.io/vinuchain/vinuexplorer-frontend:<short-sha>
         (next build runs inside the Docker build → also a compile gate)
-   3. Trigger backend deployment (on success):
-        gh workflow run deploy.yml
-          --repo VinuChain/vinuexplorer-backend --ref master
-          -f frontend_image_tag=<short-sha>
       │
       ▼
- vinuexplorer-backend deploy.yml  ── pulls the image and redeploys on the RPC box
+ Agency Control Plane trusted adapter
+   1. verifies exact merge SHA, CI, runtime evidence, and a live deploy permit
+   2. invokes the allowlisted vinuexplorer-backend deploy adapter
+   3. records the immutable provider receipt before consuming the permit
 ```
 
 Key properties:
-- **Immutable per-commit tags.** Every push publishes a `:<short-sha>` tag
-  (8-char SHA) in addition to `:latest`. These per-commit tags are what make
-  rollback instant (§6).
+- **Immutable per-commit tags only.** Every push publishes exactly one
+  `:<short-sha>` tag (8-char SHA). The frontend workflow never advances a
+  mutable alias and never deploys directly.
 - **No `concurrency:` block in `docker-publish.yml`** — by design (see the
   in-file comment): GH Actions concurrency would silently cancel pending runs and
-  skip a commit's image/deploy. Serialization happens in the backend's
-  `deploy.yml` (`cancel-in-progress: false`).
+  skip a commit's image. Deployment serialization and idempotency are enforced
+  by the Agency Control Plane adapter and the backend deployment workflow.
 - **Quality gate.** The `checks` job gates `build-and-push`, so a push to `main`
   that fails ESLint, `tsc`, the envs-validator, or Vitest produces **no** new
-  GHCR tag and triggers **no** backend deploy. (Added in the audit remediation;
+  GHCR tag. Publishing an image never grants or triggers deployment authority.
+  (Added in the audit remediation;
   previously the push→deploy path had no test/lint gate.)
+- **Trusted workflow boundary.** `workflow-boundary.yml` runs from the default
+  branch via `pull_request_target`, reads proposed workflow files through the
+  GitHub API, and never checks out or executes pull-request code. Its required
+  `Workflow boundary` context cannot be skipped with the `skip checks` label.
 - Upstream's `deploy-main.yml` is demoted to manual-only ("Legacy private image publish").
 
 ### Dockerfile COPY-list contract
@@ -120,19 +124,17 @@ operator-controlled env, not user input.
 
 ## 6. Rollback
 
-Every commit to `main` produced an immutable `:<short-sha>` image tag. To roll
-back, redeploy a previous tag via the backend deploy workflow:
+Every commit to `main` produces an immutable `:<short-sha>` image tag. When a
+rollback is required, route the known-good short SHA and incident evidence to
+the VinuChain release manager. The Agency Control Plane must issue a rollback or
+redeploy permit, and its trusted backend adapter must verify the exact target,
+environment, executable identity, idempotency key, and rollback target before
+invocation. The adapter records the provider receipt and subsequent observation
+evidence in canonical lifecycle state.
 
-```sh
-# Find a known-good prior short SHA (8 chars) from the GHCR package or git log:
-gh workflow run deploy.yml \
-  --repo VinuChain/vinuexplorer-backend \
-  --ref master \
-  -f frontend_image_tag=<old-short-sha>
-```
-
-This re-points the backend at the older image without rebuilding. No frontend
-push or rebuild is required.
+Do not dispatch the backend workflow manually from this repository or from an
+operator shell. An immutable image's existence proves build provenance; it does
+not grant deployment authority.
 
 ## 7. Upstream tracking
 

@@ -21,7 +21,7 @@ TRUSTED_POLICY_WORKFLOW = 'workflow-boundary.yml'
 UPSTREAM_PROVIDER_PATTERN =
   %r{blockscout/actions|vault\.k8s\.blockscout\.com|ghcr\.io/blockscout}i
 MUTABLE_LATEST_PATTERN =
-  %r{ghcr\.io/vinuchain/vinuexplorer-frontend:latest(?=\s|,|\z|[\]}'"])}i
+  %r!ghcr\.io/vinuchain/vinuexplorer-frontend:latest(?=\s|,|\z|[\]}'"])!i
 FORBIDDEN_DEPLOYMENT_PATTERNS = {
   /BACKEND_DEPLOY_TOKEN/i => 'BACKEND_DEPLOY_TOKEN',
   %r{vinuchain/vinuexplorer-backend}i => 'VinuChain/vinuexplorer-backend',

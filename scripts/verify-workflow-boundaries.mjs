@@ -339,7 +339,13 @@ export function findWorkflowBoundaryViolations(sources) {
         publisher.source,
         /uses:\s*docker\/build-push-action@/i,
       );
-      const dockerfile = buildStep?.match(/^\s*file\s*:\s*([^#\n]+?)\s*(?:#.*)?$/mi)?.[1]?.trim();
+      const dockerfileLine = buildStep?.split('\n').find(
+        (line) => /^\s*file\s*:/i.test(line),
+      );
+      const dockerfile = dockerfileLine
+        ?.slice(dockerfileLine.indexOf(':') + 1)
+        .split('#', 1)[0]
+        .trim();
       if (
         !buildStep ||
         !/^\s*context:\s*\.\s*(?:#.*)?$/m.test(buildStep) ||

@@ -522,7 +522,10 @@ test('rejects Octokit REST workflow dispatch endpoints', () => {
       '      - uses: actions/github-script@v7',
       '        with:',
       '          script: |',
-      "            await github.request('POST /repos/{owner}/{repo}/actions/workflows/{workflow_id}/dispatches', { owner: 'VinuChain', repo: 'vinuexplorer-backend' })",
+      '            await github.request(',
+      '              \'POST /repos/{owner}/{repo}/actions/workflows/{workflow_id}/dispatches\',',
+      '              { owner: \'VinuChain\', repo: \'vinuexplorer-backend\' },',
+      '            )',
     ),
   );
   assert.match(
@@ -535,7 +538,7 @@ test('requires docker-publish to keep the checks dependency', () => {
   const sources = cleanSources();
   const original = sources.get('docker-publish.yml');
   const modified = original
-    .replace(/\n  checks:\n.*?(?=\n  build-and-push:)/s, '\n')
+    .replace(/\n {2}checks:\n.*?(?=\n {2}build-and-push:)/s, '\n')
     .replace('    needs: [checks]\n', '');
   assert.notEqual(modified, original);
   sources.set('docker-publish.yml', modified);

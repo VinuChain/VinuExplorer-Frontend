@@ -29,8 +29,9 @@ const RAW_LATEST_METADATA_PATTERN =
   /\btype\s*=\s*raw\s*,\s*value\s*=\s*latest\b/i;
 const GITHUB_WORKFLOW_DISPATCH_PATTERN = /\bgh\s+workflow\s+run\b/i;
 const GITHUB_API_ACCESS_PATTERN =
-  /\bgh\s+api\b|api\.github\.com|createWorkflowDispatch|workflow_dispatches/i;
+  /\bgh\s+api\b|api\.github\.com|createWorkflowDispatch|workflow_dispatches|\/actions\/workflows\/[^\s'"/]+\/dispatches/i;
 const PRIVILEGED_PR_TRIGGERS = [ 'pull_request_target', 'workflow_run' ];
+const PACKAGE_PUBLISHER_PR_TRIGGERS = [ 'pull_request' ];
 const IMMUTABLE_VINUEXPLORER_IMAGE_PATTERN =
   /ghcr\.io\/vinuchain\/vinuexplorer-frontend:\$\{\{\s*env\.SHORT_SHA\s*\}\}/gi;
 const SHORT_SHA_ASSIGNMENT_PATTERN = /\bSHORT_SHA\s*=/gi;
@@ -57,6 +58,8 @@ const commandBoundaryPattern = (target) => new RegExp(
     String.raw`(?:^|\n)\s*(?:(?:-\s*)?run:\s*['"]?)?${ target }`,
     String.raw`[;&|)]\s+${ target }`,
     String.raw`(?:\$\(|\x60)\s*${ target }`,
+    String.raw`\b(?:if|then|elif|while|until|do|time|command|exec|source)\s+${ target }`,
+    String.raw`(?:^|[;&|]\s*)\.\s+${ target }`,
   ].join('|'),
   'im',
 );
@@ -98,6 +101,17 @@ const usesPrivilegedPrTrigger = (source, trigger) => new RegExp(
   `(?:^|\\n)\\s*(?:(?:-\\s*)?['"]?${ trigger }['"]?\\s*(?::|(?:#.*)?$)|['"]?on['"]?\\s*:[^\\n]*\\b${ trigger }\\b)`,
   'im',
 ).test(decodeYamlHexEscapes(source));
+
+const actionStepSource = (jobSource, actionPattern) => {
+  const lines = jobSource.split('\n');
+  const actionLine = lines.findIndex((line) => actionPattern.test(line));
+  if (actionLine < 0) return null;
+  let start = actionLine;
+  while (start > 0 && !/^\s{6}-\s/.test(lines[start])) start -= 1;
+  let end = actionLine + 1;
+  while (end < lines.length && !/^\s{6}-\s/.test(lines[end])) end += 1;
+  return lines.slice(start, end).join('\n');
+};
 
 const indentation = (line) => line.match(/^[ \t]*/)?.[0].length ?? 0;
 
@@ -232,6 +246,10 @@ export function findWorkflowBoundaryViolations(sources) {
   }
 
   for (const [ file, source ] of sources) {
+    const jobs = jobsByFile.get(file);
+    const fileIsPrivileged =
+      inheritedPrivilegeFiles.has(file) ||
+      [ ...jobs.values() ].some((job) => PRIVILEGED_SCOPE_PATTERN.test(job.source));
     if (YAML_MERGE_KEY_PATTERN.test(source)) {
       violations.push(`${ file } contains a forbidden YAML merge key`);
     }
@@ -243,8 +261,18 @@ export function findWorkflowBoundaryViolations(sources) {
           );
         }
       }
+      if (fileIsPrivileged) {
+        for (const trigger of PACKAGE_PUBLISHER_PR_TRIGGERS) {
+          if (usesPrivilegedPrTrigger(source, trigger)) {
+            violations.push(
+              `${ file } is not allowed to use privileged PR trigger ${ trigger }`,
+            );
+          }
+        }
+      }
+      const inspectionSource = decodeYamlHexEscapes(source);
       for (const [ pattern, label ] of FORBIDDEN_DEPLOYMENT_PATTERNS) {
-        if (pattern.test(source)) {
+        if (pattern.test(inspectionSource)) {
           violations.push(
             `${ file } contains forbidden deployment authority: ${ label }`,
           );
@@ -288,10 +316,41 @@ export function findWorkflowBoundaryViolations(sources) {
             `${ file } does not bind SHORT_SHA to GITHUB_SHA in one executable step`,
           );
         }
+        const githubEnvironmentWrites = executableSource.match(/\bGITHUB_ENV\b/g) || [];
+        if (githubEnvironmentWrites.length !== 1) {
+          violations.push(
+            `${ file } writes to GITHUB_ENV outside the trusted SHORT_SHA step`,
+          );
+        }
       }
     }
 
-    const jobs = jobsByFile.get(file);
+    if (file === 'docker-publish.yml') {
+      const checks = jobs.get('checks');
+      const publisher = jobs.get('build-and-push');
+      if (
+        checks?.uses !== './.github/workflows/checks.yml' ||
+        !publisher ||
+        !/^\s*needs:\s*\[\s*checks\s*\]\s*(?:#.*)?$/m.test(publisher.source)
+      ) {
+        violations.push('docker-publish.yml requires the checks job and dependency');
+      }
+      const buildStep = publisher && actionStepSource(
+        publisher.source,
+        /uses:\s*docker\/build-push-action@/i,
+      );
+      const dockerfile = buildStep?.match(/^\s*file\s*:\s*([^#\n]+?)\s*(?:#.*)?$/mi)?.[1]?.trim();
+      if (
+        !buildStep ||
+        !/^\s*context:\s*\.\s*(?:#.*)?$/m.test(buildStep) ||
+        (dockerfile && ![ 'Dockerfile', './Dockerfile' ].includes(dockerfile))
+      ) {
+        violations.push(
+          'docker-publish.yml must build from the reviewed repository context and canonical Dockerfile',
+        );
+      }
+    }
+
     const requiredJobs = REQUIRED_OWNER_GUARDS[file] || [];
     for (const id of requiredJobs) {
       const job = jobs.get(id);

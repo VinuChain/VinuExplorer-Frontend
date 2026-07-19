@@ -62,4 +62,6 @@ jobs:
           ruby-version: '3.3'
 
       - name: Parse and enforce workflow policy
-        run: ruby .github/workflow-policy/verify.rb '${{ steps.collect.outputs.directory }}'
+        run: |
+          ruby .github/workflow-policy/verify_test.rb '${{ steps.collect.outputs.directory }}'
+          ruby .github/workflow-policy/verify.rb '${{ steps.collect.outputs.directory }}'

@@ -29,8 +29,9 @@ RAW_LATEST_METADATA_PATTERN =
   /\btype\s*=\s*raw\s*,\s*value\s*=\s*latest\b/i
 GITHUB_WORKFLOW_DISPATCH_PATTERN = /\bgh\s+workflow\s+run\b/i
 GITHUB_API_ACCESS_PATTERN =
-  /\bgh\s+api\b|api\.github\.com|createWorkflowDispatch|workflow_dispatches/i
+  %r{\bgh\s+api\b|api\.github\.com|createWorkflowDispatch|workflow_dispatches|/actions/workflows/[^\s'"/]+/dispatches}i
 PRIVILEGED_PR_TRIGGERS = %w[pull_request_target workflow_run].freeze
+PACKAGE_PUBLISHER_PR_TRIGGERS = %w[pull_request].freeze
 IMMUTABLE_VINUEXPLORER_IMAGE_PATTERN =
   %r!ghcr\.io/vinuchain/vinuexplorer-frontend:\$\{\{\s*env\.SHORT_SHA\s*\}\}!i
 SHORT_SHA_ASSIGNMENT_PATTERN = /\bSHORT_SHA\s*=/i
@@ -47,7 +48,9 @@ LOCAL_COMMAND_SOURCE =
 PACKAGE_COMMAND_SOURCE = '(?:npm(?:\s+run)?|npx|yarn|pnpm|bun|deno)\b'
 REPO_LOCAL_EXECUTION_PATTERN = Regexp.new(
   "(?:\\A|\\n)\\s*#{LOCAL_COMMAND_SOURCE}|[;&|)]\\s+#{LOCAL_COMMAND_SOURCE}|" \
-  "(?:\\$\\(|`)\\s*#{LOCAL_COMMAND_SOURCE}",
+  "(?:\\$\\(|`)\\s*#{LOCAL_COMMAND_SOURCE}|" \
+  "\\b(?:if|then|elif|while|until|do|time|command|exec|source)\\s+#{LOCAL_COMMAND_SOURCE}|" \
+  "(?:\\A|[;&|]\\s*)\\.\\s+#{LOCAL_COMMAND_SOURCE}",
   Regexp::IGNORECASE
 )
 PACKAGE_SCRIPT_PATTERN = Regexp.new(
@@ -115,7 +118,26 @@ def valid_short_sha_binding?(workflow)
   end.flatten
   runs.count(TRUSTED_SHORT_SHA_RUN) == 1 &&
     runs.count { |run| run.match?(SHORT_SHA_ASSIGNMENT_PATTERN) } == 1 &&
+    runs.count { |run| run.match?(/\bGITHUB_ENV\b/) } == 1 &&
     !short_sha_env_binding?(workflow)
+end
+
+def release_build_step(workflow)
+  jobs = workflow['jobs']
+  return nil unless jobs.is_a?(Hash)
+
+  publisher = jobs['build-and-push']
+  return nil unless publisher.is_a?(Hash)
+
+  Array(publisher['steps']).find do |step|
+    step.is_a?(Hash) && step['uses'].to_s.match?(%r{\Adocker/build-push-action@}i)
+  end
+end
+
+def privileged_workflow?(file, parsed, privileged_files)
+  jobs = parsed['jobs']
+  privileged_files.include?(file) ||
+    (jobs.is_a?(Hash) && jobs.values.any? { |job| job.is_a?(Hash) && directly_privileged_job?(job) })
 end
 
 def reject_ambiguous_yaml!(node, location)
@@ -236,6 +258,7 @@ violations.concat(missing_local_workflows.to_a)
 
 workflows.each do |file, parsed|
   source = workflow_sources.fetch(file)
+  parsed_source = JSON.generate(parsed)
 
   # This file and the Ruby policy are immutable under the pull-request gate.
   # The policy workflow necessarily contains the forbidden detector strings.
@@ -244,9 +267,14 @@ workflows.each do |file, parsed|
   (workflow_triggers.fetch(file, []) & PRIVILEGED_PR_TRIGGERS).each do |trigger|
     violations << "#{file} is not allowed to use privileged PR trigger #{trigger}"
   end
+  if privileged_workflow?(file, parsed, privileged_files)
+    (workflow_triggers.fetch(file, []) & PACKAGE_PUBLISHER_PR_TRIGGERS).each do |trigger|
+      violations << "#{file} is not allowed to use privileged PR trigger #{trigger}"
+    end
+  end
 
   FORBIDDEN_DEPLOYMENT_PATTERNS.each do |pattern, label|
-    if source.match?(pattern)
+    if source.match?(pattern) || parsed_source.match?(pattern)
       violations << "#{file} contains forbidden deployment authority: #{label}"
     end
   end
@@ -263,6 +291,35 @@ workflows.each do |file, parsed|
     unless valid_short_sha_binding?(parsed)
       violations <<
         "#{file} does not bind SHORT_SHA to GITHUB_SHA in one executable step"
+    end
+  end
+
+  if file == 'docker-publish.yml'
+    jobs = parsed['jobs']
+    checks = jobs.is_a?(Hash) ? jobs['checks'] : nil
+    publisher = jobs.is_a?(Hash) ? jobs['build-and-push'] : nil
+    needs = publisher.is_a?(Hash) ? Array(publisher['needs']).map(&:to_s) : []
+    unless checks.is_a?(Hash) &&
+           checks['uses'].to_s == './.github/workflows/checks.yml' &&
+           needs.include?('checks')
+      violations << 'docker-publish.yml requires the checks job and dependency'
+    end
+
+    build_step = release_build_step(parsed)
+    build_inputs = build_step.is_a?(Hash) ? build_step['with'] : nil
+    context = build_inputs.is_a?(Hash) ? build_inputs['context'].to_s : ''
+    dockerfile = build_inputs.is_a?(Hash) ? build_inputs['file'] : nil
+    unless context == '.' && (dockerfile.nil? || %w[Dockerfile ./Dockerfile].include?(dockerfile.to_s))
+      violations <<
+        'docker-publish.yml must build from the reviewed repository context and canonical Dockerfile'
+    end
+
+    runs = publisher.is_a?(Hash) ? Array(publisher['steps']).filter_map do |step|
+      step['run'].to_s.strip if step.is_a?(Hash) && step.key?('run')
+    end : []
+    unless runs.count { |run| run.match?(/\bGITHUB_ENV\b/) } == 1 &&
+           runs.count(TRUSTED_SHORT_SHA_RUN) == 1
+      violations << 'docker-publish.yml writes to GITHUB_ENV outside the trusted SHORT_SHA step'
     end
   end
 

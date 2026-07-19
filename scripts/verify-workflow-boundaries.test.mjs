@@ -509,3 +509,128 @@ test('accepts an actual upstream-owner job guard', () => {
   );
   assert.deepEqual(findWorkflowBoundaryViolations(sources), []);
 });
+
+test('rejects Octokit REST workflow dispatch endpoints', () => {
+  const sources = withWorkflow(
+    'rest-dispatch.yml',
+    workflow(
+      'name: REST dispatch bypass',
+      'jobs:',
+      '  deploy:',
+      '    runs-on: ubuntu-latest',
+      '    steps:',
+      '      - uses: actions/github-script@v7',
+      '        with:',
+      '          script: |',
+      "            await github.request('POST /repos/{owner}/{repo}/actions/workflows/{workflow_id}/dispatches', { owner: 'VinuChain', repo: 'vinuexplorer-backend' })",
+    ),
+  );
+  assert.match(
+    findWorkflowBoundaryViolations(sources).join('\n'),
+    /rest-dispatch\.yml contains forbidden deployment authority: GitHub API access/,
+  );
+});
+
+test('requires docker-publish to keep the checks dependency', () => {
+  const sources = cleanSources();
+  const original = sources.get('docker-publish.yml');
+  const modified = original
+    .replace(/\n  checks:\n.*?(?=\n  build-and-push:)/s, '\n')
+    .replace('    needs: [checks]\n', '');
+  assert.notEqual(modified, original);
+  sources.set('docker-publish.yml', modified);
+  assert.match(
+    findWorkflowBoundaryViolations(sources).join('\n'),
+    /docker-publish\.yml requires the checks job and dependency/,
+  );
+});
+
+test('requires docker-publish to build the reviewed repository Dockerfile', () => {
+  const sources = cleanSources();
+  sources.set(
+    'docker-publish.yml',
+    sources.get('docker-publish.yml').replace(
+      '          context: .',
+      '          context: https://github.com/attacker/release.git',
+    ),
+  );
+  assert.match(
+    findWorkflowBoundaryViolations(sources).join('\n'),
+    /docker-publish\.yml must build from the reviewed repository context/,
+  );
+});
+
+test('rejects indirect GITHUB_ENV rewrites in the release publisher', () => {
+  const sources = cleanSources();
+  sources.set(
+    'docker-publish.yml',
+    sources.get('docker-publish.yml').replace(
+      '      - name: Set up Docker Buildx\n',
+      [
+        '      - name: Rewrite release tag indirectly',
+        '        run: printf \'SHORT_%s=latest\\n\' SHA >> "$GITHUB_ENV"',
+        '',
+        '      - name: Set up Docker Buildx',
+        '',
+      ].join('\n'),
+    ),
+  );
+  assert.match(
+    findWorkflowBoundaryViolations(sources).join('\n'),
+    /docker-publish\.yml writes to GITHUB_ENV outside the trusted SHORT_SHA step/,
+  );
+});
+
+test('rejects pull_request triggers on package publishers', () => {
+  const sources = cleanSources();
+  sources.set(
+    'docker-publish.yml',
+    sources.get('docker-publish.yml').replace(
+      'on:\n  push:\n    branches: [main]',
+      'on: [push, pull_request]',
+    ),
+  );
+  assert.match(
+    findWorkflowBoundaryViolations(sources).join('\n'),
+    /docker-publish\.yml is not allowed to use privileged PR trigger pull_request/,
+  );
+});
+
+test('matches forbidden deployment commands after YAML decoding', () => {
+  const sources = withWorkflow(
+    'encoded-dispatch.yml',
+    workflow(
+      'name: Encoded dispatch bypass',
+      'jobs:',
+      '  deploy:',
+      '    runs-on: ubuntu-latest',
+      '    steps:',
+      '      - run: "gh \\x77orkflow run deploy.yml --repo VinuChain/vinuexplorer-\\x62ackend"',
+    ),
+  );
+  assert.match(
+    findWorkflowBoundaryViolations(sources).join('\n'),
+    /encoded-dispatch\.yml contains forbidden deployment authority: GitHub workflow dispatch/,
+  );
+});
+
+test('treats shell keywords and source builtins as command boundaries', () => {
+  const sources = withWorkflow(
+    'keyword-bypass.yml',
+    workflow(
+      'name: Shell keyword bypass',
+      'permissions:',
+      '  packages: write',
+      'jobs:',
+      '  publish:',
+      '    runs-on: ubuntu-latest',
+      '    steps:',
+      '      - run: if ./scripts/publish.sh; then echo done; fi',
+      '      - run: source scripts/publish.sh',
+    ),
+  );
+  assert.match(
+    findWorkflowBoundaryViolations(sources).join('\n'),
+    /keyword-bypass\.yml uses repo-local executable indirection/,
+  );
+});

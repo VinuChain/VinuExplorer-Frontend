@@ -48,6 +48,7 @@ permissions:
 
 jobs:
     run:
+        if: github.repository_owner == 'blockscout'
         name: Run
         runs-on: build
         steps:

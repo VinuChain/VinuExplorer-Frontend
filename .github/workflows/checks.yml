@@ -27,6 +27,25 @@ permissions:
   contents: read
 
 jobs:
+  workflow_boundary:
+    name: Workflow boundary (defense in depth)
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
+
+      - name: Set up policy runtime
+        uses: ruby/setup-ruby@003a5c4d8d6321bd302e38f6f0ec593f77f06600 # v1
+        with:
+          ruby-version: '3.3'
+
+      - name: Verify workflow provider and deployment boundaries
+        run: |
+          ruby .github/workflow-policy/verify_test.rb .github/workflows
+          ruby .github/workflow-policy/verify.rb .github/workflows
+          node --test scripts/workflow-policy-collect.test.mjs scripts/verify-workflow-boundaries.test.mjs
+          node scripts/verify-workflow-boundaries.mjs
+
   code_quality:
     name: Code quality
     runs-on: ubuntu-latest

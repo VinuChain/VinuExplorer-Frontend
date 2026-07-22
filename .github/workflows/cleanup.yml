@@ -14,6 +14,7 @@ permissions:
 
 jobs:
   cleanup_release:
+    if: github.repository_owner == 'blockscout'
     uses: blockscout/actions/.github/workflows/cleanup_helmfile.yaml@main
     with:
       appName: review-l2-$GITHUB_REF_NAME_SLUG
@@ -23,6 +24,7 @@ jobs:
       vaultRole: ci-dev
     secrets: inherit
   cleanup_l2_release:
+    if: github.repository_owner == 'blockscout'
     uses: blockscout/actions/.github/workflows/cleanup_helmfile.yaml@main
     with:
       appName: review-$GITHUB_REF_NAME_SLUG
@@ -32,6 +34,7 @@ jobs:
       vaultRole: ci-dev
     secrets: inherit
   cleanup_docker_image:
+    if: github.repository_owner == 'blockscout'
     uses: blockscout/actions/.github/workflows/cleanup_docker.yaml@main
     with:
       dockerImage: review-$GITHUB_REF_NAME_SLUG

@@ -1,13 +1,18 @@
-import type { HTMLChakraProps } from '@chakra-ui/react';
+import { Flex, type HTMLChakraProps } from '@chakra-ui/react';
 import React from 'react';
 
 import type { EntityTag as TEntityTag } from './types';
 
+import { route } from 'nextjs-routes';
+
+import appConfig from 'configs/app';
 import { useMultichainContext } from 'lib/contexts/multichain';
 import * as mixpanel from 'lib/mixpanel/index';
 import { Link, LinkExternalIcon } from 'toolkit/chakra/link';
 import { Skeleton } from 'toolkit/chakra/skeleton';
 import { Tag } from 'toolkit/chakra/tag';
+import { Tooltip } from 'toolkit/chakra/tooltip';
+import IconSvg from 'ui/shared/IconSvg';
 
 import EntityTagIcon from './EntityTagIcon';
 import EntityTagTooltip from './EntityTagTooltip';
@@ -67,7 +72,7 @@ const EntityTag = ({ data, addressHash, isLoading, noLink, renderMode = 'categor
     return getTagName(data, addressHash);
   })();
 
-  return (
+  const tag = (
     <EntityTagTooltip data={ data }>
       <Link
         external={ linkParams?.type === 'external' }
@@ -90,6 +95,49 @@ const EntityTag = ({ data, addressHash, isLoading, noLink, renderMode = 'categor
         </Tag>
       </Link>
     </EntityTagTooltip>
+  );
+
+  if (
+    data.tagType !== 'name' ||
+    !addressHash ||
+    !appConfig.features.publicTagsSubmission.isEnabled
+  ) {
+    return tag;
+  }
+
+  const updateHref = route({
+    pathname: '/public-tags/submit',
+    query: {
+      submissionType: 'update',
+      address: addressHash,
+      tagLabel: data.slug,
+      tagName: data.name,
+    },
+  });
+
+  return (
+    <Flex as="span" display="inline-flex" alignItems="center" gap={ 1 } minW={ 0 }>
+      { tag }
+      <Tooltip content={ `Request an update to ${ data.name }` } disableOnMobile>
+        <Link
+          href={ updateHref }
+          aria-label={ `Request an update to ${ data.name }` }
+          color="icon.secondary"
+          display="inline-flex"
+          alignItems="center"
+          justifyContent="center"
+          flexShrink={ 0 }
+          boxSize={ 11 }
+          borderRadius="sm"
+          _hover={{ color: 'link.primary' }}
+          _focusVisible={{ outline: '2px solid', outlineColor: 'focus' }}
+          noIcon
+          data-testid="public-tag-update-link"
+        >
+          <IconSvg name="edit" boxSize={ 3 }/>
+        </Link>
+      </Tooltip>
+    </Flex>
   );
 };
 

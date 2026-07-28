@@ -1,6 +1,14 @@
 import { pickBy, isEqual } from 'es-toolkit';
 
-import type { FormFieldTag, FormFields, FormSubmitResult, FormSubmitResultGrouped, FormSubmitResultItemGrouped, SubmitRequestBody } from './types';
+import type {
+  FormFieldTag,
+  FormFields,
+  FormSubmitResult,
+  FormSubmitResultGrouped,
+  FormSubmitResultItemGrouped,
+  PublicTagUpdateTarget,
+  SubmitRequestBody,
+} from './types';
 import type { UserInfo } from 'types/api/account';
 
 import type { Route } from 'nextjs-routes';
@@ -37,10 +45,32 @@ export function convertFormDataToRequestsBody(data: FormFields): Array<SubmitReq
   return result;
 }
 
+export function convertUpdateFormDataToRequestBody(data: FormFields, target: PublicTagUpdateTarget): SubmitRequestBody {
+  const tag = data.tags[0];
+  const visualMeta = {
+    bgColor: tag?.bgColor,
+    textColor: tag?.textColor,
+    tagUrl: tag?.url,
+    tagIcon: tag?.iconUrl,
+    tooltipDescription: tag?.tooltipDescription,
+  };
+
+  return {
+    requesterName: data.requesterName,
+    requesterEmail: data.requesterEmail,
+    companyName: data.companyName,
+    companyWebsite: data.companyWebsite,
+    address: target.address,
+    name: target.label,
+    submissionType: 'update',
+    meta: pickBy(visualMeta, (value) => typeof value === 'string' && value.trim().length > 0),
+  };
+}
+
 export function convertTagApiFieldsToFormFields(tag: Pick<SubmitRequestBody, 'name' | 'tagType' | 'meta'>): FormFieldTag {
   return {
     name: tag.name,
-    type: [ tag.tagType ],
+    type: [ tag.tagType ?? 'name' ],
     url: tag.meta.tagUrl,
     iconUrl: tag.meta.tagIcon,
     bgColor: tag.meta.bgColor,
@@ -90,6 +120,7 @@ export function groupSubmitResult(data: FormSubmitResult | undefined): FormSubmi
     requesterEmail: data[0].payload.requesterEmail,
     companyName: data[0].payload.companyName,
     companyWebsite: data[0].payload.companyWebsite,
+    submissionType: data[0].payload.submissionType,
     items: items.sort((a, b) => {
       if (a.error && !b.error) {
         return 1;
@@ -103,8 +134,10 @@ export function groupSubmitResult(data: FormSubmitResult | undefined): FormSubmi
 }
 
 export function getFormDefaultValues(query: Route['query'], userInfo: UserInfo | undefined) {
+  const updateTarget = getUpdateTarget(query);
+
   return {
-    addresses: getAddressesFromQuery(query),
+    addresses: updateTarget ? [ { hash: updateTarget.address } ] : getAddressesFromQuery(query),
     requesterName: getQueryParamString(query?.requesterName) || userInfo?.nickname || userInfo?.name || undefined,
     requesterEmail: getQueryParamString(query?.requesterEmail) || userInfo?.email || undefined,
     companyName: getQueryParamString(query?.companyName),
@@ -113,7 +146,38 @@ export function getFormDefaultValues(query: Route['query'], userInfo: UserInfo |
     // dropdown (PublicTagsSubmitFieldTagType.ALLOWED_CATEGORY_TYPES) —
     // any name-tag default would be rejected at validation since
     // 'name' is no longer offered to submitters.
-    tags: [ { name: '', type: [ 'generic' as const ] } ],
+    tags: [ {
+      name: updateTarget?.label ?? '',
+      type: [ updateTarget ? 'name' as const : 'generic' as const ],
+      url: undefined,
+      iconUrl: undefined,
+      bgColor: undefined,
+      textColor: undefined,
+      tooltipDescription: undefined,
+    } ],
+  };
+}
+
+export function isUpdateMode(query: Route['query']): boolean {
+  return getQueryParamString(query?.submissionType) === 'update';
+}
+
+export function getUpdateTarget(query: Route['query']): PublicTagUpdateTarget | undefined {
+  if (!isUpdateMode(query)) {
+    return;
+  }
+
+  const address = getQueryParamString(query?.address);
+  const label = getQueryParamString(query?.tagLabel);
+
+  if (!address || !label) {
+    return;
+  }
+
+  return {
+    address,
+    label,
+    displayName: getQueryParamString(query?.tagName) || label,
   };
 }
 

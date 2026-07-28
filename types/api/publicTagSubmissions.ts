@@ -1,6 +1,7 @@
 import type { PublicTagType } from './addressMetadata';
 
-export type PublicTagApplicationStatus = 'pending' | 'approved' | 'rejected';
+export type PublicTagApplicationStatus = 'pending' | 'processing' | 'approved' | 'rejected';
+export type PublicTagApplicationSubmissionType = 'create' | 'update';
 
 // Mirrors the moderator-facing payload validated by
 // Explorer.Account.PublicTagSubmission.Meta on the backend. Optional
@@ -22,7 +23,8 @@ export interface PublicTagApplicationRow {
   id: number;
   address_hash: string;
   tag_name: string;
-  tag_type: PublicTagType['type'];
+  tag_type: PublicTagType['type'] | null;
+  submission_type: PublicTagApplicationSubmissionType;
   company_name: string | null;
   company_website: string | null;
   description: string | null;

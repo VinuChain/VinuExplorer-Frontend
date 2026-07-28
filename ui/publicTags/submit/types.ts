@@ -40,7 +40,8 @@ export interface SubmitRequestBody {
   companyWebsite?: string;
   address: string;
   name: string;
-  tagType: AddressMetadataTagType;
+  tagType?: AddressMetadataTagType;
+  submissionType?: 'create' | 'update';
   description?: string;
   meta: {
     bgColor?: string;
@@ -69,6 +70,7 @@ export interface FormSubmitResultGrouped {
   requesterEmail: string;
   companyName?: string;
   companyWebsite?: string;
+  submissionType?: 'create' | 'update';
   items: Array<FormSubmitResultItemGrouped>;
 }
 
@@ -76,4 +78,10 @@ export interface FormSubmitResultItemGrouped {
   error: string | null;
   addresses: Array<string>;
   tags: Array<Pick<SubmitRequestBody, 'name' | 'tagType' | 'meta'>>;
+}
+
+export interface PublicTagUpdateTarget {
+  address: string;
+  label: string;
+  displayName: string;
 }

@@ -12,6 +12,7 @@ interface Props {
 
 const STATUSES: Array<{ label: string; value: PublicTagApplicationStatus }> = [
   { label: 'Pending', value: 'pending' },
+  { label: 'Applying', value: 'processing' },
   { label: 'Approved', value: 'approved' },
   { label: 'Rejected', value: 'rejected' },
 ];

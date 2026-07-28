@@ -8,6 +8,7 @@ import TimeWithTooltip from 'ui/shared/time/TimeWithTooltip';
 
 import PublicTagApplicationPreview from './PublicTagApplicationPreview';
 import PublicTagApplicationStatusBadge from './PublicTagApplicationStatusBadge';
+import { getPublicTagApplicationTypeLabel, isPublicTagApplicationEditable } from './utils';
 
 interface Props {
   item: PublicTagApplicationRow;
@@ -41,7 +42,7 @@ const PublicTagApplicationsListItem = ({ item, isLoading, onEdit }: Props) => {
 
       <ListItemMobileGrid.Label isLoading={ isLoading }>Type</ListItemMobileGrid.Label>
       <ListItemMobileGrid.Value>
-        <span>{ item.tag_type }</span>
+        <span>{ getPublicTagApplicationTypeLabel(item) }</span>
       </ListItemMobileGrid.Value>
 
       <ListItemMobileGrid.Label isLoading={ isLoading }>Status</ListItemMobileGrid.Label>
@@ -58,7 +59,7 @@ const PublicTagApplicationsListItem = ({ item, isLoading, onEdit }: Props) => {
         />
       </ListItemMobileGrid.Value>
 
-      { onEdit && !isLoading && item.status === 'pending' && (
+      { onEdit && !isLoading && isPublicTagApplicationEditable(item) && (
         <>
           <ListItemMobileGrid.Label isLoading={ isLoading }>&nbsp;</ListItemMobileGrid.Label>
           <ListItemMobileGrid.Value>

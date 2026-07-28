@@ -19,9 +19,10 @@ import { groupSubmitResult } from './utils';
 interface Props {
   data: FormSubmitResult | undefined;
   onAddNewTagClick?: () => void;
+  onEditClick?: () => void;
 }
 
-const PublicTagsSubmitResult = ({ data, onAddNewTagClick }: Props) => {
+const PublicTagsSubmitResult = ({ data, onAddNewTagClick, onEditClick }: Props) => {
   const groupedData = React.useMemo(() => groupSubmitResult(data), [ data ]);
 
   if (!groupedData) {
@@ -31,6 +32,10 @@ const PublicTagsSubmitResult = ({ data, onAddNewTagClick }: Props) => {
   const hasErrors = groupedData.items.some((item) => item.error !== null);
   const companyWebsite = makePrettyLink(groupedData.companyWebsite);
   const editButtonQuery = hasErrors ? pickBy({
+    submissionType: groupedData.submissionType,
+    address: groupedData.submissionType === 'update' ? groupedData.items[0]?.addresses[0] : undefined,
+    tagLabel: groupedData.submissionType === 'update' ? groupedData.items[0]?.tags[0]?.name : undefined,
+    tagName: groupedData.submissionType === 'update' ? groupedData.items[0]?.tags[0]?.name : undefined,
     requesterName: groupedData.requesterName,
     requesterEmail: groupedData.requesterEmail,
     companyName: groupedData.companyName,
@@ -68,12 +73,16 @@ const PublicTagsSubmitResult = ({ data, onAddNewTagClick }: Props) => {
       </Grid>
 
       <Heading level="2" mt={ 8 } mb={ 5 }>Public tags/labels</Heading>
-      { hasErrors ? <PublicTagsSubmitResultWithErrors data={ groupedData }/> : <PublicTagsSubmitResultSuccess data={ groupedData }/> }
+      { hasErrors ? (
+        <PublicTagsSubmitResultWithErrors data={ groupedData } onEditClick={ onEditClick }/>
+      ) : (
+        <PublicTagsSubmitResultSuccess data={ groupedData }/>
+      ) }
 
       <Flex flexDir={{ base: 'column', lg: 'row' }} columnGap={ 6 } mt={ 8 } rowGap={ 3 }>
         { hasErrors && (
           <Link href={ route({ pathname: '/public-tags/submit', query: editButtonQuery }) } asChild>
-            <Button variant="outline" w={{ base: '100%', lg: 'auto' }}>
+            <Button variant="outline" w={{ base: '100%', lg: 'auto' }} onClick={ onEditClick }>
               Edit
             </Button>
           </Link>

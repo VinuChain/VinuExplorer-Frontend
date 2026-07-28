@@ -13,9 +13,10 @@ import AddressEntity from 'ui/shared/entities/address/AddressEntity';
 import EntityTag from 'ui/shared/EntityTags/EntityTag';
 interface Props {
   data: FormSubmitResultGrouped;
+  onEditClick?: () => void;
 }
 
-const PublicTagsSubmitResultWithErrors = ({ data }: Props) => {
+const PublicTagsSubmitResultWithErrors = ({ data, onEditClick }: Props) => {
   const isMobile = useIsMobile();
   const bgColorSuccess = { _light: 'green.50', _dark: 'green.800' };
   const bgColorError = { _light: 'red.50', _dark: 'red.800' };
@@ -25,7 +26,11 @@ const PublicTagsSubmitResultWithErrors = ({ data }: Props) => {
       { data.items.map((item, index) => {
 
         const startOverButtonQuery = pickBy({
-          addresses: item.addresses,
+          submissionType: data.submissionType,
+          address: data.submissionType === 'update' ? item.addresses[0] : undefined,
+          tagLabel: data.submissionType === 'update' ? item.tags[0]?.name : undefined,
+          tagName: data.submissionType === 'update' ? item.tags[0]?.name : undefined,
+          addresses: data.submissionType === 'update' ? undefined : item.addresses,
           requesterName: data.requesterName,
           requesterEmail: data.requesterEmail,
           companyName: data.companyName,
@@ -60,7 +65,7 @@ const PublicTagsSubmitResultWithErrors = ({ data }: Props) => {
                       <EntityTag
                         key={ tag.name }
                         maxW={{ base: '100%', lg: '300px' }}
-                        data={{ ...tag, slug: '', ordinal: 0 }}
+                        data={{ ...tag, tagType: tag.tagType ?? 'name', slug: '', ordinal: 0 }}
                         noLink
                       />
                     )) }
@@ -81,6 +86,7 @@ const PublicTagsSubmitResultWithErrors = ({ data }: Props) => {
                   mt={{ base: 1, lg: 6 }}
                   ml={{ base: 0, lg: 6 }}
                   w="min-content"
+                  onClick={ onEditClick }
                 >
                   Start  over
                 </Button>

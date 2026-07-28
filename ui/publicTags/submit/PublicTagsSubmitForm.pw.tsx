@@ -68,3 +68,41 @@ test('requires ownership answer before submit', async({ render }) => {
 
   await expect(component.getByText('Please answer the ownership question')).toBeVisible();
 });
+
+test('update mode locks one target and exposes only blank visual fields +@mobile', async({ render }) => {
+  const component = await render(
+    <PublicTagsSubmitForm
+      config={ configMock }
+      onSubmitResult={ onSubmitResult }
+      userInfo={ useInfoMock }
+    />,
+    {
+      hooksConfig: {
+        router: {
+          query: {
+            submissionType: 'update',
+            address: mocks.address1,
+            tagLabel: 'vir-official',
+            tagName: 'Vinu Republic',
+          },
+        },
+      },
+    },
+  );
+
+  const target = component.getByTestId('public-tag-update-target');
+  await expect(target).toContainText('Vinu Republic');
+  await expect(target).toContainText('vir-official');
+  await expect(target).toContainText(mocks.address1);
+
+  await expect(component.getByText(/Do you own this address/i)).toHaveCount(0);
+  await expect(component.getByLabel(/Smart contract \/ Address/i)).toHaveCount(0);
+  await expect(component.getByLabel('Tag (max 35 characters)*')).toHaveCount(0);
+  await expect(component.getByLabel(/connection/i)).toHaveCount(0);
+  await expect(component.getByRole('button', { name: 'Add item' })).toHaveCount(0);
+  await expect(component.getByLabel(/Tag URL/i)).toHaveValue('');
+  await expect(component.getByLabel(/Tag icon URL/i)).toHaveValue('');
+
+  await component.getByRole('button', { name: 'Send update request' }).click();
+  await expect(component.getByText(/Enter at least one visual change/i)).toBeVisible();
+});

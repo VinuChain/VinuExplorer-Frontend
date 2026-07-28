@@ -40,6 +40,7 @@ const PublicTagsSubmitResultSuccess = ({ data }: Props) => {
                 maxW={{ base: '100%', lg: '300px' }}
                 data={{
                   ...tag,
+                  tagType: tag.tagType ?? 'name',
                   slug: '',
                   ordinal: 0,
                 }}

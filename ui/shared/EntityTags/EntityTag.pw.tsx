@@ -13,6 +13,29 @@ test('custom name tag +@dark-mode', async({ render }) => {
   await expect(component).toHaveScreenshot();
 });
 
+test('signed-out mobile name tag exposes a keyboard-accessible adjacent update link', async({ render }) => {
+  const addressHash = '0x1234567890123456789012345678901234567890';
+  const component = await render(
+    <Box w="200px">
+      <EntityTag data={ addressMetadataMock.customNameTag } addressHash={ addressHash }/>
+    </Box>,
+  );
+
+  const updateLink = component.getByRole('link', { name: 'Request an update to Unicorn Uproar' });
+  await expect(updateLink).toBeVisible();
+  await expect(updateLink).toHaveAttribute(
+    'href',
+    `/public-tags/submit?submissionType=update&address=${ addressHash }&tagLabel=unicorn-uproar&tagName=Unicorn+Uproar`,
+  );
+
+  await updateLink.focus();
+  await expect(updateLink).toBeFocused();
+  const hitArea = await updateLink.boundingBox();
+  expect(hitArea?.width).toBeGreaterThanOrEqual(44);
+  expect(hitArea?.height).toBeGreaterThanOrEqual(44);
+  await expect(component.getByRole('link', { name: 'Unicorn Uproar', exact: true })).toBeVisible();
+});
+
 test('cex deposit tag', async({ render }) => {
   const component = await render(
     <Box w="200px">

@@ -1,7 +1,13 @@
 import { describe, it, expect } from 'vitest';
 
 import * as mocks from './mocks';
-import { convertFormDataToRequestsBody, convertTagApiFieldsToFormFields, groupSubmitResult } from './utils';
+import {
+  convertFormDataToRequestsBody,
+  convertTagApiFieldsToFormFields,
+  convertUpdateFormDataToRequestBody,
+  getUpdateTarget,
+  groupSubmitResult,
+} from './utils';
 
 describe('function convertFormDataToRequestsBody()', () => {
   it('should convert form data to requests body', () => {
@@ -17,6 +23,65 @@ describe('function convertFormDataToRequestsBody()', () => {
       { address: mocks.address2, name: mocks.tag1.name, tagType: mocks.tag1.tagType },
       { address: mocks.address2, name: mocks.tag2.name, tagType: mocks.tag2.tagType },
     ]);
+  });
+});
+
+describe('function convertUpdateFormDataToRequestBody()', () => {
+  it('locks identity and sends only nonblank visual changes', () => {
+    const formData = {
+      ...mocks.baseFields,
+      addresses: [ { hash: '0xattacker' } ],
+      tags: [ {
+        name: 'Retargeted name',
+        type: [ 'protocol' as const ],
+        url: '   ',
+        iconUrl: 'https://assets.example/new-icon.png',
+        bgColor: undefined,
+        textColor: '#123456',
+        tooltipDescription: '',
+      } ],
+    };
+
+    const result = convertUpdateFormDataToRequestBody(formData, {
+      address: mocks.address1,
+      label: 'canonical-tag-label',
+      displayName: 'Canonical tag',
+    });
+
+    expect(result).toEqual({
+      requesterName: mocks.baseFields.requesterName,
+      requesterEmail: mocks.baseFields.requesterEmail,
+      companyName: mocks.baseFields.companyName,
+      companyWebsite: mocks.baseFields.companyWebsite,
+      address: mocks.address1,
+      name: 'canonical-tag-label',
+      submissionType: 'update',
+      meta: {
+        tagIcon: 'https://assets.example/new-icon.png',
+        textColor: '#123456',
+      },
+    });
+    expect(result).not.toHaveProperty('tagType');
+    expect(result).not.toHaveProperty('description');
+  });
+});
+
+describe('function getUpdateTarget()', () => {
+  it('preserves the exact tag label and address from the action link', () => {
+    expect(getUpdateTarget({
+      submissionType: 'update',
+      address: mocks.address1,
+      tagLabel: 'vir-official',
+      tagName: 'Vinu Republic',
+    })).toEqual({
+      address: mocks.address1,
+      label: 'vir-official',
+      displayName: 'Vinu Republic',
+    });
+  });
+
+  it('rejects incomplete update links', () => {
+    expect(getUpdateTarget({ submissionType: 'update', address: mocks.address1 })).toBeUndefined();
   });
 });
 

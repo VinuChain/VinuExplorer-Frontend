@@ -31,10 +31,10 @@ const PublicTagsSubmitResultWithErrors = ({ data, onEditClick }: Props) => {
           tagLabel: data.submissionType === 'update' ? item.tags[0]?.name : undefined,
           tagName: data.submissionType === 'update' ? item.tags[0]?.name : undefined,
           addresses: data.submissionType === 'update' ? undefined : item.addresses,
-          requesterName: data.requesterName,
-          requesterEmail: data.requesterEmail,
-          companyName: data.companyName,
-          companyWebsite: data.companyWebsite,
+          requesterName: data.submissionType === 'update' ? undefined : data.requesterName,
+          requesterEmail: data.submissionType === 'update' ? undefined : data.requesterEmail,
+          companyName: data.submissionType === 'update' ? undefined : data.companyName,
+          companyWebsite: data.submissionType === 'update' ? undefined : data.companyWebsite,
         }, Boolean);
 
         return (

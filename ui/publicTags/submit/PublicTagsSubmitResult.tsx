@@ -36,10 +36,10 @@ const PublicTagsSubmitResult = ({ data, onAddNewTagClick, onEditClick }: Props) 
     address: groupedData.submissionType === 'update' ? groupedData.items[0]?.addresses[0] : undefined,
     tagLabel: groupedData.submissionType === 'update' ? groupedData.items[0]?.tags[0]?.name : undefined,
     tagName: groupedData.submissionType === 'update' ? groupedData.items[0]?.tags[0]?.name : undefined,
-    requesterName: groupedData.requesterName,
-    requesterEmail: groupedData.requesterEmail,
-    companyName: groupedData.companyName,
-    companyWebsite: groupedData.companyWebsite,
+    requesterName: groupedData.submissionType === 'update' ? undefined : groupedData.requesterName,
+    requesterEmail: groupedData.submissionType === 'update' ? undefined : groupedData.requesterEmail,
+    companyName: groupedData.submissionType === 'update' ? undefined : groupedData.companyName,
+    companyWebsite: groupedData.submissionType === 'update' ? undefined : groupedData.companyWebsite,
   }, Boolean) : undefined;
 
   return (

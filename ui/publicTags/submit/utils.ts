@@ -133,15 +133,25 @@ export function groupSubmitResult(data: FormSubmitResult | undefined): FormSubmi
   };
 }
 
-export function getFormDefaultValues(query: Route['query'], userInfo: UserInfo | undefined) {
+export function getFormDefaultValues(
+  query: Route['query'],
+  userInfo: UserInfo | undefined,
+  retrySubmission?: SubmitRequestBody,
+) {
   const updateTarget = getUpdateTarget(query);
+  const matchingRetry = updateTarget &&
+    retrySubmission?.submissionType === 'update' &&
+    retrySubmission.address.toLowerCase() === updateTarget.address.toLowerCase() &&
+    retrySubmission.name === updateTarget.label ?
+    retrySubmission :
+    undefined;
 
   return {
     addresses: updateTarget ? [ { hash: updateTarget.address } ] : getAddressesFromQuery(query),
-    requesterName: getQueryParamString(query?.requesterName) || userInfo?.nickname || userInfo?.name || undefined,
-    requesterEmail: getQueryParamString(query?.requesterEmail) || userInfo?.email || undefined,
-    companyName: getQueryParamString(query?.companyName),
-    companyWebsite: getQueryParamString(query?.companyWebsite),
+    requesterName: matchingRetry?.requesterName || getQueryParamString(query?.requesterName) || userInfo?.nickname || userInfo?.name || undefined,
+    requesterEmail: matchingRetry?.requesterEmail || getQueryParamString(query?.requesterEmail) || userInfo?.email || undefined,
+    companyName: matchingRetry?.companyName ?? getQueryParamString(query?.companyName),
+    companyWebsite: matchingRetry?.companyWebsite ?? getQueryParamString(query?.companyWebsite),
     // 'generic' is the first item in the curated Category Label
     // dropdown (PublicTagsSubmitFieldTagType.ALLOWED_CATEGORY_TYPES) —
     // any name-tag default would be rejected at validation since
@@ -149,13 +159,27 @@ export function getFormDefaultValues(query: Route['query'], userInfo: UserInfo |
     tags: [ {
       name: updateTarget?.label ?? '',
       type: [ updateTarget ? 'name' as const : 'generic' as const ],
-      url: undefined,
-      iconUrl: undefined,
-      bgColor: undefined,
-      textColor: undefined,
-      tooltipDescription: undefined,
+      url: matchingRetry?.meta.tagUrl,
+      iconUrl: matchingRetry?.meta.tagIcon,
+      bgColor: matchingRetry?.meta.bgColor,
+      textColor: matchingRetry?.meta.textColor,
+      tooltipDescription: matchingRetry?.meta.tooltipDescription,
     } ],
   };
+}
+
+export function getPublicTagFormKey(query: Route['query']): string {
+  const updateTarget = getUpdateTarget(query);
+
+  if (!updateTarget) {
+    return isUpdateMode(query) ? 'invalid-update' : 'create';
+  }
+
+  return JSON.stringify([
+    'update',
+    updateTarget.address.toLowerCase(),
+    updateTarget.label,
+  ]);
 }
 
 export function isUpdateMode(query: Route['query']): boolean {

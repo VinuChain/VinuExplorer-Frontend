@@ -5,6 +5,8 @@ import {
   convertFormDataToRequestsBody,
   convertTagApiFieldsToFormFields,
   convertUpdateFormDataToRequestBody,
+  getFormDefaultValues,
+  getPublicTagFormKey,
   getUpdateTarget,
   groupSubmitResult,
 } from './utils';
@@ -82,6 +84,109 @@ describe('function getUpdateTarget()', () => {
 
   it('rejects incomplete update links', () => {
     expect(getUpdateTarget({ submissionType: 'update', address: mocks.address1 })).toBeUndefined();
+  });
+});
+
+describe('function getFormDefaultValues()', () => {
+  const updateQuery = {
+    submissionType: 'update',
+    address: mocks.address1,
+    tagLabel: 'vir-official',
+    tagName: 'Vinu Republic',
+  };
+  const retrySubmission = {
+    requesterName: 'Retry Person',
+    requesterEmail: 'retry@example.com',
+    companyName: 'Retry Co',
+    companyWebsite: 'https://retry.example',
+    address: mocks.address1,
+    name: 'vir-official',
+    submissionType: 'update' as const,
+    meta: {
+      tagUrl: 'https://vir.example',
+      tagIcon: 'https://vir.example/icon.png',
+      bgColor: '#112233',
+      textColor: '#fefefe',
+      tooltipDescription: 'VIR retry',
+    },
+  };
+
+  it('restores a failed update from memory without making the target editable', () => {
+    expect(getFormDefaultValues(updateQuery, undefined, retrySubmission)).toMatchObject({
+      addresses: [ { hash: mocks.address1 } ],
+      requesterName: 'Retry Person',
+      requesterEmail: 'retry@example.com',
+      companyName: 'Retry Co',
+      companyWebsite: 'https://retry.example',
+      tags: [ {
+        name: 'vir-official',
+        type: [ 'name' ],
+        url: 'https://vir.example',
+        iconUrl: 'https://vir.example/icon.png',
+        bgColor: '#112233',
+        textColor: '#fefefe',
+        tooltipDescription: 'VIR retry',
+      } ],
+    });
+  });
+
+  it('does not carry a failed update into a different immutable target', () => {
+    const defaults = getFormDefaultValues({
+      ...updateQuery,
+      address: mocks.address2,
+      tagLabel: 'another-tag',
+      tagName: 'Another tag',
+    }, undefined, retrySubmission);
+
+    expect(defaults.requesterName).toBeUndefined();
+    expect(defaults.addresses).toEqual([ { hash: mocks.address2 } ]);
+    expect(defaults.tags).toEqual([ {
+      name: 'another-tag',
+      type: [ 'name' ],
+      url: undefined,
+      iconUrl: undefined,
+      bgColor: undefined,
+      textColor: undefined,
+      tooltipDescription: undefined,
+    } ]);
+  });
+});
+
+describe('function getPublicTagFormKey()', () => {
+  it('remounts when mode or immutable update target changes', () => {
+    const createKey = getPublicTagFormKey({});
+    const firstUpdateKey = getPublicTagFormKey({
+      submissionType: 'update',
+      address: mocks.address1,
+      tagLabel: 'vir-official',
+      tagName: 'Vinu Republic',
+    });
+    const secondUpdateKey = getPublicTagFormKey({
+      submissionType: 'update',
+      address: mocks.address2,
+      tagLabel: 'another-tag',
+      tagName: 'Another tag',
+    });
+
+    expect(createKey).not.toBe(firstUpdateKey);
+    expect(firstUpdateKey).not.toBe(secondUpdateKey);
+  });
+
+  it('does not remount when only the cosmetic display name changes', () => {
+    const friendlyNameKey = getPublicTagFormKey({
+      submissionType: 'update',
+      address: mocks.address1,
+      tagLabel: 'vir-official',
+      tagName: 'Vinu Republic',
+    });
+    const labelFallbackKey = getPublicTagFormKey({
+      submissionType: 'update',
+      address: mocks.address1,
+      tagLabel: 'vir-official',
+      tagName: 'vir-official',
+    });
+
+    expect(friendlyNameKey).toBe(labelFallbackKey);
   });
 });
 

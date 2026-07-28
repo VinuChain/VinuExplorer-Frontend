@@ -4,7 +4,7 @@ import React from 'react';
 import type { SubmitHandler } from 'react-hook-form';
 import { useForm, FormProvider } from 'react-hook-form';
 
-import type { FormFields, FormSubmitResult } from './types';
+import type { FormFields, FormSubmitResult, SubmitRequestBody } from './types';
 import type { UserInfo } from 'types/api/account';
 import type { PublicTagTypesResponse } from 'types/api/addressMetadata';
 import type { PublicTagApplicationRow } from 'types/api/publicTagSubmissions';
@@ -39,10 +39,11 @@ import {
 interface Props {
   config?: PublicTagTypesResponse | undefined;
   userInfo?: UserInfo | undefined;
+  retrySubmission?: SubmitRequestBody | undefined;
   onSubmitResult: (result: FormSubmitResult) => void;
 }
 
-const PublicTagsSubmitForm = ({ config, userInfo, onSubmitResult }: Props) => {
+const PublicTagsSubmitForm = ({ config, userInfo, retrySubmission, onSubmitResult }: Props) => {
   const isMobile = useIsMobile();
   const router = useRouter();
   const apiFetch = useApiFetch();
@@ -55,7 +56,7 @@ const PublicTagsSubmitForm = ({ config, userInfo, onSubmitResult }: Props) => {
 
   const formApi = useForm<FormFields>({
     mode: 'onBlur',
-    defaultValues: getFormDefaultValues(router.query, userInfo),
+    defaultValues: getFormDefaultValues(router.query, userInfo, retrySubmission),
   });
 
   const ownership = formApi.watch('ownership');

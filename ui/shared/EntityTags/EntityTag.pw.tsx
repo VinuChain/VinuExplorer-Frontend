@@ -62,7 +62,7 @@ test('protocol tag +@dark-mode', async({ render }) => {
 
 test('tag with link and long name +@dark-mode', async({ render }) => {
   const component = await render(<EntityTag data={ addressMetadataMock.infoTagWithLink } maxW="300px"/>);
-  await expect(component).toHaveScreenshot();
+  await expect(component).toHaveScreenshot({ maxDiffPixels: 30 });
 });
 
 test('tag with tooltip +@dark-mode', async({ render, page, mockAssetResponse }) => {

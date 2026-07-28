@@ -70,6 +70,31 @@ test('update and processing requests cannot be edited', async({ render, mockApiR
   await expect(processingBadge).toHaveCSS('outline-style', 'solid');
 });
 
+test('partial update preview lists only requested visual changes', async({ render, mockApiResponse }) => {
+  const items: Array<PublicTagApplicationRow> = [ {
+    ...PUBLIC_TAG_APPLICATION_ROW,
+    id: 1,
+    submission_type: 'update',
+    tag_type: null,
+    meta: { tooltipDescription: 'Keep this tooltip' },
+  } ];
+
+  await mockApiResponse(
+    'admin:public_tag_applications_list',
+    { items, next_page_params: null },
+    pathParams,
+  );
+
+  const component = await render(<PublicTagApplicationsList/>);
+  const preview = component.getByLabel('Requested visual changes').first();
+
+  await expect(preview).toContainText('Requested changes for Example Tag');
+  await expect(preview).toContainText('Tooltip:');
+  await expect(preview).toContainText('Keep this tooltip');
+  await expect(preview).not.toContainText('Background color:');
+  await expect(preview).not.toContainText('Icon URL:');
+});
+
 test('rejected row with reject reason wraps badge in tooltip', async({ render, mockApiResponse }) => {
   const reason = 'Duplicate submission';
   const items: Array<PublicTagApplicationRow> = [

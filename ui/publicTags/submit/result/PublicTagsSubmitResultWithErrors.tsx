@@ -9,8 +9,10 @@ import { route } from 'nextjs-routes';
 import useIsMobile from 'lib/hooks/useIsMobile';
 import { Button } from 'toolkit/chakra/button';
 import { Link } from 'toolkit/chakra/link';
+import PublicTagApplicationPreview from 'ui/publicTags/list/PublicTagApplicationPreview';
 import AddressEntity from 'ui/shared/entities/address/AddressEntity';
 import EntityTag from 'ui/shared/EntityTags/EntityTag';
+
 interface Props {
   data: FormSubmitResultGrouped;
   onEditClick?: () => void;
@@ -61,7 +63,12 @@ const PublicTagsSubmitResultWithErrors = ({ data, onEditClick }: Props) => {
                 <GridItem px={{ base: 4, lg: 6 }} pb={{ base: 2, lg: 4 }} pt={{ base: 0, lg: 4 }}>
                   <Box fontSize="sm" color="text.secondary" fontWeight={ 500 }>Tag</Box>
                   <Flex rowGap={ 2 } columnGap={ 2 } mt={ 2 } justifyContent="flex-start" flexWrap="wrap">
-                    { item.tags.map((tag) => (
+                    { item.tags.map((tag) => data.submissionType === 'update' ? (
+                      <PublicTagApplicationPreview
+                        key={ tag.name }
+                        item={{ tag_name: tag.name, meta: tag.meta, submission_type: 'update' }}
+                      />
+                    ) : (
                       <EntityTag
                         key={ tag.name }
                         maxW={{ base: '100%', lg: '300px' }}

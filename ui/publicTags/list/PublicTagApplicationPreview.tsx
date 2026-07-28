@@ -1,15 +1,23 @@
 import { chakra, HStack, VStack } from '@chakra-ui/react';
 import React from 'react';
 
-import type { PublicTagApplicationRow } from 'types/api/publicTagSubmissions';
+import type { PublicTagApplicationMeta, PublicTagApplicationRow } from 'types/api/publicTagSubmissions';
 
 import { Image } from 'toolkit/chakra/image';
 import { Tooltip } from 'toolkit/chakra/tooltip';
 
 interface Props {
-  item: Pick<PublicTagApplicationRow, 'tag_name' | 'meta'>;
+  item: Pick<PublicTagApplicationRow, 'tag_name' | 'meta' | 'submission_type'>;
   size?: 'sm' | 'md';
 }
+
+const UPDATE_FIELD_LABELS: Array<[keyof PublicTagApplicationMeta, string]> = [
+  [ 'bgColor', 'Background color' ],
+  [ 'textColor', 'Text color' ],
+  [ 'tagUrl', 'Project URL' ],
+  [ 'tagIcon', 'Icon URL' ],
+  [ 'tooltipDescription', 'Tooltip' ],
+];
 
 // Renders the visual the submitter requested for the tag chip — same
 // bg/text color, optional logo, optional tooltip. Falls back to a
@@ -17,13 +25,38 @@ interface Props {
 // renders as blank.
 const PublicTagApplicationPreview = ({ item, size = 'md' }: Props) => {
   const meta = item.meta ?? {};
+  const chipFontSize = size === 'sm' ? 'xs' : 'sm';
+
+  if (item.submission_type === 'update') {
+    const changes = UPDATE_FIELD_LABELS.flatMap(([ key, label ]) => {
+      const value = meta[key];
+      return typeof value === 'string' && value.trim() ? [ { key, label, value } ] : [];
+    });
+
+    return (
+      <VStack align="flex-start" gap={ 1 } aria-label="Requested visual changes">
+        <chakra.span fontSize={ chipFontSize } fontWeight={ 600 }>
+          Requested changes for { item.tag_name }
+        </chakra.span>
+        { changes.map(({ key, label, value }) => (
+          <HStack key={ key } align="flex-start" gap={ 1 } fontSize={ chipFontSize } maxW="100%">
+            <chakra.span color="text.secondary" flexShrink={ 0 }>{ label }:</chakra.span>
+            <chakra.span overflowWrap="anywhere">{ value }</chakra.span>
+          </HStack>
+        )) }
+        { changes.length === 0 && (
+          <chakra.span color="text.secondary" fontSize={ chipFontSize }>No visual fields supplied</chakra.span>
+        ) }
+      </VStack>
+    );
+  }
+
   const bgColor = meta.bgColor || 'rgba(127, 127, 127, 0.12)';
   const textColor = meta.textColor || 'inherit';
   const iconUrl = meta.tagIcon?.trim() || undefined;
   const tooltip = meta.tooltipDescription?.trim() || undefined;
   const projectUrl = meta.tagUrl?.trim() || undefined;
 
-  const chipFontSize = size === 'sm' ? 'xs' : 'sm';
   const chipPadding = size === 'sm' ? '2px 8px' : '3px 10px';
   const iconSize = size === 'sm' ? '14px' : '16px';
 

@@ -30,7 +30,12 @@ test('result with errors view', async({ render }) => {
 test('failed update Edit clears the result and preserves the immutable target query', async({ render }) => {
   const component = await render(<PublicTagsSubmitResultRecovery data={ failedUpdateResponse }/>);
   const editLink = component.getByRole('link', { name: 'Edit' });
+  const preview = component.getByLabel('Requested visual changes');
 
+  await expect(preview).toContainText('Requested changes for vir-official');
+  await expect(preview).toContainText('Tooltip:');
+  await expect(preview).toContainText('Hello, it is me');
+  await expect(preview).not.toContainText('Background color:');
   await expect(editLink).toHaveAttribute(
     'href',
     '/public-tags/submit?submissionType=update&address=0x1234567890123456789012345678901234567890&tagLabel=vir-official&tagName=vir-official',

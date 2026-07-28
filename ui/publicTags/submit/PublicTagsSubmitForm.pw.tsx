@@ -68,3 +68,89 @@ test('requires ownership answer before submit', async({ render }) => {
 
   await expect(component.getByText('Please answer the ownership question')).toBeVisible();
 });
+
+test('update mode locks one target and exposes only blank visual fields +@mobile', async({ render }) => {
+  const component = await render(
+    <PublicTagsSubmitForm
+      config={ configMock }
+      onSubmitResult={ onSubmitResult }
+      userInfo={ useInfoMock }
+    />,
+    {
+      hooksConfig: {
+        router: {
+          query: {
+            submissionType: 'update',
+            address: mocks.address1,
+            tagLabel: 'vir-official',
+            tagName: 'Vinu Republic',
+          },
+        },
+      },
+    },
+  );
+
+  const target = component.getByTestId('public-tag-update-target');
+  await expect(target).toContainText('Vinu Republic');
+  await expect(target).toContainText('vir-official');
+  await expect(target).toContainText(mocks.address1);
+
+  await expect(component.getByText(/Do you own this address/i)).toHaveCount(0);
+  await expect(component.getByLabel(/Smart contract \/ Address/i)).toHaveCount(0);
+  await expect(component.getByLabel('Tag (max 35 characters)*')).toHaveCount(0);
+  await expect(component.getByLabel(/connection/i)).toHaveCount(0);
+  await expect(component.getByRole('button', { name: 'Add item' })).toHaveCount(0);
+  await expect(component.getByLabel(/Tag URL/i)).toHaveValue('');
+  await expect(component.getByLabel(/Tag icon URL/i)).toHaveValue('');
+
+  await component.getByRole('button', { name: 'Send update request' }).click();
+  await expect(component.getByText(/Enter at least one visual change/i)).toBeVisible({ timeout: EXPECT_TIMEOUT });
+});
+
+test('failed update retry restores in-memory values for the same locked target', async({ render }) => {
+  const component = await render(
+    <PublicTagsSubmitForm
+      config={ configMock }
+      onSubmitResult={ onSubmitResult }
+      retrySubmission={{
+        requesterName: 'Retry Person',
+        requesterEmail: 'retry@example.com',
+        companyName: 'Retry Co',
+        companyWebsite: 'https://retry.example',
+        address: mocks.address1,
+        name: 'vir-official',
+        submissionType: 'update',
+        meta: {
+          tagUrl: 'https://vir.example',
+          tagIcon: 'https://vir.example/icon.png',
+          bgColor: '#112233',
+          textColor: '#fefefe',
+          tooltipDescription: 'VIR retry',
+        },
+      }}
+      userInfo={ useInfoMock }
+    />,
+    {
+      hooksConfig: {
+        router: {
+          query: {
+            submissionType: 'update',
+            address: mocks.address1,
+            tagLabel: 'vir-official',
+            tagName: 'Vinu Republic',
+          },
+        },
+      },
+    },
+  );
+
+  await expect(component.getByRole('textbox', { name: 'Your name' })).toHaveValue('Retry Person');
+  await expect(component.getByRole('textbox', { name: 'Email' })).toHaveValue('retry@example.com');
+  await expect(component.getByRole('textbox', { name: 'Company name' })).toHaveValue('Retry Co');
+  await expect(component.getByRole('textbox', { name: 'Company website' })).toHaveValue('https://retry.example');
+  await expect(component.getByLabel(/Tag URL/i)).toHaveValue('https://vir.example');
+  await expect(component.getByLabel(/Tag icon URL/i)).toHaveValue('https://vir.example/icon.png');
+  await expect(component.getByLabel(/Background \(Hex\)/i)).toHaveValue('#112233');
+  await expect(component.getByLabel(/Text \(Hex\)/i)).toHaveValue('#fefefe');
+  await expect(component.getByLabel(/Tag description/i)).toHaveValue('VIR retry');
+});

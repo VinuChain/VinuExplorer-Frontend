@@ -49,7 +49,7 @@ const PublicTagApplicationEditModal = ({ item, open, onOpenChange }: Props) => {
           body: {
             submission: {
               name: data.tag_name,
-              tagType: item.tag_type,
+              ...(item.tag_type ? { tagType: item.tag_type } : {}),
               description: data.description,
             },
           } as unknown as Record<string, unknown>,

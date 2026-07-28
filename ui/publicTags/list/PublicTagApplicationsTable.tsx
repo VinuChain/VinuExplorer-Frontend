@@ -9,6 +9,7 @@ import TimeWithTooltip from 'ui/shared/time/TimeWithTooltip';
 
 import PublicTagApplicationPreview from './PublicTagApplicationPreview';
 import PublicTagApplicationStatusBadge from './PublicTagApplicationStatusBadge';
+import { getPublicTagApplicationTypeLabel, isPublicTagApplicationEditable } from './utils';
 
 interface Props {
   items: Array<PublicTagApplicationRow>;
@@ -73,7 +74,7 @@ const PublicTagApplicationsTableItem = ({ item, isLoading, onEdit }: ItemProps) 
       </TableCell>
       <TableCell verticalAlign="middle">
         <Skeleton loading={ isLoading }>
-          <span>{ item.tag_type }</span>
+          <span>{ getPublicTagApplicationTypeLabel(item) }</span>
         </Skeleton>
       </TableCell>
       <TableCell verticalAlign="middle">
@@ -90,7 +91,7 @@ const PublicTagApplicationsTableItem = ({ item, isLoading, onEdit }: ItemProps) 
       </TableCell>
       { onEdit && (
         <TableCell verticalAlign="middle">
-          { !isLoading && item.status === 'pending' && (
+          { !isLoading && isPublicTagApplicationEditable(item) && (
             <button type="button" onClick={ handleEdit } style={{ cursor: 'pointer', textDecoration: 'underline' }}>Edit</button>
           ) }
         </TableCell>

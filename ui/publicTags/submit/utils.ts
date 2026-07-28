@@ -1,6 +1,14 @@
 import { pickBy, isEqual } from 'es-toolkit';
 
-import type { FormFieldTag, FormFields, FormSubmitResult, FormSubmitResultGrouped, FormSubmitResultItemGrouped, SubmitRequestBody } from './types';
+import type {
+  FormFieldTag,
+  FormFields,
+  FormSubmitResult,
+  FormSubmitResultGrouped,
+  FormSubmitResultItemGrouped,
+  PublicTagUpdateTarget,
+  SubmitRequestBody,
+} from './types';
 import type { UserInfo } from 'types/api/account';
 
 import type { Route } from 'nextjs-routes';
@@ -37,10 +45,32 @@ export function convertFormDataToRequestsBody(data: FormFields): Array<SubmitReq
   return result;
 }
 
+export function convertUpdateFormDataToRequestBody(data: FormFields, target: PublicTagUpdateTarget): SubmitRequestBody {
+  const tag = data.tags[0];
+  const visualMeta = {
+    bgColor: tag?.bgColor,
+    textColor: tag?.textColor,
+    tagUrl: tag?.url,
+    tagIcon: tag?.iconUrl,
+    tooltipDescription: tag?.tooltipDescription,
+  };
+
+  return {
+    requesterName: data.requesterName,
+    requesterEmail: data.requesterEmail,
+    companyName: data.companyName,
+    companyWebsite: data.companyWebsite,
+    address: target.address,
+    name: target.label,
+    submissionType: 'update',
+    meta: pickBy(visualMeta, (value) => typeof value === 'string' && value.trim().length > 0),
+  };
+}
+
 export function convertTagApiFieldsToFormFields(tag: Pick<SubmitRequestBody, 'name' | 'tagType' | 'meta'>): FormFieldTag {
   return {
     name: tag.name,
-    type: [ tag.tagType ],
+    type: [ tag.tagType ?? 'name' ],
     url: tag.meta.tagUrl,
     iconUrl: tag.meta.tagIcon,
     bgColor: tag.meta.bgColor,
@@ -90,6 +120,7 @@ export function groupSubmitResult(data: FormSubmitResult | undefined): FormSubmi
     requesterEmail: data[0].payload.requesterEmail,
     companyName: data[0].payload.companyName,
     companyWebsite: data[0].payload.companyWebsite,
+    submissionType: data[0].payload.submissionType,
     items: items.sort((a, b) => {
       if (a.error && !b.error) {
         return 1;
@@ -102,18 +133,75 @@ export function groupSubmitResult(data: FormSubmitResult | undefined): FormSubmi
   };
 }
 
-export function getFormDefaultValues(query: Route['query'], userInfo: UserInfo | undefined) {
+export function getFormDefaultValues(
+  query: Route['query'],
+  userInfo: UserInfo | undefined,
+  retrySubmission?: SubmitRequestBody,
+) {
+  const updateTarget = getUpdateTarget(query);
+  const matchingRetry = updateTarget &&
+    retrySubmission?.submissionType === 'update' &&
+    retrySubmission.address.toLowerCase() === updateTarget.address.toLowerCase() &&
+    retrySubmission.name === updateTarget.label ?
+    retrySubmission :
+    undefined;
+
   return {
-    addresses: getAddressesFromQuery(query),
-    requesterName: getQueryParamString(query?.requesterName) || userInfo?.nickname || userInfo?.name || undefined,
-    requesterEmail: getQueryParamString(query?.requesterEmail) || userInfo?.email || undefined,
-    companyName: getQueryParamString(query?.companyName),
-    companyWebsite: getQueryParamString(query?.companyWebsite),
+    addresses: updateTarget ? [ { hash: updateTarget.address } ] : getAddressesFromQuery(query),
+    requesterName: matchingRetry?.requesterName || getQueryParamString(query?.requesterName) || userInfo?.nickname || userInfo?.name || undefined,
+    requesterEmail: matchingRetry?.requesterEmail || getQueryParamString(query?.requesterEmail) || userInfo?.email || undefined,
+    companyName: matchingRetry?.companyName ?? getQueryParamString(query?.companyName),
+    companyWebsite: matchingRetry?.companyWebsite ?? getQueryParamString(query?.companyWebsite),
     // 'generic' is the first item in the curated Category Label
     // dropdown (PublicTagsSubmitFieldTagType.ALLOWED_CATEGORY_TYPES) —
     // any name-tag default would be rejected at validation since
     // 'name' is no longer offered to submitters.
-    tags: [ { name: '', type: [ 'generic' as const ] } ],
+    tags: [ {
+      name: updateTarget?.label ?? '',
+      type: [ updateTarget ? 'name' as const : 'generic' as const ],
+      url: matchingRetry?.meta.tagUrl,
+      iconUrl: matchingRetry?.meta.tagIcon,
+      bgColor: matchingRetry?.meta.bgColor,
+      textColor: matchingRetry?.meta.textColor,
+      tooltipDescription: matchingRetry?.meta.tooltipDescription,
+    } ],
+  };
+}
+
+export function getPublicTagFormKey(query: Route['query']): string {
+  const updateTarget = getUpdateTarget(query);
+
+  if (!updateTarget) {
+    return isUpdateMode(query) ? 'invalid-update' : 'create';
+  }
+
+  return JSON.stringify([
+    'update',
+    updateTarget.address.toLowerCase(),
+    updateTarget.label,
+  ]);
+}
+
+export function isUpdateMode(query: Route['query']): boolean {
+  return getQueryParamString(query?.submissionType) === 'update';
+}
+
+export function getUpdateTarget(query: Route['query']): PublicTagUpdateTarget | undefined {
+  if (!isUpdateMode(query)) {
+    return;
+  }
+
+  const address = getQueryParamString(query?.address);
+  const label = getQueryParamString(query?.tagLabel);
+
+  if (!address || !label) {
+    return;
+  }
+
+  return {
+    address,
+    label,
+    displayName: getQueryParamString(query?.tagName) || label,
   };
 }
 

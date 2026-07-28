@@ -24,11 +24,12 @@ test('empty state', async({ render, mockApiResponse }) => {
   await expect(component.getByText(/No requests yet/i)).toBeVisible();
 });
 
-test('three-status mixed list', async({ render, mockApiResponse }) => {
+test('four-status mixed list', async({ render, mockApiResponse }) => {
   const items: Array<PublicTagApplicationRow> = [
     { ...PUBLIC_TAG_APPLICATION_ROW, id: 1, status: 'pending' },
-    { ...PUBLIC_TAG_APPLICATION_ROW, id: 2, status: 'approved' },
-    { ...PUBLIC_TAG_APPLICATION_ROW, id: 3, status: 'rejected', reject_reason: null },
+    { ...PUBLIC_TAG_APPLICATION_ROW, id: 2, status: 'processing' },
+    { ...PUBLIC_TAG_APPLICATION_ROW, id: 3, status: 'approved' },
+    { ...PUBLIC_TAG_APPLICATION_ROW, id: 4, status: 'rejected', reject_reason: null },
   ];
 
   await mockApiResponse(
@@ -41,8 +42,57 @@ test('three-status mixed list', async({ render, mockApiResponse }) => {
   // 'Approved' and 'Rejected' only exist in real data rows, not placeholder skeletons
   await expect(component.getByText('Approved').first()).toBeVisible();
   await expect(component.getByText('Rejected').first()).toBeVisible();
+  await expect(component.getByText('Applying').first()).toBeVisible();
   // 'Pending review' appears in both placeholders and real row; real row also exists
   await expect(component.getByText('Pending review')).not.toHaveCount(0);
+});
+
+test('update and processing requests cannot be edited', async({ render, mockApiResponse }) => {
+  const items: Array<PublicTagApplicationRow> = [
+    { ...PUBLIC_TAG_APPLICATION_ROW, id: 1, status: 'pending', submission_type: 'update', tag_type: null },
+    { ...PUBLIC_TAG_APPLICATION_ROW, id: 2, status: 'processing', submission_type: 'create' },
+  ];
+
+  await mockApiResponse(
+    'admin:public_tag_applications_list',
+    { items, next_page_params: null },
+    pathParams,
+  );
+
+  const component = await render(<PublicTagApplicationsList/>);
+  await expect(component.locator('span:visible').filter({ hasText: /^Name tag update$/ }).first()).toBeVisible();
+  await expect(component.getByText('Applying').first()).toBeVisible();
+  await expect(component.getByRole('button', { name: 'Edit' })).toHaveCount(0);
+
+  const processingBadge = component.locator('[aria-label="Applying: approved changes are being applied"]:visible');
+  await processingBadge.focus();
+  await expect(processingBadge).toBeFocused();
+  await expect(processingBadge).toHaveCSS('outline-style', 'solid');
+});
+
+test('partial update preview lists only requested visual changes', async({ render, mockApiResponse }) => {
+  const items: Array<PublicTagApplicationRow> = [ {
+    ...PUBLIC_TAG_APPLICATION_ROW,
+    id: 1,
+    submission_type: 'update',
+    tag_type: null,
+    meta: { tooltipDescription: 'Keep this tooltip' },
+  } ];
+
+  await mockApiResponse(
+    'admin:public_tag_applications_list',
+    { items, next_page_params: null },
+    pathParams,
+  );
+
+  const component = await render(<PublicTagApplicationsList/>);
+  const preview = component.getByLabel('Requested visual changes').first();
+
+  await expect(preview).toContainText('Requested changes for Example Tag');
+  await expect(preview).toContainText('Tooltip:');
+  await expect(preview).toContainText('Keep this tooltip');
+  await expect(preview).not.toContainText('Background color:');
+  await expect(preview).not.toContainText('Icon URL:');
 });
 
 test('rejected row with reject reason wraps badge in tooltip', async({ render, mockApiResponse }) => {

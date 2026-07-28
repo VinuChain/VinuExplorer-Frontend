@@ -1,13 +1,18 @@
-import type { HTMLChakraProps } from '@chakra-ui/react';
+import { Flex, type HTMLChakraProps } from '@chakra-ui/react';
 import React from 'react';
 
 import type { EntityTag as TEntityTag } from './types';
 
+import { route } from 'nextjs-routes';
+
+import appConfig from 'configs/app';
 import { useMultichainContext } from 'lib/contexts/multichain';
 import * as mixpanel from 'lib/mixpanel/index';
 import { Link, LinkExternalIcon } from 'toolkit/chakra/link';
 import { Skeleton } from 'toolkit/chakra/skeleton';
 import { Tag } from 'toolkit/chakra/tag';
+import { Tooltip } from 'toolkit/chakra/tooltip';
+import IconSvg from 'ui/shared/IconSvg';
 
 import EntityTagIcon from './EntityTagIcon';
 import EntityTagTooltip from './EntityTagTooltip';
@@ -29,7 +34,7 @@ interface Props extends HTMLChakraProps<'span'> {
   renderMode?: 'name' | 'category';
 }
 
-const EntityTag = ({ data, addressHash, isLoading, noLink, renderMode = 'category', ...rest }: Props) => {
+const EntityTag = ({ data, addressHash, isLoading, noLink, renderMode = 'category', maxW, ...rest }: Props) => {
   const multichainContext = useMultichainContext();
 
   const linkParams = !noLink ? getTagLinkParams(data, multichainContext, renderMode) : undefined;
@@ -52,6 +57,12 @@ const EntityTag = ({ data, addressHash, isLoading, noLink, renderMode = 'categor
     return <Skeleton loading borderRadius="sm" w="100px" h="24px"/>;
   }
 
+  const canRequestUpdate =
+    data.tagType === 'name' &&
+    Boolean(addressHash) &&
+    appConfig.features.account.isEnabled &&
+    appConfig.features.publicTagsSubmission.isEnabled;
+
   const text = (() => {
     if (data.meta?.warpcastHandle) {
       return `@${ data.meta.warpcastHandle }`;
@@ -67,7 +78,7 @@ const EntityTag = ({ data, addressHash, isLoading, noLink, renderMode = 'categor
     return getTagName(data, addressHash);
   })();
 
-  return (
+  const tag = (
     <EntityTagTooltip data={ data }>
       <Link
         external={ linkParams?.type === 'external' }
@@ -75,6 +86,8 @@ const EntityTag = ({ data, addressHash, isLoading, noLink, renderMode = 'categor
         onClick={ handleLinkClick }
         noIcon
         cursor={ hasLink ? 'pointer' : 'default' }
+        maxW={ canRequestUpdate ? '100%' : maxW }
+        minW={ canRequestUpdate ? 0 : undefined }
         { ...rest }
       >
         <Tag
@@ -90,6 +103,55 @@ const EntityTag = ({ data, addressHash, isLoading, noLink, renderMode = 'categor
         </Tag>
       </Link>
     </EntityTagTooltip>
+  );
+
+  if (!canRequestUpdate || !addressHash) {
+    return tag;
+  }
+
+  const updateHref = route({
+    pathname: '/public-tags/submit',
+    query: {
+      submissionType: 'update',
+      address: addressHash,
+      tagLabel: data.slug,
+      tagName: data.name,
+    },
+  });
+
+  return (
+    <Flex
+      as="span"
+      display="inline-flex"
+      alignItems="center"
+      gap={ 1 }
+      minW={ 0 }
+      maxW={ maxW }
+      data-testid="entity-tag-with-update"
+    >
+      <Flex as="span" minW={ 0 } flex="1 1 auto" overflow="hidden">
+        { tag }
+      </Flex>
+      <Tooltip content={ `Request an update to ${ data.name }` } disableOnMobile>
+        <Link
+          href={ updateHref }
+          aria-label={ `Request an update to ${ data.name }` }
+          color="icon.secondary"
+          display="inline-flex"
+          alignItems="center"
+          justifyContent="center"
+          flexShrink={ 0 }
+          boxSize={ 11 }
+          borderRadius="sm"
+          _hover={{ color: 'link.primary' }}
+          _focusVisible={{ outline: '2px solid', outlineColor: 'focus' }}
+          noIcon
+          data-testid="public-tag-update-link"
+        >
+          <IconSvg name="edit" boxSize={ 3 }/>
+        </Link>
+      </Tooltip>
+    </Flex>
   );
 };
 

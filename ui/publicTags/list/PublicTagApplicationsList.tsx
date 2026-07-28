@@ -18,9 +18,10 @@ import PublicTagApplicationEditModal from './PublicTagApplicationEditModal';
 import PublicTagApplicationsListItem from './PublicTagApplicationsListItem';
 import PublicTagApplicationsStatusFilter from './PublicTagApplicationsStatusFilter';
 import PublicTagApplicationsTable from './PublicTagApplicationsTable';
+import { isPublicTagApplicationEditable } from './utils';
 
 const parseStatusParam = (s: string): PublicTagApplicationStatus | undefined => {
-  return s === 'pending' || s === 'approved' || s === 'rejected' ? s : undefined;
+  return s === 'pending' || s === 'processing' || s === 'approved' || s === 'rejected' ? s : undefined;
 };
 
 const PublicTagApplicationsList = () => {
@@ -64,7 +65,9 @@ const PublicTagApplicationsList = () => {
   }, [ refetch ]);
 
   const handleEdit = React.useCallback((item: PublicTagApplicationRow) => {
-    setEditItem(item);
+    if (isPublicTagApplicationEditable(item)) {
+      setEditItem(item);
+    }
   }, []);
 
   const handleEditModalClose = React.useCallback(() => {

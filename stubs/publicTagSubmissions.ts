@@ -7,6 +7,7 @@ export const PUBLIC_TAG_APPLICATION_ROW: PublicTagApplicationRow = {
   address_hash: ADDRESS_HASH,
   tag_name: 'Example Tag',
   tag_type: 'name',
+  submission_type: 'create',
   company_name: 'Example Corp',
   company_website: 'https://example.com',
   description: 'A test tag for display purposes',

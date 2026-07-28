@@ -411,20 +411,6 @@ const AddressPageContent = () => {
     xStarQuery.data?.data,
   ]);
 
-  const titleContentAfter = (
-    <EntityTags
-      tags={ tags }
-      addressHash={ addressQuery.data?.hash }
-      isLoading={
-        isLoading ||
-        (config.features.userOps.isEnabled && userOpsAccountQuery.isPlaceholderData) ||
-        (config.features.addressMetadata.isEnabled && addressMetadataQuery.isPending) ||
-        (addressProfileAPIFeature.isEnabled && userPropfileApiQuery.isPending) ||
-        (xScoreFeature.isEnabled && xStarQuery.isPlaceholderData)
-      }
-    />
-  );
-
   // API always returns hash in check-summed format except for addresses that are not in the database
   // In this case it returns 404 with empty payload, so we calculate check-summed hash on the client
   const checkSummedHash = React.useMemo(() => {
@@ -434,6 +420,20 @@ const AddressPageContent = () => {
 
     return addressQuery.data?.hash ?? getCheckedSummedAddress(hash);
   }, [ hash, addressQuery.data?.hash, isLoading ]);
+
+  const titleContentAfter = (
+    <EntityTags
+      tags={ tags }
+      addressHash={ checkSummedHash }
+      isLoading={
+        isLoading ||
+        (config.features.userOps.isEnabled && userOpsAccountQuery.isPlaceholderData) ||
+        (config.features.addressMetadata.isEnabled && addressMetadataQuery.isPending) ||
+        (addressProfileAPIFeature.isEnabled && userPropfileApiQuery.isPending) ||
+        (xScoreFeature.isEnabled && xStarQuery.isPlaceholderData)
+      }
+    />
+  );
 
   const titleSecondRow = (
     <Flex alignItems="center" w="100%" columnGap={ 2 } rowGap={ 2 } flexWrap={{ base: 'wrap', lg: 'nowrap' }}>

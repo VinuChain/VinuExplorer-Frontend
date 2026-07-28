@@ -9,13 +9,16 @@ import { route } from 'nextjs-routes';
 import useIsMobile from 'lib/hooks/useIsMobile';
 import { Button } from 'toolkit/chakra/button';
 import { Link } from 'toolkit/chakra/link';
+import PublicTagApplicationPreview from 'ui/publicTags/list/PublicTagApplicationPreview';
 import AddressEntity from 'ui/shared/entities/address/AddressEntity';
 import EntityTag from 'ui/shared/EntityTags/EntityTag';
+
 interface Props {
   data: FormSubmitResultGrouped;
+  onEditClick?: () => void;
 }
 
-const PublicTagsSubmitResultWithErrors = ({ data }: Props) => {
+const PublicTagsSubmitResultWithErrors = ({ data, onEditClick }: Props) => {
   const isMobile = useIsMobile();
   const bgColorSuccess = { _light: 'green.50', _dark: 'green.800' };
   const bgColorError = { _light: 'red.50', _dark: 'red.800' };
@@ -25,11 +28,15 @@ const PublicTagsSubmitResultWithErrors = ({ data }: Props) => {
       { data.items.map((item, index) => {
 
         const startOverButtonQuery = pickBy({
-          addresses: item.addresses,
-          requesterName: data.requesterName,
-          requesterEmail: data.requesterEmail,
-          companyName: data.companyName,
-          companyWebsite: data.companyWebsite,
+          submissionType: data.submissionType,
+          address: data.submissionType === 'update' ? item.addresses[0] : undefined,
+          tagLabel: data.submissionType === 'update' ? item.tags[0]?.name : undefined,
+          tagName: data.submissionType === 'update' ? item.tags[0]?.name : undefined,
+          addresses: data.submissionType === 'update' ? undefined : item.addresses,
+          requesterName: data.submissionType === 'update' ? undefined : data.requesterName,
+          requesterEmail: data.submissionType === 'update' ? undefined : data.requesterEmail,
+          companyName: data.submissionType === 'update' ? undefined : data.companyName,
+          companyWebsite: data.submissionType === 'update' ? undefined : data.companyWebsite,
         }, Boolean);
 
         return (
@@ -56,11 +63,16 @@ const PublicTagsSubmitResultWithErrors = ({ data }: Props) => {
                 <GridItem px={{ base: 4, lg: 6 }} pb={{ base: 2, lg: 4 }} pt={{ base: 0, lg: 4 }}>
                   <Box fontSize="sm" color="text.secondary" fontWeight={ 500 }>Tag</Box>
                   <Flex rowGap={ 2 } columnGap={ 2 } mt={ 2 } justifyContent="flex-start" flexWrap="wrap">
-                    { item.tags.map((tag) => (
+                    { item.tags.map((tag) => data.submissionType === 'update' ? (
+                      <PublicTagApplicationPreview
+                        key={ tag.name }
+                        item={{ tag_name: tag.name, meta: tag.meta, submission_type: 'update' }}
+                      />
+                    ) : (
                       <EntityTag
                         key={ tag.name }
                         maxW={{ base: '100%', lg: '300px' }}
-                        data={{ ...tag, slug: '', ordinal: 0 }}
+                        data={{ ...tag, tagType: tag.tagType ?? 'name', slug: '', ordinal: 0 }}
                         noLink
                       />
                     )) }
@@ -81,6 +93,7 @@ const PublicTagsSubmitResultWithErrors = ({ data }: Props) => {
                   mt={{ base: 1, lg: 6 }}
                   ml={{ base: 0, lg: 6 }}
                   w="min-content"
+                  onClick={ onEditClick }
                 >
                   Start  over
                 </Button>

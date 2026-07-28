@@ -4,7 +4,7 @@ import React from 'react';
 
 import type { TabItemRegular } from 'toolkit/components/AdaptiveTabs/types';
 import type { PublicTagType } from 'types/api/addressMetadata';
-import type { FormSubmitResult } from 'ui/publicTags/submit/types';
+import type { FormSubmitResult, SubmitRequestBody } from 'ui/publicTags/submit/types';
 
 import appConfig from 'configs/app';
 import useApiQuery from 'lib/api/useApiQuery';
@@ -13,6 +13,7 @@ import RoutedTabs from 'toolkit/components/RoutedTabs/RoutedTabs';
 import PublicTagApplicationsList from 'ui/publicTags/list/PublicTagApplicationsList';
 import PublicTagsSubmitForm from 'ui/publicTags/submit/PublicTagsSubmitForm';
 import PublicTagsSubmitResult from 'ui/publicTags/submit/PublicTagsSubmitResult';
+import { getPublicTagFormKey, isUpdateMode } from 'ui/publicTags/submit/utils';
 import AccountPageDescription from 'ui/shared/AccountPageDescription';
 import PageTitle from 'ui/shared/Page/PageTitle';
 import useProfileQuery from 'ui/snippets/auth/useProfileQuery';
@@ -42,13 +43,30 @@ const DEFAULT_TAG_TYPES: Array<PublicTagType> = [
   { id: 'burn', type: 'burn', description: 'Burn address tag' },
 ];
 
+const UPDATE_TARGET_QUERY_PARAMS = [ 'submissionType', 'address', 'tagLabel', 'tagName' ];
+
 const PublicTagsSubmit = () => {
   const [ submitResult, setSubmitResult ] = React.useState<FormSubmitResult>();
+  const [ retrySubmission, setRetrySubmission ] = React.useState<SubmitRequestBody>();
 
   const router = useRouter();
   const queryClient = useQueryClient();
   const profileQuery = useProfileQuery();
   useRedirectForInvalidAuthToken();
+  const updateMode = isUpdateMode(router.query);
+  const formKey = getPublicTagFormKey(router.query);
+  const pageTitle = updateMode ? 'Request a name tag update' : 'Request a public tag/label';
+  const previousFormKey = React.useRef(formKey);
+
+  React.useEffect(() => {
+    if (previousFormKey.current === formKey) {
+      return;
+    }
+
+    previousFormKey.current = formKey;
+    setSubmitResult(undefined);
+    setRetrySubmission(undefined);
+  }, [ formKey ]);
 
   const configQuery = useApiQuery('metadata:public_tag_types', {
     queryOptions: {
@@ -57,6 +75,10 @@ const PublicTagsSubmit = () => {
   });
 
   const handleFormSubmitResult = React.useCallback(async(result: FormSubmitResult) => {
+    const failedUpdate = result.find((item) =>
+      item.status === 'error' && item.payload.submissionType === 'update',
+    );
+    setRetrySubmission(failedUpdate?.payload);
     setSubmitResult(result);
 
     if (result.every((r) => r.status === 'ok')) {
@@ -80,21 +102,32 @@ const PublicTagsSubmit = () => {
   }, []);
 
   const handleAddNewTagClick = React.useCallback(() => {
+    setRetrySubmission(undefined);
     handleTabsValueChange({ value: 'submit-tag' });
   }, [ handleTabsValueChange ]);
+
+  const handleEditFailedSubmission = React.useCallback(() => {
+    setSubmitResult(undefined);
+  }, []);
 
   const tagTypes = configQuery.data?.tagTypes ?? DEFAULT_TAG_TYPES;
 
   const tabs: Array<TabItemRegular> = React.useMemo(() => [
     {
       id: 'submit-tag',
-      title: 'Submit new tag',
+      title: updateMode ? 'Update name tag' : 'Submit new tag',
       component: submitResult ? (
-        <PublicTagsSubmitResult data={ submitResult } onAddNewTagClick={ handleAddNewTagClick }/>
+        <PublicTagsSubmitResult
+          data={ submitResult }
+          onAddNewTagClick={ handleAddNewTagClick }
+          onEditClick={ handleEditFailedSubmission }
+        />
       ) : (
         <PublicTagsSubmitForm
+          key={ formKey }
           config={{ tagTypes }}
           onSubmitResult={ handleFormSubmitResult }
+          retrySubmission={ retrySubmission }
           userInfo={ profileQuery.data }
         />
       ),
@@ -104,12 +137,22 @@ const PublicTagsSubmit = () => {
       title: 'My requests',
       component: <PublicTagApplicationsList/>,
     },
-  ], [ submitResult, handleAddNewTagClick, tagTypes, handleFormSubmitResult, profileQuery.data ]);
+  ], [
+    submitResult,
+    handleAddNewTagClick,
+    handleEditFailedSubmission,
+    tagTypes,
+    handleFormSubmitResult,
+    formKey,
+    profileQuery.data,
+    retrySubmission,
+    updateMode,
+  ]);
 
-  if (profileQuery.isLoading || (appConfig.features.addressMetadata.isEnabled && configQuery.isPending)) {
+  if (router.isReady === false || profileQuery.isLoading || (appConfig.features.addressMetadata.isEnabled && configQuery.isPending)) {
     return (
       <>
-        <PageTitle title="Request a public tag/label"/>
+        <PageTitle title={ pageTitle }/>
         <ContentLoader/>
       </>
     );
@@ -118,19 +161,22 @@ const PublicTagsSubmit = () => {
   if (!profileQuery.data) {
     return (
       <>
-        <PageTitle title="Request a public tag/label"/>
-        <AccountPageDescription>Please sign in to submit a public tag/label request and see your prior submissions.</AccountPageDescription>
+        <PageTitle title={ pageTitle }/>
+        <AccountPageDescription>
+          Please sign in to { updateMode ? 'request this name tag update' : 'submit a public tag/label request' } and see your prior submissions.
+        </AccountPageDescription>
       </>
     );
   }
 
   return (
     <>
-      <PageTitle title="Request a public tag/label"/>
+      <PageTitle title={ pageTitle }/>
       <RoutedTabs
         tabs={ tabs }
         defaultTabId="submit-tag"
         onValueChange={ handleTabsValueChange }
+        preservedParams={ updateMode ? UPDATE_TARGET_QUERY_PARAMS : undefined }
       />
     </>
   );

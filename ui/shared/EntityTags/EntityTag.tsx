@@ -34,7 +34,7 @@ interface Props extends HTMLChakraProps<'span'> {
   renderMode?: 'name' | 'category';
 }
 
-const EntityTag = ({ data, addressHash, isLoading, noLink, renderMode = 'category', ...rest }: Props) => {
+const EntityTag = ({ data, addressHash, isLoading, noLink, renderMode = 'category', maxW, ...rest }: Props) => {
   const multichainContext = useMultichainContext();
 
   const linkParams = !noLink ? getTagLinkParams(data, multichainContext, renderMode) : undefined;
@@ -56,6 +56,12 @@ const EntityTag = ({ data, addressHash, isLoading, noLink, renderMode = 'categor
   if (isLoading) {
     return <Skeleton loading borderRadius="sm" w="100px" h="24px"/>;
   }
+
+  const canRequestUpdate =
+    data.tagType === 'name' &&
+    Boolean(addressHash) &&
+    appConfig.features.account.isEnabled &&
+    appConfig.features.publicTagsSubmission.isEnabled;
 
   const text = (() => {
     if (data.meta?.warpcastHandle) {
@@ -80,6 +86,8 @@ const EntityTag = ({ data, addressHash, isLoading, noLink, renderMode = 'categor
         onClick={ handleLinkClick }
         noIcon
         cursor={ hasLink ? 'pointer' : 'default' }
+        maxW={ canRequestUpdate ? '100%' : maxW }
+        minW={ canRequestUpdate ? 0 : undefined }
         { ...rest }
       >
         <Tag
@@ -97,11 +105,7 @@ const EntityTag = ({ data, addressHash, isLoading, noLink, renderMode = 'categor
     </EntityTagTooltip>
   );
 
-  if (
-    data.tagType !== 'name' ||
-    !addressHash ||
-    !appConfig.features.publicTagsSubmission.isEnabled
-  ) {
+  if (!canRequestUpdate || !addressHash) {
     return tag;
   }
 
@@ -116,8 +120,18 @@ const EntityTag = ({ data, addressHash, isLoading, noLink, renderMode = 'categor
   });
 
   return (
-    <Flex as="span" display="inline-flex" alignItems="center" gap={ 1 } minW={ 0 }>
-      { tag }
+    <Flex
+      as="span"
+      display="inline-flex"
+      alignItems="center"
+      gap={ 1 }
+      minW={ 0 }
+      maxW={ maxW }
+      data-testid="entity-tag-with-update"
+    >
+      <Flex as="span" minW={ 0 } flex="1 1 auto" overflow="hidden">
+        { tag }
+      </Flex>
       <Tooltip content={ `Request an update to ${ data.name }` } disableOnMobile>
         <Link
           href={ updateHref }

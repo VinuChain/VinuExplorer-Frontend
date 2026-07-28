@@ -36,6 +36,36 @@ test('signed-out mobile name tag exposes a keyboard-accessible adjacent update l
   await expect(component.getByRole('link', { name: 'Unicorn Uproar', exact: true })).toBeVisible();
 });
 
+test('name tag reserves its constrained width for the update action', async({ render }) => {
+  const component = await render(
+    <EntityTag
+      data={{ ...addressMetadataMock.customNameTag, name: 'A very long public name tag that must shrink' }}
+      addressHash="0x1234567890123456789012345678901234567890"
+      maxW="120px"
+    />,
+  );
+
+  const wrapper = component.getByTestId('entity-tag-with-update');
+  const bounds = await wrapper.boundingBox();
+  expect(bounds?.width).toBeLessThanOrEqual(120);
+  await expect(component.getByTestId('public-tag-update-link')).toBeVisible();
+});
+
+test('name tag hides the update action when accounts are disabled', async({ render, mockEnvs }) => {
+  await mockEnvs([
+    [ 'NEXT_PUBLIC_IS_ACCOUNT_SUPPORTED', 'false' ],
+  ]);
+
+  const component = await render(
+    <EntityTag
+      data={ addressMetadataMock.customNameTag }
+      addressHash="0x1234567890123456789012345678901234567890"
+    />,
+  );
+
+  await expect(component.getByTestId('public-tag-update-link')).toHaveCount(0);
+});
+
 test('cex deposit tag', async({ render }) => {
   const component = await render(
     <Box w="200px">

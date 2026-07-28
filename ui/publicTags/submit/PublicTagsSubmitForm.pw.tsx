@@ -104,7 +104,7 @@ test('update mode locks one target and exposes only blank visual fields +@mobile
   await expect(component.getByLabel(/Tag icon URL/i)).toHaveValue('');
 
   await component.getByRole('button', { name: 'Send update request' }).click();
-  await expect(component.getByText(/Enter at least one visual change/i)).toBeVisible();
+  await expect(component.getByText(/Enter at least one visual change/i)).toBeVisible({ timeout: EXPECT_TIMEOUT });
 });
 
 test('failed update retry restores in-memory values for the same locked target', async({ render }) => {

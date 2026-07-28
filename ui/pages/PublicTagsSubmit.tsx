@@ -43,6 +43,8 @@ const DEFAULT_TAG_TYPES: Array<PublicTagType> = [
   { id: 'burn', type: 'burn', description: 'Burn address tag' },
 ];
 
+const UPDATE_TARGET_QUERY_PARAMS = [ 'submissionType', 'address', 'tagLabel', 'tagName' ];
+
 const PublicTagsSubmit = () => {
   const [ submitResult, setSubmitResult ] = React.useState<FormSubmitResult>();
   const [ retrySubmission, setRetrySubmission ] = React.useState<SubmitRequestBody>();
@@ -174,6 +176,7 @@ const PublicTagsSubmit = () => {
         tabs={ tabs }
         defaultTabId="submit-tag"
         onValueChange={ handleTabsValueChange }
+        preservedParams={ updateMode ? UPDATE_TARGET_QUERY_PARAMS : undefined }
       />
     </>
   );

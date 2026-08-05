@@ -15,7 +15,7 @@
 > |                     |                                                                                               |
 > | ------------------- | --------------------------------------------------------------------------------------------- |
 > | Upstream base       | `blockscout/frontend` v2.6.0 (merge-base `fba6438be`)                                         |
-> | Networks            | mainnet chain ID **207** · RPC `vinuchain-rpc.com` · explorer `vinuexplorer.org`              |
+> | Networks            | mainnet chain ID **207** · RPC `rpc.vinuchain.org` · explorer `vinuexplorer.org`              |
 > |                     | testnet chain ID **206** · RPC `vinufoundation-rpc.com` · explorer `testnet.vinuexplorer.org` |
 > | Image               | `ghcr.io/vinuchain/vinuexplorer-frontend:<short-sha>`                                         |
 > | Publish             | push to `main` → build the immutable short-SHA image                                          |

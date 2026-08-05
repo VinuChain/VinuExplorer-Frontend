@@ -22,7 +22,7 @@ deploy or recover using only this repository.
 
 | Network | Chain ID | RPC | Explorer |
 | --- | --- | --- | --- |
-| Mainnet | **207** | `vinuchain-rpc.com` | `vinuexplorer.org` |
+| Mainnet | **207** | `rpc.vinuchain.org` | `vinuexplorer.org` |
 | Testnet | **206** | `vinufoundation-rpc.com` | `testnet.vinuexplorer.org` |
 
 There is **no VinuChain env preset committed in `configs/envs/`**. Production

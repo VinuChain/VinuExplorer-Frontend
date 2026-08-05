@@ -286,7 +286,7 @@ Playwright component tests cover: empty state, three-row mixed-status list (one 
 
 | Risk | Mitigation |
 |---|---|
-| Auth-gating the POST silently breaks an undocumented external integration. | Grep `vinuchain-rpc.com`, `vinuexplorer.org`, and known third-party scripts for the path; announce the change in release notes; if a known anonymous client breaks, accept the regression (the audit trail benefit outweighs it, per brainstorming). |
+| Auth-gating the POST silently breaks an undocumented external integration. | Grep `rpc.vinuchain.org`, `vinuexplorer.org`, and known third-party scripts for the path; announce the change in release notes; if a known anonymous client breaks, accept the regression (the audit trail benefit outweighs it, per brainstorming). |
 | Backfill SQL matches a row that the email's true owner didn't actually submit (someone earlier spoofed their address). | Bounded to historical anonymous rows where the spoofer guessed the future Auth0 email exactly. For tag submissions this is essentially zero. Document in release notes; offer manual unlink via DB on request. |
 | The `:api_v1` pipeline doesn't yet have an auth plug. | Lift the existing one from `:account_api_v2` into a shared plug; do not duplicate. Adds one small refactor commit. |
 | `account_public_tag_submissions` ends up larger than expected at migration time. | Inspect row count before deploy; switch to `CREATE INDEX CONCURRENTLY` in a separate non-transactional migration if > 50k rows. |

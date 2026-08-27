@@ -1,3 +1,4 @@
+import type { IncomingMessage } from 'http';
 import fetch, { AbortError } from 'node-fetch';
 
 import buildUrl from 'nextjs/utils/buildUrl';
@@ -12,7 +13,21 @@ type Params<R extends ResourceName> = {
   pathParams?: ResourcePathParams<R>;
   queryParams?: Record<string, string | number | undefined>;
   timeout?: number;
+  req: IncomingMessage;
 };
+
+// Forward the client address so the API rate limiter buckets SSR fetches per client
+// instead of per frontend container. Only the ingress-derived X-Real-IP (nginx sets it
+// from $remote_addr, the peer it actually accepted) is trusted; the incoming
+// X-Forwarded-For chain is caller-controlled and is deliberately not copied.
+export function getForwardedHeaders(req: IncomingMessage): Record<string, string> {
+  const realIp = req.headers['x-real-ip'];
+  const chain = [ Array.isArray(realIp) ? realIp[0] : realIp, req.socket.remoteAddress?.replace(/^::ffff:/, '') ]
+    .filter(Boolean)
+    .join(', ');
+
+  return chain ? { 'x-forwarded-for': chain } : {};
+}
 
 export default async function fetchApi<R extends ResourceName = never, S = ResourcePayload<R>>(params: Params<R>): Promise<S | undefined> {
   const controller = new AbortController();
@@ -25,7 +40,7 @@ export default async function fetchApi<R extends ResourceName = never, S = Resou
   const end = metrics?.apiRequestDuration.startTimer();
 
   try {
-    const response = await fetch(url, { signal: controller.signal });
+    const response = await fetch(url, { signal: controller.signal, headers: getForwardedHeaders(params.req) });
 
     const duration = end?.({ route: params.resource, code: response.status });
     if (response.status === 200) {

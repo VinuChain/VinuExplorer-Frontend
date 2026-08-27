@@ -4,6 +4,27 @@ import type { NextApiRequest, NextApiResponse } from 'next';
 import fetchFactory from 'nextjs/utils/fetchProxy';
 
 import appConfig from 'configs/app';
+import multichainConfig from 'configs/multichain';
+
+function toOrigin(endpoint: string | undefined) {
+  try {
+    return endpoint ? new URL(endpoint).origin : undefined;
+  } catch {
+    return;
+  }
+}
+
+// SSRF guard: the target host comes from the caller-controlled "x-endpoint" header (or a protocol-relative path),
+// so the proxy only forwards to origins that are present in the server-side config
+export function getAllowedOrigins(): Set<string> {
+  const apis = [ appConfig.apis, ...(multichainConfig()?.chains ?? []).map((chain) => chain.app_config.apis) ];
+  const origins = apis
+    .flatMap((item) => Object.values(item))
+    .map((api) => toOrigin(api?.endpoint))
+    .filter((origin): origin is string => Boolean(origin));
+
+  return new Set(origins);
+}
 
 const handler = async(nextReq: NextApiRequest, nextRes: NextApiResponse) => {
   if (!nextReq.url) {
@@ -11,10 +32,22 @@ const handler = async(nextReq: NextApiRequest, nextRes: NextApiResponse) => {
     return;
   }
 
-  const url = new URL(
-    nextReq.url.replace(/^\/node-api\/proxy/, ''),
-    nextReq.headers['x-endpoint']?.toString() || appConfig.apis.general?.endpoint,
-  );
+  const url = (() => {
+    try {
+      return new URL(
+        nextReq.url.replace(/^\/node-api\/proxy/, ''),
+        nextReq.headers['x-endpoint']?.toString() || appConfig.apis.general?.endpoint,
+      );
+    } catch {
+      return;
+    }
+  })();
+
+  if (!url || !getAllowedOrigins().has(url.origin)) {
+    nextRes.status(400).json({ error: 'Requested endpoint is not allowed' });
+    return;
+  }
+
   const apiRes = await fetchFactory(nextReq)(
     url.toString(),
     pickBy(pick(nextReq, [ 'body', 'method' ]), Boolean),

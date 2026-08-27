@@ -32,15 +32,6 @@ const TxsHeaderMobile = ({ filterComponent, sorting, setSorting, paginationProps
     setSorting?.(value[0] as TransactionsSortingValue);
   }, [ setSorting ]);
 
-  // Hard reload matches the in-banner link behavior in SocketNewItemsNotice.
-  // A soft `pagination.resetPage()` refetch leaves the live-tx counter banner
-  // in a broken state (vanishes and never re-appears); a full reload re-mounts
-  // the socket hook so the banner returns to "scanning..." and increments
-  // again. See TxsRefreshButton call sites for both mobile and desktop.
-  const handleRefresh = React.useCallback(() => {
-    window.location.reload();
-  }, []);
-
   return (
     <ActionBar className={ className }>
       <HStack>
@@ -62,7 +53,7 @@ const TxsHeaderMobile = ({ filterComponent, sorting, setSorting, paginationProps
           size="xs"
           placeholder="Search by addresses, hash, method..."
         /> */ }
-        <TxsRefreshButton onClick={ handleRefresh } isLoading={ paginationProps.isLoading }/>
+        <TxsRefreshButton onClick={ paginationProps.resetPage } isLoading={ paginationProps.isLoading }/>
         { linkSlot }
       </HStack>
       { showPagination && <Pagination { ...paginationProps }/> }

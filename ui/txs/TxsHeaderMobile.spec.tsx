@@ -48,10 +48,9 @@ function getPagination(resetPage: () => void): PaginationParams {
 }
 
 describe('TxsHeaderMobile', () => {
-  it('wires the refresh button to a full page reload (not pagination.resetPage)', () => {
-    // Soft refetch via resetPage leaves SocketNewItemsNotice broken (banner
-    // vanishes and never reappears). The refresh button must do a hard
-    // reload instead so the socket hook re-mounts cleanly.
+  it('wires the refresh button to pagination reset, not a page reload', () => {
+    // A hard reload discards scroll position, open tooltips and filter UI;
+    // pagination.resetPage refetches page 1 in place.
     const reload = vi.fn();
     const originalLocation = window.location;
     Object.defineProperty(window, 'location', {
@@ -71,8 +70,8 @@ describe('TxsHeaderMobile', () => {
 
     fireEvent.click(screen.getByRole('button', { name: 'Refresh transactions' }));
 
-    expect(reload).toHaveBeenCalledTimes(1);
-    expect(resetPage).not.toHaveBeenCalled();
+    expect(resetPage).toHaveBeenCalledTimes(1);
+    expect(reload).not.toHaveBeenCalled();
 
     Object.defineProperty(window, 'location', {
       value: originalLocation,

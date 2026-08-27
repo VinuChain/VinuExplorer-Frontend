@@ -17,18 +17,9 @@ interface Props {
 
 const TxsSocketNoticeTypeAll = ({ type, place, isLoading }: Props) => {
   const multichainContext = useMultichainContext();
-  const { num, showErrorAlert } = useNewTxsSocketTypeAll({ type, isLoading });
+  const { num, showErrorAlert, refetch } = useNewTxsSocketTypeAll({ type, isLoading });
 
   if (num === undefined) {
-    return null;
-  }
-
-  // The list now auto-refreshes on each new-tx socket signal (see
-  // useTxsSocketTypeAll), so the perpetual "scanning new transactions..." /
-  // "N more transactions have come in" notice is redundant and reads as if the
-  // page is stuck. Only surface the connection-error state; otherwise let the
-  // list update silently like the latest-blocks widget.
-  if (!showErrorAlert) {
     return null;
   }
 
@@ -45,6 +36,7 @@ const TxsSocketNoticeTypeAll = ({ type, place, isLoading }: Props) => {
         num={ num }
         isLoading={ isLoading }
         url={ url }
+        onLinkClick={ refetch }
       />
     );
   }
@@ -56,6 +48,7 @@ const TxsSocketNoticeTypeAll = ({ type, place, isLoading }: Props) => {
         showErrorAlert={ showErrorAlert }
         isLoading={ isLoading }
         url={ url }
+        onLinkClick={ refetch }
       />
     );
   }

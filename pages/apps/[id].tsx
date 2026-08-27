@@ -68,6 +68,7 @@ export const getServerSideProps: GetServerSideProps<Props<typeof pathname>> = as
           }
         } else {
           return await fetchApi({
+            req: ctx.req,
             resource: 'admin:marketplace_dapp',
             pathParams: { dappId: getQueryParamString(ctx.query.id), chainId: config.chain.id },
             timeout: 1_000,

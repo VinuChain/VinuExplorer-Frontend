@@ -12,8 +12,9 @@ deploy or recover using only this repository.
 | --- | --- |
 | Upstream remote | `https://github.com/blockscout/frontend.git` |
 | Origin | `VinuChain/VinuExplorer-Frontend` |
-| Merge-base with upstream | `fba6438be` (2025-12-13), upstream tag `v2.6.0` |
+| Merge-base with upstream | `fba6438be` (2025-12-13) — 33 commits before upstream `v2.6.0`; nearest tag `v2.5.0-alpha` |
 | Default branch | `main` (production source) |
+| Delta inventory | `scripts/fork-delta.sh` — diff vs the base, fork commits ahead, upstream commits behind and the latest upstream release tag; warns if `main` no longer merges from the recorded base |
 
 `package.json` still carries the upstream identity (`name: blockscout-frontend`,
 `version: 1.0.0`) — this is intentional, the fork tracks upstream packaging.
@@ -22,7 +23,7 @@ deploy or recover using only this repository.
 
 | Network | Chain ID | RPC | Explorer |
 | --- | --- | --- | --- |
-| Mainnet | **207** | `rpc.vinuchain.org` | `vinuexplorer.org` |
+| Mainnet | **207** | `rpc.vinuchain.org` | `mainnet.vinuexplorer.org` (`vinuexplorer.org` 301s here) |
 | Testnet | **206** | `vinufoundation-rpc.com` | `testnet.vinuexplorer.org` |
 
 There is **no VinuChain env preset committed in `configs/envs/`**. Production
@@ -68,11 +69,15 @@ Design records for the tag/VNS features live in `docs/superpowers/`.
         builds ghcr.io/vinuchain/vinuexplorer-frontend:<short-sha>
         (next build runs inside the Docker build → also a compile gate)
       │
-      ▼
- Agency Control Plane trusted adapter
-   1. verifies exact merge SHA, CI, runtime evidence, and a live deploy permit
-   2. invokes the allowlisted vinuexplorer-backend deploy adapter
-   3. records the immutable provider receipt before consuming the permit
+      ▼  (nothing in this repository deploys; the image is only published)
+ VinuChain/VinuExplorer-Backend  .github/workflows/deploy.yml
+   1. runs on every backend `master` push, or via `workflow_dispatch`
+      with the input `frontend_image_tag=<short-sha>`
+   2. resolve-frontend-image: the input tag, else this repo's current
+      `main` head (8-char SHA); waits up to 25 min for that GHCR tag /
+      docker-publish run to succeed
+   3. build-test gate → CodeDeploy testnet → mainnet; `bin/deployment/start`
+      pins ghcr.io/vinuchain/vinuexplorer-frontend:<tag> on each box
 ```
 
 Key properties:
@@ -81,8 +86,13 @@ Key properties:
   mutable alias and never deploys directly.
 - **No `concurrency:` block in `docker-publish.yml`** — by design (see the
   in-file comment): GH Actions concurrency would silently cancel pending runs and
-  skip a commit's image. Deployment serialization and idempotency are enforced
-  by the Agency Control Plane adapter and the backend deployment workflow.
+  skip a commit's image. Deployment serialization is enforced by the backend
+  workflow's `concurrency` group and its CodeDeploy active-deployment wait.
+- **Deploy coupling.** A push to `main` does not, by itself, change what is
+  served: the next backend `master` push (or a `workflow_dispatch` of the
+  backend `deploy.yml`) picks up the current `main` short SHA. Check what is
+  live with `curl -s https://mainnet.vinuexplorer.org/node-api/config | jq -r
+  .envs.NEXT_PUBLIC_GIT_COMMIT_SHA` (same on `testnet.vinuexplorer.org`).
 - **Quality gate.** The `checks` job gates `build-and-push`, so a push to `main`
   that fails ESLint, `tsc`, the envs-validator, or Vitest produces **no** new
   GHCR tag. Publishing an image never grants or triggers deployment authority.
@@ -126,21 +136,26 @@ operator-controlled env, not user input.
 
 ## 6. Rollback
 
-Every commit to `main` produces an immutable `:<short-sha>` image tag. When a
-rollback is required, route the known-good short SHA and incident evidence to
-the VinuChain release manager. The Agency Control Plane must issue a rollback or
-redeploy permit, and its trusted backend adapter must verify the exact target,
-environment, executable identity, idempotency key, and rollback target before
-invocation. The adapter records the provider receipt and subsequent observation
-evidence in canonical lifecycle state.
+Every commit to `main` produces an immutable `:<short-sha>` image tag. To roll
+back, the VinuChain release manager runs the backend deploy workflow with the
+known-good tag:
 
-Do not dispatch the backend workflow manually from this repository or from an
-operator shell. An immutable image's existence proves build provenance; it does
-not grant deployment authority.
+```sh
+gh workflow run deploy.yml -R VinuChain/VinuExplorer-Backend \
+  -f frontend_image_tag=<known-good-short-sha>
+```
+
+That redeploys the current backend `master` with the pinned frontend image
+through the same build-test gate and testnet-first sequencing; confirm with
+`NEXT_PUBLIC_GIT_COMMIT_SHA` at `/node-api/config` on both hosts. Workflows in
+this repository must never dispatch it — `.github/workflow-policy/verify.rb`
+and `scripts/verify-workflow-boundaries.mjs` reject `gh workflow run` and
+Actions-API calls here. An immutable image's existence proves build
+provenance; it does not grant deployment authority.
 
 ## 7. Upstream tracking
 
-The fork tracks the upstream v2.6.0 line and drifts over time. Keep the sync
+The fork branched just before upstream v2.6.0 and drifts over time. Keep the sync
 cadence to **≤1 quarter**; fork debt grows superlinearly. Known conflict hotspots
 when merging upstream: `lib/api/buildUrl.ts` / `lib/api/useApiFetch.tsx` (proxy
 rework), `toolkit/hooks/*` (resize-semantics change), `ui/snippets/topBar/TopBarStats.tsx`,

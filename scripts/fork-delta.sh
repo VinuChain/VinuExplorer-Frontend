@@ -6,7 +6,7 @@ UPSTREAM_BASE=fba6438bec0a7d8b072799d997ab7d82f6159b80  # merge-base with blocks
 UPSTREAM_REF=main
 cd "$(git rev-parse --show-toplevel)"
 git remote get-url upstream >/dev/null 2>&1 || git remote add upstream https://github.com/blockscout/frontend.git
-git fetch --quiet --tags upstream "${UPSTREAM_REF}"
+git fetch --quiet --tags upstream "+refs/heads/${UPSTREAM_REF}:refs/remotes/upstream/${UPSTREAM_REF}"
 ACTUAL_BASE=$(git merge-base HEAD "upstream/${UPSTREAM_REF}")
 echo "UPSTREAM_BASE ${UPSTREAM_BASE}"
 [ "${ACTUAL_BASE}" = "${UPSTREAM_BASE}" ] || echo "WARNING: merge-base with upstream/${UPSTREAM_REF} is ${ACTUAL_BASE}; update UPSTREAM_BASE here and in docs/FORK.md"

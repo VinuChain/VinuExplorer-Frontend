@@ -26,6 +26,12 @@ describe('getForwardedHeaders()', () => {
     expect(headers).toEqual({ 'x-forwarded-for': '203.0.113.7, 127.0.0.1' });
   });
 
+  it('ignores X-Real-IP when the peer is not the ingress (direct caller)', () => {
+    const headers = getForwardedHeaders(createRequest({ 'x-real-ip': '203.0.113.7' }, '198.51.100.9'));
+
+    expect(headers).toEqual({ 'x-forwarded-for': '198.51.100.9' });
+  });
+
   it('ignores the caller-controlled X-Forwarded-For chain', () => {
     const headers = getForwardedHeaders(
       createRequest({ 'x-forwarded-for': '198.51.100.1, 10.0.0.2', 'x-real-ip': '203.0.113.7' }, '127.0.0.1'),

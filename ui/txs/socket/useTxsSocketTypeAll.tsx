@@ -60,10 +60,20 @@ export default function useNewTxsSocketTypeAll({ type, isLoading }: Params) {
   const resourceName = RESOURCE_BY_TYPE[type];
   const isFetching = useIsFetching({ queryKey: [ resourceName ] }) > 0;
 
+  const lastNoticeAt = React.useRef(0);
+  const fetchStartedAt = React.useRef(0);
+
   // Whatever refreshed the list (notice click, Refresh button, page change)
-  // has now shown the announced transactions, so the counter starts over.
+  // has now shown the announced transactions, so the counter starts over —
+  // but only if that fetch started after the announcement. A fetch already in
+  // flight when the socket message arrived (focus refetch, pagination) cannot
+  // contain those transactions and must not clear the counter.
   React.useEffect(() => {
-    if (!isFetching) {
+    if (isFetching) {
+      fetchStartedAt.current = Date.now();
+      return;
+    }
+    if (fetchStartedAt.current >= lastNoticeAt.current) {
       resetNum();
     }
   }, [ isFetching, resetNum ]);
@@ -77,6 +87,7 @@ export default function useNewTxsSocketTypeAll({ type, isLoading }: Params) {
   const { topic, event } = getSocketParams(type, page);
 
   const handleNewTxMessage = React.useCallback((response: { transaction: number } | { pending_transaction: number } | unknown) => {
+    lastNoticeAt.current = Date.now();
     if (assertIsNewTxResponse(response)) {
       setNum(response.transaction);
     }

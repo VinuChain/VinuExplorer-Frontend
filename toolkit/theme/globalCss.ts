@@ -64,6 +64,20 @@ const globalCss: SystemConfig['globalCss'] = {
   select: {
     ...webkitAutofillRules,
   },
+  // Nothing in the app consults prefers-reduced-motion, so a user who has asked
+  // their OS to reduce motion still gets every transition, the infinite
+  // skeleton pulse, and smooth scrolling. Vestibular triggers are the reason
+  // that setting exists, so honour it as a global floor rather than per
+  // component. Durations are collapsed rather than set to 0 so animation and
+  // transition end events still fire and nothing waiting on them stalls.
+  '*, *::before, *::after': {
+    '@media (prefers-reduced-motion: reduce)': {
+      animationDuration: '0.01ms !important',
+      animationIterationCount: '1 !important',
+      transitionDuration: '0.01ms !important',
+      scrollBehavior: 'auto !important',
+    },
+  },
   ...recaptcha,
   ...scrollbar,
   ...entity,

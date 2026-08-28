@@ -18,7 +18,9 @@ const DEFAULT_THEME_COLORS = {
       _dark: { value: '{colors.whiteAlpha.800}' },
     },
     secondary: {
-      _light: { value: '{colors.gray.500}' },
+      // gray.500 is 3.83:1 on the page background and fails WCAG AA for the
+      // 12px text this token is mostly used for. gray.600 is 7.18:1.
+      _light: { value: '{colors.gray.600}' },
       _dark: { value: '{colors.gray.400}' },
     },
   },

@@ -109,6 +109,19 @@ const SearchBarInput = (
     </>
   );
 
+  // PopoverTrigger renders `asChild`, so its trigger props land on this form.
+  // `aria-expanded`/`aria-haspopup` are not allowed on <form> (axe flags it
+  // critical). Move them to the input and pair them with role="combobox",
+  // which is the pattern they actually describe: a text field owning a
+  // suggestion popup. Everything else — data-scope/data-part, id, handlers —
+  // stays on the form, which is what Chakra positions and toggles against.
+  const {
+    'aria-expanded': ariaExpanded,
+    'aria-haspopup': ariaHasPopup,
+    'aria-controls': ariaControls,
+    ...formProps
+  } = rest;
+
   return (
     <chakra.form
       ref={ innerRef }
@@ -121,7 +134,7 @@ const SearchBarInput = (
       borderRadius="base"
       position="relative"
       zIndex={ isSuggestOpen ? 'modal' : 'auto' }
-      { ...rest }
+      { ...formProps }
     >
       <InputGroup
         startElement={ startElement }
@@ -134,6 +147,14 @@ const SearchBarInput = (
           onChange={ handleChange }
           onFocus={ onFocus }
           tabIndex={ readOnly ? -1 : 0 }
+          // Only a combobox when a popover actually supplied the state: this input
+          // is also rendered standalone (search results page, mobile), and
+          // role="combobox" without aria-expanded is itself a violation.
+          role={ ariaExpanded !== undefined ? 'combobox' : undefined }
+          aria-expanded={ ariaExpanded }
+          aria-haspopup={ ariaHasPopup }
+          aria-controls={ ariaControls }
+          aria-autocomplete={ ariaExpanded !== undefined ? 'list' : undefined }
           borderWidth={ isHeroBanner ? borderWidthHeroBanner : '2px' }
           borderStyle="solid"
           borderColor={{ _light: 'blackAlpha.100', _dark: 'whiteAlpha.200' }}

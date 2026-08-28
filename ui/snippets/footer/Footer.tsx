@@ -105,7 +105,16 @@ const Footer = () => {
       <Box gridArea={ gridArea }>
         <Flex columnGap={ 2 } textStyle="xs" alignItems="center">
           <span>Made with</span>
-          <Link href="https://www.blockscout.com" external noIcon display="inline-flex" color={ logoColor } _hover={{ color: logoColor }}>
+          { /* Icon-only link: without aria-label it is in the tab order with no accessible name. */ }
+          <Link
+            href="https://www.blockscout.com"
+            external
+            noIcon
+            aria-label="Blockscout"
+            display="inline-flex"
+            color={ logoColor }
+            _hover={{ color: logoColor }}
+          >
             <IconSvg
               name="networks/logo-placeholder"
               width="80px"
@@ -118,7 +127,7 @@ const Footer = () => {
         </Text>
         <Box mt={ 6 } alignItems="start" textStyle="xs">
           <Text>
-            Blockscout: <Link href={ BLOCKSCOUT_UPSTREAM_URL } external noIcon>{ BLOCKSCOUT_UPSTREAM_VERSION }</Link>
+            Blockscout: <Link href={ BLOCKSCOUT_UPSTREAM_URL } external noIcon textDecoration="underline">{ BLOCKSCOUT_UPSTREAM_VERSION }</Link>
           </Text>
           { frontendSha && (
             <Text>
@@ -158,9 +167,9 @@ const Footer = () => {
     return (
       <Box gridArea={ gridArea } textStyle="xs" mt={ 6 }>
         <span>This site is protected by reCAPTCHA and the Google </span>
-        <Link href="https://policies.google.com/privacy" external noIcon>Privacy Policy</Link>
+        <Link href="https://policies.google.com/privacy" external noIcon textDecoration="underline">Privacy Policy</Link>
         <span> and </span>
-        <Link href="https://policies.google.com/terms" external noIcon>Terms of Service</Link>
+        <Link href="https://policies.google.com/terms" external noIcon textDecoration="underline">Terms of Service</Link>
         <span> apply.</span>
       </Box>
     );

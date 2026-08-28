@@ -217,8 +217,10 @@ const Stats = () => {
         id: 'feeless_txs' as const,
         icon: 'gas' as const,
         label: 'Feeless txs',
-        value: `${ apiData.feeless_tx_percentage.toFixed(1) }%`,
-        hint: `${ BigNumber(apiData.total_fee_refunded).div(WEI).dp(2).toFormat() } VC total refunded`,
+        value: apiData.feeless_tx_percentage < 0.005 && BigNumber(apiData.total_fee_refunded).gt(0) ?
+          '<0.01%' :
+          `${ apiData.feeless_tx_percentage.toLocaleString(undefined, { maximumFractionDigits: 2 }) }%`,
+        hint: `All-time share of transactions with a Payback refund; ${ BigNumber(apiData.total_fee_refunded).div(WEI).dp(2).toFormat() } VC total refunded`,
         isLoading,
       },
     ]

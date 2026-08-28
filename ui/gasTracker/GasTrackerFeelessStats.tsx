@@ -29,6 +29,7 @@ const GasTrackerFeelessStats = ({ totalFeeRefunded, feelessTxPercentage, isLoadi
 
   const nativeSymbol = config.chain.currency.symbol;
   const totalRefunded = totalFeeRefunded != null ? BigNumber(totalFeeRefunded).div(WEI).dp(2).toFormat() : '0';
+  const hasRefunds = totalFeeRefunded != null && BigNumber(totalFeeRefunded).gt(0);
 
   const items: Array<StatItem> = [];
 
@@ -36,8 +37,11 @@ const GasTrackerFeelessStats = ({ totalFeeRefunded, feelessTxPercentage, isLoadi
     items.push({
       id: 'feeless-transactions',
       label: 'Feeless transactions',
-      value: hasFeelessTxPercentage ? `${ feelessTxPercentage.toFixed(1) }%` : '0.0%',
-      hint: 'Share of transactions classified as Gas-Free by fee refund data.',
+      // Backend rounds to 2 dp, so 0 means "< 0.005%", not "none" - say so when refunds exist.
+      value: hasFeelessTxPercentage && feelessTxPercentage < 0.005 && hasRefunds ?
+        '<0.01%' :
+        `${ (feelessTxPercentage ?? 0).toLocaleString(undefined, { maximumFractionDigits: 2 }) }%`,
+      hint: 'All-time share of transactions that received a full or partial Payback refund.',
     });
   }
 

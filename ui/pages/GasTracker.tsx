@@ -35,7 +35,7 @@ const GasTracker = () => {
   }
 
   const isLoading = isPlaceholderData;
-  const enrichedData = data ? enrichGasStats(data, dataUpdatedAt) : data;
+  const enrichedData = data ? enrichGasStats(data) : data;
 
   const titleSecondRow = (
     <Flex
@@ -48,7 +48,7 @@ const GasTracker = () => {
       rowGap={ 1 }
       flexDir={{ base: 'column', lg: 'row' }}
     >
-      { typeof enrichedData?.network_utilization_percentage === 'number' &&
+      { typeof enrichedData?.network_utilization_percentage === 'number' && enrichedData.network_utilization_percentage >= 0.01 &&
         <GasTrackerNetworkUtilization percentage={ enrichedData.network_utilization_percentage } isLoading={ isLoading }/> }
       { enrichedData?.gas_price_updated_at && (
         <Skeleton loading={ isLoading } whiteSpace="pre" display="flex" alignItems="center">
@@ -68,7 +68,7 @@ const GasTracker = () => {
         <Skeleton loading={ isLoading } ml={{ base: 0, lg: 'auto' }} whiteSpace="pre" display="flex" alignItems="center">
           <NativeTokenIcon mr={ 2 } boxSize={ 6 }/>
           <chakra.span color="text.secondary">{ config.chain.currency.symbol }</chakra.span>
-          <span> ${ Number(enrichedData.coin_price).toLocaleString(undefined, { maximumFractionDigits: 2 }) }</span>
+          <span> ${ Number(enrichedData.coin_price).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 6 }) }</span>
         </Skeleton>
       ) }
     </Flex>

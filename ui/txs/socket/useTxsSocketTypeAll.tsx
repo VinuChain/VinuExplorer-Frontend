@@ -1,4 +1,4 @@
-import { useQueryClient } from '@tanstack/react-query';
+import { useIsFetching, useQueryClient } from '@tanstack/react-query';
 import { useRouter } from 'next/router';
 import React from 'react';
 
@@ -9,14 +9,11 @@ import getQueryParamString from 'lib/router/getQueryParamString';
 import useSocketChannel from 'lib/socket/useSocketChannel';
 import useSocketMessage from 'lib/socket/useSocketMessage';
 
-// Debounce window for coalescing bursts of new-tx socket events into a single
-// list refetch, so a flurry of incoming transactions triggers one network call.
-const LIVE_REFRESH_DELAY = 1000;
-
 // The global `transactions:new_transaction` channel only broadcasts a COUNT of
-// new transactions, not their data (unlike the per-address channel). To make
-// the list update live we refetch the first page when new txs are detected.
-// Keyed by the React Query resource backing each list (queryKey[0]).
+// new transactions, not their data (unlike the per-address channel), so the
+// list can only announce them; they are applied by refetching the first page
+// when the user asks. Keyed by the React Query resource backing each list
+// (queryKey[0]).
 const RESOURCE_BY_TYPE: Partial<Record<TxsSocketType, string>> = {
   txs_home: 'general:homepage_txs',
   txs_validated: 'general:txs_validated',
@@ -60,45 +57,44 @@ export default function useNewTxsSocketTypeAll({ type, isLoading }: Params) {
   const [ showErrorAlert, setShowErrorAlert ] = React.useState(false);
 
   const queryClient = useQueryClient();
-  const refetchTimeoutId = React.useRef(0);
+  const resourceName = RESOURCE_BY_TYPE[type];
+  const isFetching = useIsFetching({ queryKey: [ resourceName ] }) > 0;
+
+  const lastNoticeAt = React.useRef(0);
+  const fetchStartedAt = React.useRef(0);
+
+  // Whatever refreshed the list (notice click, Refresh button, page change)
+  // has now shown the announced transactions, so the counter starts over —
+  // but only if that fetch started after the announcement. A fetch already in
+  // flight when the socket message arrived (focus refetch, pagination) cannot
+  // contain those transactions and must not clear the counter.
+  React.useEffect(() => {
+    if (isFetching) {
+      fetchStartedAt.current = Date.now();
+      return;
+    }
+    if (fetchStartedAt.current >= lastNoticeAt.current) {
+      resetNum();
+    }
+  }, [ isFetching, resetNum ]);
+
+  // Prefix match on the resource name (queryKey[0]) so the currently
+  // displayed list — regardless of its pagination params — is refetched.
+  const refetch = React.useCallback(() => {
+    queryClient.invalidateQueries({ queryKey: [ resourceName ] });
+  }, [ queryClient, resourceName ]);
 
   const { topic, event } = getSocketParams(type, page);
 
-  // Refetch the currently displayed (page 1) list so new transactions appear
-  // live, then clear the "N more transactions have come in" notice. We use a
-  // plain refetch of the active query (not pagination.resetPage) so pagination
-  // state and the socket subscription stay intact.
-  const scheduleLiveRefetch = React.useCallback(() => {
-    const resourceName = RESOURCE_BY_TYPE[type];
-    if (!resourceName || refetchTimeoutId.current) {
-      return;
-    }
-
-    refetchTimeoutId.current = window.setTimeout(() => {
-      refetchTimeoutId.current = 0;
-      resetNum();
-      // Prefix match on the resource name (queryKey[0]) so the currently
-      // displayed list — regardless of its pagination params — is refetched.
-      queryClient.invalidateQueries({ queryKey: [ resourceName ] });
-    }, LIVE_REFRESH_DELAY);
-  }, [ type, queryClient, resetNum ]);
-
-  React.useEffect(() => {
-    return () => {
-      window.clearTimeout(refetchTimeoutId.current);
-    };
-  }, []);
-
   const handleNewTxMessage = React.useCallback((response: { transaction: number } | { pending_transaction: number } | unknown) => {
+    lastNoticeAt.current = Date.now();
     if (assertIsNewTxResponse(response)) {
       setNum(response.transaction);
-      scheduleLiveRefetch();
     }
     if (assertIsNewPendingTxResponse(response)) {
       setNum(response.pending_transaction);
-      scheduleLiveRefetch();
     }
-  }, [ setNum, scheduleLiveRefetch ]);
+  }, [ setNum ]);
 
   const handleSocketClose = React.useCallback(() => {
     setShowErrorAlert(true);
@@ -125,5 +121,5 @@ export default function useNewTxsSocketTypeAll({ type, isLoading }: Params) {
     return { };
   }
 
-  return { num, showErrorAlert };
+  return { num, showErrorAlert, refetch };
 }

@@ -47,9 +47,10 @@ test.describe('socket', () => {
     },
   };
 
-  // The global new-transaction socket event only carries a count, so on a new
-  // tx the list refetches its first page and the new transaction appears live,
-  // without a manual page reload (mirrors the live behavior of latest blocks).
+  // The global new-transaction socket event only carries a count, so the list
+  // announces new transactions in the notice and applies them (refetching its
+  // first page in place, no page reload) only when the user asks. Rows must
+  // not move under the reader on every socket burst.
   test('new item', async({ render, mockApiResponse, page, createSocket }) => {
     await mockApiResponse('general:homepage_txs', [
       txMock.base,
@@ -57,7 +58,7 @@ test.describe('socket', () => {
       txMock.withTokenTransfer,
     ], { times: 1 });
 
-    await render(<LatestTxs/>, { hooksConfig }, { withSocket: true });
+    const component = await render(<LatestTxs/>, { hooksConfig }, { withSocket: true });
 
     // Connect the mock socket and wait for the component to join the channel
     // before sending; the hook only joins once the initial fetch resolves.
@@ -68,8 +69,8 @@ test.describe('socket', () => {
     // the visible (desktop, at the default viewport) one.
     await expect(page.locator(`a[href*="/tx/${ txMock.base.hash }"]:visible`).first()).toBeVisible();
 
-    // A new-tx signal makes the list refetch its first page; serve a refreshed
-    // page that includes a brand-new transaction at the top.
+    // The refreshed first page (served once the user acts) carries a brand-new
+    // transaction at the top.
     const newTxHash = '0x0000000000000000000000000000000000000000000000000000000000001234';
     await mockApiResponse('general:homepage_txs', [
       { ...txMock.base, hash: newTxHash },
@@ -80,6 +81,16 @@ test.describe('socket', () => {
 
     socketServer.sendMessage(socket, channel, 'transaction', { transaction: 1 });
 
+    // Announced, not applied: the notice offers an accessible action and the
+    // list is unchanged.
+    const notice = component.getByRole('button', { name: '1 more transaction' });
+    await expect(notice).toBeVisible();
+    await expect(page.locator(`a[href*="/tx/${ newTxHash }"]`)).toHaveCount(0);
+
+    await notice.click();
+
+    // Applied on user action: the new row is in, the counter is back to zero.
     await expect(page.locator(`a[href*="/tx/${ newTxHash }"]:visible`).first()).toBeVisible();
+    await expect(notice).toBeHidden();
   });
 });

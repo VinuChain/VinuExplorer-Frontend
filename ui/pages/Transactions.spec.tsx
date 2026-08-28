@@ -97,15 +97,21 @@ function getQuery() {
 
 describe('Transactions refresh button', () => {
   // `window.location.reload` is non-configurable in jsdom; replace the
-  // entire `location` with a stub object so we can spy on `reload` calls
-  // without `Object.defineProperty` complaining about it being read-only.
+  // entire `location` with a stub object so we can assert `reload` is NOT
+  // called without `Object.defineProperty` complaining about it being read-only.
   const originalLocation = window.location;
+  let validatedQuery: ReturnType<typeof getQuery>;
+  let pendingQuery: ReturnType<typeof getQuery>;
 
   beforeEach(() => {
     vi.clearAllMocks();
+    validatedQuery = getQuery();
+    pendingQuery = getQuery();
     mockUseIsMobile.mockReturnValue(false);
     mockUseRouter.mockReturnValue({ query: {} });
-    mockUseQueryWithPages.mockImplementation(() => getQuery());
+    mockUseQueryWithPages.mockImplementation(({ resourceName }: { resourceName: string }) => (
+      resourceName === 'general:txs_pending' ? pendingQuery : validatedQuery
+    ));
 
     Object.defineProperty(window, 'location', {
       configurable: true,
@@ -123,21 +129,25 @@ describe('Transactions refresh button', () => {
     });
   });
 
-  it('hard-reloads the page from the default validated tab', () => {
+  it('soft-refetches the default validated tab via pagination.resetPage', () => {
     render(<Transactions/>);
 
     fireEvent.click(screen.getByRole('button', { name: 'Refresh transactions' }));
 
-    expect(mockReload).toHaveBeenCalledTimes(1);
+    expect(validatedQuery.pagination.resetPage).toHaveBeenCalledTimes(1);
+    expect(pendingQuery.pagination.resetPage).not.toHaveBeenCalled();
+    expect(mockReload).not.toHaveBeenCalled();
   });
 
-  it('hard-reloads the page from the pending tab', () => {
+  it('soft-refetches the pending tab via pagination.resetPage', () => {
     mockUseRouter.mockReturnValue({ query: { tab: 'pending' } });
 
     render(<Transactions/>);
 
     fireEvent.click(screen.getByRole('button', { name: 'Refresh transactions' }));
 
-    expect(mockReload).toHaveBeenCalledTimes(1);
+    expect(pendingQuery.pagination.resetPage).toHaveBeenCalledTimes(1);
+    expect(validatedQuery.pagination.resetPage).not.toHaveBeenCalled();
+    expect(mockReload).not.toHaveBeenCalled();
   });
 });

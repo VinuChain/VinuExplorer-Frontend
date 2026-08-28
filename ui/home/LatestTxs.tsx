@@ -26,7 +26,7 @@ const LatestTxs = () => {
     },
   });
 
-  const { num, showErrorAlert } = useNewTxsSocket({ type: 'txs_home', isLoading: isPlaceholderData });
+  const { num, showErrorAlert, refetch } = useNewTxsSocket({ type: 'txs_home', isLoading: isPlaceholderData });
 
   if (isError) {
     return <Text mt={ 4 }>No data. Please reload the page.</Text>;
@@ -36,12 +36,7 @@ const LatestTxs = () => {
     const txsUrl = route({ pathname: `/txs`, query: zetachainFeature.isEnabled ? { tab: 'evm' } : undefined });
     return (
       <>
-        { /* The list auto-refreshes on each new-tx socket signal, so only show
-            the notice when live updates are broken; otherwise it would sit on a
-            misleading perpetual "scanning new transactions..." message. */ }
-        { showErrorAlert && (
-          <SocketNewItemsNotice borderBottomRadius={ 0 } url={ txsUrl } num={ num } showErrorAlert={ showErrorAlert } isLoading={ isPlaceholderData }/>
-        ) }
+        <SocketNewItemsNotice borderBottomRadius={ 0 } num={ num } showErrorAlert={ showErrorAlert } isLoading={ isPlaceholderData } onLinkClick={ refetch }/>
         <Box mb={ 3 } display={{ base: 'block', lg: 'none' }} textStyle="sm">
           { data.slice(0, txsCount).map(((tx, index) => (
             <LatestTxsItemMobile

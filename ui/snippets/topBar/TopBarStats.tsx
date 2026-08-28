@@ -46,7 +46,7 @@ const TopBarStats = () => {
     };
   }, [ isPlaceholderData, data?.gas_price_updated_at, dataUpdatedAt, data?.gas_prices_update_in, refetch ]);
 
-  const enrichedData = data ? enrichGasStats(data, dataUpdatedAt) : data;
+  const enrichedData = data ? enrichGasStats(data) : data;
 
   // Keep the coin-price slots visible whenever their feature flag + viewport preconditions hold,
   // even if the stats API returns an empty/null payload. Missing values are rendered as "—" below

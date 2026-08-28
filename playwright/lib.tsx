@@ -76,6 +76,16 @@ test.beforeEach(async({ page, mockTextAd }) => {
   // with few exceptions:
   //  1. mock text AD requests
   await mockTextAd();
+
+  //  2. the OP Superchain native token icon reads Ethereum mainnet stats from a
+  //     third-party host. Left to the catch-all abort above it races React Query's
+  //     retry/backoff, so the icon flips between the live logo and the placeholder
+  //     from run to run and its screenshots are only stable by luck. Answer it
+  //     with an empty payload so the component settles on the placeholder every time.
+  await page.route('https://eth.blockscout.com/api/v2/stats', (route) => route.fulfill({
+    status: 200,
+    json: {},
+  }));
 });
 
 export * from '@playwright/experimental-ct-react';

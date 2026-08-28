@@ -35,8 +35,14 @@ const PageMetadata = <Pathname extends Route['pathname']>(props: Props<Pathname>
       { opengraph.description && <meta name="twitter:description" content={ opengraph.description }/> }
       <meta property="twitter:image" content={ opengraph.imageUrl }/>
 
-      { /* Prevent auto zoom in inputs on mobile */ }
-      <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1"/>
+      { /* `maximum-scale=1` used to be set here to stop iOS auto-zooming when a
+           sub-16px input takes focus. That silently disabled pinch-zoom for
+           everyone, which axe reports as a critical `meta-viewport` violation on
+           every page and fails WCAG 2.1 AA 1.4.4 (Resize Text) — a real barrier
+           for low-vision users, traded against a cosmetic annoyance on one
+           platform. Zoom stays enabled; the correct cure for the iOS behaviour is
+           a 16px font on mobile inputs, not taking zoom away from everybody. */ }
+      <meta name="viewport" content="width=device-width, initial-scale=1"/>
 
       { /* JSON-LD structured data — rendered SSR so crawlers see it in the initial HTML */ }
       { siteJsonLd?.map((schema, index) => (

@@ -63,7 +63,20 @@ const TokenSocialLinks = ({ socials, fields, boxSize = 5 }: Props) => {
 
         return (
           <Tooltip key={ key } content={ label }>
-            <Link external href={ href } noIcon display="flex" alignItems="center" flexShrink={ 0 } color="icon.secondary" _hover={{ color: 'link.primary' }}>
+            { /* The tooltip is not an accessible name - it is a sibling popup, not
+              * aria-labelledby - so an icon-only link reaches a screen reader as its
+              * bare href. Name it explicitly. */ }
+            <Link
+              external
+              href={ href }
+              noIcon
+              aria-label={ label }
+              display="flex"
+              alignItems="center"
+              flexShrink={ 0 }
+              color="icon.secondary"
+              _hover={{ color: 'link.primary' }}
+            >
               <IconSvg name={ icon } boxSize={ boxSize }/>
             </Link>
           </Tooltip>

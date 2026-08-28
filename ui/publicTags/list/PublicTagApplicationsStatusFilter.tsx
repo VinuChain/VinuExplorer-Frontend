@@ -30,6 +30,7 @@ const StatusButton = ({ status, activeValue, onChange }: StatusButtonProps) => {
       size="sm"
       variant={ activeValue === status.value ? 'solid' : 'outline' }
       onClick={ handleClick }
+      aria-pressed={ activeValue === status.value }
     >
       { status.label }
     </Button>
@@ -45,6 +46,7 @@ const PublicTagApplicationsStatusFilter = ({ value, onChange }: Props) => {
         size="sm"
         variant={ value === undefined ? 'solid' : 'outline' }
         onClick={ handleAll }
+        aria-pressed={ value === undefined }
       >
         All
       </Button>

@@ -41,6 +41,12 @@ const NameDomain = () => {
     },
   });
 
+  // Same pattern as ui/cluster/ClusterDetails.tsx: a decodable-but-invalid name
+  // must 404, not sit on placeholderData forever with the query disabled.
+  if (!isValid) {
+    throw new Error('Domain not found', { cause: { status: 404 } });
+  }
+
   const tabs: Array<TabItemRegular> = [
     { id: 'details', title: 'Details', component: <NameDomainDetails query={ infoQuery }/> },
     { id: 'history', title: 'History', component: <NameDomainHistory domain={ infoQuery.data }/> },
@@ -75,6 +81,7 @@ const NameDomain = () => {
           />
           <Tooltip content="Lookup for related domain names">
             <Link
+              aria-label="Lookup for related domain names"
               flexShrink={ 0 }
               display="inline-flex"
               href={ route({

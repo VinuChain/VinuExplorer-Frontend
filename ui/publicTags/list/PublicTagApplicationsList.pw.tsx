@@ -168,6 +168,8 @@ test('status filter — clicking Approved sends status query param', async({ ren
   );
   await component.getByRole('button', { name: 'Approved' }).click();
   await reqPromise;
+  await expect(component.getByRole('button', { name: 'Approved', pressed: true })).toBeVisible();
+  await expect(component.getByRole('button', { name: 'All', pressed: false })).toBeVisible();
 });
 
 test('edit modal opens with row tag name pre-filled', async({ render, mockApiResponse, page }) => {

@@ -1,5 +1,6 @@
 import Cookies from 'js-cookie';
 
+import config from 'configs/app';
 import { isBrowser } from 'toolkit/utils/isBrowser';
 
 export enum NAMES {
@@ -23,6 +24,13 @@ export enum NAMES {
   SHOW_SCAM_TOKENS = 'show_scam_tokens',
 }
 
+// Upstream #3301 (ebaacc566). Upstream defaults `protocol` to https in configs/app/app.ts;
+// the fork's app.ts leaves it undefined when NEXT_PUBLIC_APP_PROTOCOL is unset, hence the fallback here.
+export const getDefaultAttributes = () => ({
+  path: '/',
+  secure: (config.app.protocol || 'https') === 'https',
+});
+
 export function get(name?: NAMES | undefined | null, serverCookie?: string) {
   if (!isBrowser()) {
     return serverCookie ? getFromCookieString(serverCookie, name) : undefined;
@@ -34,13 +42,11 @@ export function get(name?: NAMES | undefined | null, serverCookie?: string) {
 }
 
 export function set(name: NAMES, value: string, attributes: Cookies.CookieAttributes = {}) {
-  attributes.path = '/';
-
-  return Cookies.set(name, value, attributes);
+  return Cookies.set(name, value, { ...getDefaultAttributes(), ...attributes });
 }
 
 export function remove(name: NAMES, attributes: Cookies.CookieAttributes = {}) {
-  return Cookies.remove(name, attributes);
+  return Cookies.remove(name, { ...getDefaultAttributes(), ...attributes });
 }
 
 export function getFromCookieString(cookieString: string, name?: NAMES | undefined | null) {

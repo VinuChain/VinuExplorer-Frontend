@@ -38,7 +38,40 @@ const Link = chakra((props: LinkProps) => {
 
 type IconProps = Pick<EntityProps, 'token' | 'className'> & EntityBase.IconBaseProps;
 
+// Negative cache for vinuchain-lists icons, so scrolling a token list does not
+// re-request raw.githubusercontent.com for the same missing token on every
+// mount.
+//
+// It expires, because an <img> error event carries no HTTP status: a transient
+// network failure, a GitHub 5xx and a real 404 are indistinguishable here.
+// Remembering them forever meant one blip hid that token's icon for the rest of
+// the session. A short TTL keeps the request saving for a genuine 404 while
+// letting a transient failure heal itself.
+// ponytail: TTL map, a registry-backed allowlist would remove the first request too.
+const MISSING_ICON_TTL_MS = 5 * 60 * 1000;
+const missingListIcons = new Map<string, number>();
+
+function isListIconMissing(addressHash: string) {
+  const seenAt = missingListIcons.get(addressHash);
+
+  if (seenAt === undefined) {
+    return false;
+  }
+
+  if (Date.now() - seenAt < MISSING_ICON_TTL_MS) {
+    return true;
+  }
+
+  missingListIcons.delete(addressHash);
+  return false;
+}
+
 const Icon = (props: IconProps) => {
+  const addressHash = props.token.address_hash;
+  const handleListIconError = React.useCallback(() => {
+    missingListIcons.set(addressHash, Date.now());
+  }, [ addressHash ]);
+
   if (props.noIcon) {
     return null;
   }
@@ -48,8 +81,8 @@ const Icon = (props: IconProps) => {
     borderRadius: props.token.type === 'ERC-20' ? 'full' : 'base',
   };
 
-  const addressHash = props.token.address_hash;
-  const vinuchainListsUrl =
+  const vinuchainListsUrl = isListIconMissing(addressHash) ?
+    undefined :
     `https://raw.githubusercontent.com/VinuChain/vinuchain-lists/main/tokens/${ addressHash }/${ addressHash }.png`;
   const iconSrc = props.token.icon_url ?? vinuchainListsUrl;
 
@@ -58,6 +91,7 @@ const Icon = (props: IconProps) => {
       { ...styles }
       className={ props.className }
       src={ iconSrc }
+      onError={ props.token.icon_url ? undefined : handleListIconError }
       alt={ `${ props.token.name || 'token' } logo` }
       fallback={ <TokenLogoPlaceholder/> }
       shield={ props.shield ?? (props.chain ? { src: props.chain.logo } : undefined) }

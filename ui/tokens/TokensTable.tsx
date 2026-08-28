@@ -58,20 +58,8 @@ const TokensTable = ({ items, page, isLoading, sorting, setSorting, top }: Props
           ) : (
             <TableColumnHeader w="42%" py={ 3 }>Token</TableColumnHeader>
           ) }
-          { hasSorting ? (
-            <TableColumnHeaderSortable
-              w="12%"
-              py={ 3 }
-              sortField="label"
-              sortValue={ sorting }
-              onSortToggle={ sort }
-              indicatorPosition="right"
-            >
-              Label
-            </TableColumnHeaderSortable>
-          ) : (
-            <TableColumnHeader w="12%" py={ 3 }>Label</TableColumnHeader>
-          ) }
+          { /* no backend sort for labels; a client sort would only reorder the current page */ }
+          <TableColumnHeader w="12%" py={ 3 }>Label</TableColumnHeader>
           { hasSorting ? (
             <TableColumnHeaderSortable
               isNumeric

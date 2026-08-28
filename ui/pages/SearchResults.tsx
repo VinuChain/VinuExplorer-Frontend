@@ -12,7 +12,8 @@ import getQueryParamString from 'lib/router/getQueryParamString';
 import removeQueryParam from 'lib/router/removeQueryParam';
 import getSearchResultTxHash from 'lib/search/getSearchResultTxHash';
 import { Skeleton } from 'toolkit/chakra/skeleton';
-import { TableBody, TableColumnHeaderSortable, TableHeaderSticky, TableRoot, TableRow } from 'toolkit/chakra/table';
+import type { TableColumnHeaderProps } from 'toolkit/chakra/table';
+import { TableBody, TableColumnHeader, TableColumnHeaderSortable, TableHeaderSticky, TableRoot, TableRow } from 'toolkit/chakra/table';
 import { ContentLoader } from 'toolkit/components/loaders/ContentLoader';
 import * as regexp from 'toolkit/utils/regexp';
 import useMarketplaceApps from 'ui/marketplace/useMarketplaceApps';
@@ -41,6 +42,20 @@ type SearchResultsSortDirection = 'asc' | 'desc';
 type SearchResultRow = {
   item: SearchResultItem | SearchResultAppItem;
   rank: number;
+};
+
+// The sort below re-orders only the rows in memory, so it is offered only when
+// the page is the whole result set; otherwise the header is a plain label.
+const ResultsColumnHeader = ({ sortField, sortValue, onSortToggle, ...rest }: TableColumnHeaderProps & {
+  sortField: SearchResultsSortField;
+  sortValue?: string;
+  onSortToggle?: (field: SearchResultsSortField) => void;
+}) => {
+  if (!sortValue || !onSortToggle) {
+    return <TableColumnHeader { ...rest }/>;
+  }
+
+  return <TableColumnHeaderSortable sortField={ sortField } sortValue={ sortValue } onSortToggle={ onSortToggle } { ...rest }/>;
 };
 
 function getTimestampValue(timestamp?: string | null) {
@@ -292,6 +307,19 @@ const SearchResultsPageContent = () => {
     zetaChainCCTXQuery.data,
   ]);
 
+  // Client-side sorting only re-orders rows already fetched, so offer it only
+  // when this page IS the whole result set. Zeta CCTX rows are merged in from a
+  // separate query that is capped at 10 with no pagination, so whenever any of
+  // them appear the list is a truncated slice and sorting it would misrepresent
+  // a page-local order as a sort of everything.
+  const isClientSortable =
+    !isLoading &&
+    pagination.page === 1 &&
+    !data?.next_page_params &&
+    !zetaChainCCTXQuery.data?.items?.length;
+  const headerSortValue = isClientSortable ? sortValue : undefined;
+  const headerSortToggle = isClientSortable ? handleSortToggle : undefined;
+
   const sortedDisplayedItems: Array<SearchResultRow> = React.useMemo(() => {
     const firstRank = (pagination.page - 1) * 50 + 1;
     const rankedItems = displayedItems.map((item, index) => ({
@@ -299,11 +327,15 @@ const SearchResultsPageContent = () => {
       rank: firstRank + index,
     }));
 
-    return [ ...rankedItems ].sort((a, b) => {
+    if (!isClientSortable) {
+      return rankedItems;
+    }
+
+    return rankedItems.sort((a, b) => {
       const result = compareSearchResultRows(a, b, sort.field);
       return sort.direction === 'asc' ? result : -result;
     });
-  }, [ displayedItems, pagination.page, sort.direction, sort.field ]);
+  }, [ displayedItems, isClientSortable, pagination.page, sort.direction, sort.field ]);
 
   const content = (() => {
     if (isError) {
@@ -332,48 +364,48 @@ const SearchResultsPageContent = () => {
           <TableRoot fontWeight={ 500 }>
             <TableHeaderSticky top={ pagination.isVisible ? ACTION_BAR_HEIGHT_DESKTOP : 0 }>
               <TableRow>
-                <TableColumnHeaderSortable
+                <ResultsColumnHeader
                   width="56px"
                   sortField="rank"
-                  sortValue={ sortValue }
-                  onSortToggle={ handleSortToggle }
+                  sortValue={ headerSortValue }
+                  onSortToggle={ headerSortToggle }
                 >
                   #
-                </TableColumnHeaderSortable>
-                <TableColumnHeaderSortable
+                </ResultsColumnHeader>
+                <ResultsColumnHeader
                   width="28%"
                   sortField="result"
-                  sortValue={ sortValue }
-                  onSortToggle={ handleSortToggle }
+                  sortValue={ headerSortValue }
+                  onSortToggle={ headerSortToggle }
                 >
                   Result
-                </TableColumnHeaderSortable>
-                <TableColumnHeaderSortable
+                </ResultsColumnHeader>
+                <ResultsColumnHeader
                   width="32%"
                   sortField="details"
-                  sortValue={ sortValue }
-                  onSortToggle={ handleSortToggle }
+                  sortValue={ headerSortValue }
+                  onSortToggle={ headerSortToggle }
                 >
                   Details
-                </TableColumnHeaderSortable>
-                <TableColumnHeaderSortable
+                </ResultsColumnHeader>
+                <ResultsColumnHeader
                   width="24%"
                   pr={ 10 }
                   sortField="value"
-                  sortValue={ sortValue }
-                  onSortToggle={ handleSortToggle }
+                  sortValue={ headerSortValue }
+                  onSortToggle={ headerSortToggle }
                   isNumeric
                 >
                   Value / Date
-                </TableColumnHeaderSortable>
-                <TableColumnHeaderSortable
+                </ResultsColumnHeader>
+                <ResultsColumnHeader
                   width="150px"
                   sortField="category"
-                  sortValue={ sortValue }
-                  onSortToggle={ handleSortToggle }
+                  sortValue={ headerSortValue }
+                  onSortToggle={ headerSortToggle }
                 >
                   Category
-                </TableColumnHeaderSortable>
+                </ResultsColumnHeader>
               </TableRow>
             </TableHeaderSticky>
             <TableBody>

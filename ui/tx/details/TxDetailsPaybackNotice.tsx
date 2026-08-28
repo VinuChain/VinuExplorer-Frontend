@@ -3,16 +3,19 @@ import React from 'react';
 
 import type { Transaction } from 'types/api/transaction';
 
+import config from 'configs/app';
 import { currencyUnits } from 'lib/units';
 import { Alert } from 'toolkit/chakra/alert';
 import * as DetailedInfo from 'ui/shared/DetailedInfo/DetailedInfo';
 
-const KNOWN_BUG_PAYBACK_V2_CONTRACTS = new Set([
-  '0xdea4687fdba2528d1b30222e199c90b63af8c850',
-]);
-const CORRECTED_PAYBACK_V2_CONTRACTS = new Set([
-  '0x89d1cbd9deaab4dff6f800a336fbdd9a5c6829e4',
-]);
+// PaybackV2 deployments per chain id (docs/FORK.md); the notice never fires on
+// a chain that has no entry, so mainnet stays silent until its addresses land.
+const PAYBACK_V2_CONTRACTS: Record<string, { knownBug: Set<string>; corrected: Set<string> }> = {
+  '206': {
+    knownBug: new Set([ '0xdea4687fdba2528d1b30222e199c90b63af8c850' ]),
+    corrected: new Set([ '0x89d1cbd9deaab4dff6f800a336fbdd9a5c6829e4' ]),
+  },
+};
 const STAKE_FOR_SELECTOR = '0x4bf69206';
 const PAYBACK_V2_ROLLOUT_MIN_STAKE_WEI = '1000000000000000000000';
 
@@ -22,6 +25,11 @@ interface Props {
 }
 
 const TxDetailsPaybackNotice = ({ isLoading, data }: Props) => {
+  const contracts = config.chain.id ? PAYBACK_V2_CONTRACTS[config.chain.id] : undefined;
+  if (!contracts) {
+    return null;
+  }
+
   const toHash = data.to?.hash.toLowerCase();
   const methodCall = data.decoded_input?.method_call.toLowerCase();
   const isStakeForCall = Boolean(
@@ -31,12 +39,12 @@ const TxDetailsPaybackNotice = ({ isLoading, data }: Props) => {
   );
   const isKnownBugStakeFor = Boolean(
     toHash &&
-    KNOWN_BUG_PAYBACK_V2_CONTRACTS.has(toHash) &&
+    contracts.knownBug.has(toHash) &&
     isStakeForCall,
   );
   const isCorrectedStakeFor = Boolean(
     toHash &&
-    CORRECTED_PAYBACK_V2_CONTRACTS.has(toHash) &&
+    contracts.corrected.has(toHash) &&
     isStakeForCall,
   );
 

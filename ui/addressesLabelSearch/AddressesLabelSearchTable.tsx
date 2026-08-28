@@ -3,7 +3,15 @@ import React from 'react';
 import type { AddressesItem } from 'types/api/addresses';
 
 import { currencyUnits } from 'lib/units';
-import { TableBody, TableColumnHeaderSortable, TableHeaderSticky, TableRoot, TableRow } from 'toolkit/chakra/table';
+import {
+  TableBody,
+  TableColumnHeader,
+  type TableColumnHeaderProps,
+  TableColumnHeaderSortable,
+  TableHeaderSticky,
+  TableRoot,
+  TableRow,
+} from 'toolkit/chakra/table';
 
 import AddressesLabelSearchTableItem from './AddressesLabelSearchTableItem';
 
@@ -16,17 +24,33 @@ export type AddressesLabelSearchRow = {
 interface Props {
   items: Array<AddressesLabelSearchRow>;
   top: number;
-  sortValue: string;
-  onSortToggle: (field: AddressesLabelSearchSortField) => void;
+  sortValue?: string;
+  onSortToggle?: (field: AddressesLabelSearchSortField) => void;
   isLoading?: boolean;
 }
+
+type HeaderCellProps = TableColumnHeaderProps & {
+  sortField: AddressesLabelSearchSortField;
+  sortValue?: string;
+  onSortToggle?: (field: AddressesLabelSearchSortField) => void;
+};
+
+// Without a sort handler the header is plain: the client-side sort only ranks the
+// fetched page, so it is offered only when that page is the whole result set.
+const HeaderCell = ({ sortField, sortValue, onSortToggle, ...rest }: HeaderCellProps) => {
+  if (!sortValue || !onSortToggle) {
+    return <TableColumnHeader { ...rest }/>;
+  }
+
+  return <TableColumnHeaderSortable sortField={ sortField } sortValue={ sortValue } onSortToggle={ onSortToggle } { ...rest }/>;
+};
 
 const AddressesLabelSearchTable = ({ items, top, sortValue, onSortToggle, isLoading }: Props) => {
   return (
     <TableRoot maxW="1040px" tableLayout="fixed">
       <TableHeaderSticky top={ top }>
         <TableRow>
-          <TableColumnHeaderSortable
+          <HeaderCell
             width="56px"
             py={ 3 }
             sortField="rank"
@@ -34,8 +58,8 @@ const AddressesLabelSearchTable = ({ items, top, sortValue, onSortToggle, isLoad
             onSortToggle={ onSortToggle }
           >
             #
-          </TableColumnHeaderSortable>
-          <TableColumnHeaderSortable
+          </HeaderCell>
+          <HeaderCell
             width="38%"
             py={ 3 }
             sortField="address"
@@ -43,8 +67,8 @@ const AddressesLabelSearchTable = ({ items, top, sortValue, onSortToggle, isLoad
             onSortToggle={ onSortToggle }
           >
             Address
-          </TableColumnHeaderSortable>
-          <TableColumnHeaderSortable
+          </HeaderCell>
+          <HeaderCell
             width="26%"
             py={ 3 }
             sortField="label"
@@ -52,8 +76,8 @@ const AddressesLabelSearchTable = ({ items, top, sortValue, onSortToggle, isLoad
             onSortToggle={ onSortToggle }
           >
             Label
-          </TableColumnHeaderSortable>
-          <TableColumnHeaderSortable
+          </HeaderCell>
+          <HeaderCell
             width="16%"
             py={ 3 }
             sortField="balance"
@@ -62,8 +86,8 @@ const AddressesLabelSearchTable = ({ items, top, sortValue, onSortToggle, isLoad
             isNumeric
           >
             { `Balance ${ currencyUnits.ether }` }
-          </TableColumnHeaderSortable>
-          <TableColumnHeaderSortable
+          </HeaderCell>
+          <HeaderCell
             width="14%"
             py={ 3 }
             sortField="txns"
@@ -72,7 +96,7 @@ const AddressesLabelSearchTable = ({ items, top, sortValue, onSortToggle, isLoad
             isNumeric
           >
             Txn count
-          </TableColumnHeaderSortable>
+          </HeaderCell>
         </TableRow>
       </TableHeaderSticky>
       <TableBody>

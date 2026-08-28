@@ -1,0 +1,50 @@
+name: Production build
+
+# `next build` is what docker-publish.yml runs to produce the release image, but
+# it ran nowhere in the PR checks: a change that broke it merged green, then the
+# image build failed on main and published nothing, and the backend deploy's
+# frontend-image resolution polled for 32 minutes for a tag that would never
+# appear. Running it here puts that failure on the pull request that caused it.
+#
+# This lives in its own file rather than in checks.yml because checks.yml is a
+# default-branch trust anchor (see scripts/workflow-policy-collect.mjs) that
+# pull-request code cannot modify — and deliberately so, since docker-publish.yml
+# calls it with package-write permissions. This workflow is triggered only by
+# `pull_request`, so it never runs privileged.
+
+on:
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  production_build:
+    name: Production build
+    runs-on: ubuntu-latest
+    timeout-minutes: 40
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v4
+
+      - name: Setup node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22.14.0
+          cache: 'yarn'
+
+      - name: Install dependencies
+        run: yarn --frozen-lockfile
+
+      # The same three steps the image builder runs (Dockerfile stage 2).
+      - name: Build production bundle
+        env:
+          NODE_ENV: production
+          NODE_OPTIONS: --max-old-space-size=4096
+        run: |
+          set -a
+          source ./deploy/scripts/build_sprite.sh
+          ./deploy/scripts/collect_envs.sh ./docs/ENVS.md
+          set +a
+          yarn build

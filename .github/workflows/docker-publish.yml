@@ -15,9 +15,11 @@ permissions:
 # its own immutable :<short-sha> tag" promise and skips the backend deploy
 # trigger for the cancelled commit's image.
 #
-# Deployment is deliberately not triggered here. This workflow only publishes
-# the immutable image for the exact merge SHA; the Agency Control Plane owns
-# the later, reversible backend deployment permit and provider action.
+# Deployment is deliberately not triggered here, and this workflow holds no
+# authority to trigger it: the trusted workflow boundary rejects deployment
+# dispatch from this repository outright. All this does is publish the
+# immutable image for the exact merge SHA. Which image a deployment picks up,
+# and how a frontend rollback is performed, is documented in docs/FORK.md.
 
 jobs:
   # Quality gate for the release artifact path.

@@ -25,6 +25,20 @@ const globalCss: SystemConfig['globalCss'] = {
     fontVariantLigatures: 'no-contextual',
     focusRingStyle: 'hidden',
   },
+  // `focusRingStyle: 'hidden'` above disables Chakra's focus ring globally,
+  // which leaves keyboard users with no visible focus indicator at all - a
+  // WCAG 2.4.7 (Focus Visible, AA) failure that axe cannot detect, since it
+  // does not evaluate focus styles. Verified on the live site: the first tab
+  // stop matched :focus-visible with outline: none and box-shadow: none.
+  //
+  // Restored for keyboard focus only, so pointer interaction is unchanged.
+  // The selector is deliberately low specificity, so any component that
+  // defines its own _focusVisible treatment still wins; this is the floor.
+  '*:focus-visible': {
+    outline: '2px solid',
+    outlineColor: { _light: 'blue.600', _dark: 'blue.300' },
+    outlineOffset: '2px',
+  },
   mark: {
     bg: 'global.mark.bg',
     color: 'inherit',
@@ -49,6 +63,20 @@ const globalCss: SystemConfig['globalCss'] = {
   },
   select: {
     ...webkitAutofillRules,
+  },
+  // Nothing in the app consults prefers-reduced-motion, so a user who has asked
+  // their OS to reduce motion still gets every transition, the infinite
+  // skeleton pulse, and smooth scrolling. Vestibular triggers are the reason
+  // that setting exists, so honour it as a global floor rather than per
+  // component. Durations are collapsed rather than set to 0 so animation and
+  // transition end events still fire and nothing waiting on them stalls.
+  '*, *::before, *::after': {
+    '@media (prefers-reduced-motion: reduce)': {
+      animationDuration: '0.01ms !important',
+      animationIterationCount: '1 !important',
+      transitionDuration: '0.01ms !important',
+      scrollBehavior: 'auto !important',
+    },
   },
   ...recaptcha,
   ...scrollbar,

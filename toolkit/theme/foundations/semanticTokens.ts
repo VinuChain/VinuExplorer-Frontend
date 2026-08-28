@@ -351,6 +351,14 @@ const semanticTokens: ThemingConfig['semanticTokens'] = {
         DEFAULT: { value: { _light: '{colors.blackAlpha.200}', _dark: '{colors.whiteAlpha.200}' } },
       },
     },
+    // Light-mode badges put a `.500` foreground on a `.50` background. That is
+    // a mid-tone on near-white: eight of the nine palettes land between 2.33:1
+    // and 4.00:1, under the 4.5:1 WCAG AA floor for body text (only purple
+    // clears it, at 4.51). Each `_light` foreground below is the lightest
+    // shade of its own palette that reaches 4.5:1 on that same background, so
+    // the badges stay recognisably themselves and no new colours enter the
+    // scale. The `_dark` side already passes (4.79:1 to 7.86:1) and is
+    // untouched. badgeContrast.spec.ts holds every pair to the floor.
     badge: {
       gray: {
         bg: { value: { _light: '{colors.blackAlpha.50}', _dark: '{colors.whiteAlpha.100}' } },
@@ -358,11 +366,11 @@ const semanticTokens: ThemingConfig['semanticTokens'] = {
       },
       green: {
         bg: { value: { _light: '{colors.green.50}', _dark: '{colors.green.800}' } },
-        fg: { value: { _light: '{colors.green.500}', _dark: '{colors.green.200}' } },
+        fg: { value: { _light: '{colors.green.700}', _dark: '{colors.green.200}' } },
       },
       red: {
         bg: { value: { _light: '{colors.red.50}', _dark: '{colors.red.800}' } },
-        fg: { value: { _light: '{colors.red.500}', _dark: '{colors.red.200}' } },
+        fg: { value: { _light: '{colors.red.600}', _dark: '{colors.red.200}' } },
       },
       purple: {
         bg: { value: { _light: '{colors.purple.50}', _dark: '{colors.purple.800}' } },
@@ -374,11 +382,11 @@ const semanticTokens: ThemingConfig['semanticTokens'] = {
       },
       orange: {
         bg: { value: { _light: '{colors.orange.50}', _dark: '{colors.orange.800}' } },
-        fg: { value: { _light: '{colors.orange.500}', _dark: '{colors.orange.100}' } },
+        fg: { value: { _light: '{colors.orange.700}', _dark: '{colors.orange.100}' } },
       },
       blue: {
         bg: { value: { _light: '{colors.blue.50}', _dark: '{colors.blue.800}' } },
-        fg: { value: { _light: '{colors.blue.500}', _dark: '{colors.blue.100}' } },
+        fg: { value: { _light: '{colors.blue.600}', _dark: '{colors.blue.100}' } },
       },
       blue_alt: {
         bg: { value: { _light: '{colors.blue.50}', _dark: '{colors.blue.800}' } },
@@ -386,19 +394,19 @@ const semanticTokens: ThemingConfig['semanticTokens'] = {
       },
       yellow: {
         bg: { value: { _light: '{colors.yellow.50}', _dark: '{colors.yellow.800}' } },
-        fg: { value: { _light: '{colors.yellow.500}', _dark: '{colors.yellow.100}' } },
+        fg: { value: { _light: '{colors.yellow.700}', _dark: '{colors.yellow.100}' } },
       },
       teal: {
         bg: { value: { _light: '{colors.teal.50}', _dark: '{colors.teal.800}' } },
-        fg: { value: { _light: '{colors.teal.500}', _dark: '{colors.teal.100}' } },
+        fg: { value: { _light: '{colors.teal.600}', _dark: '{colors.teal.100}' } },
       },
       cyan: {
         bg: { value: { _light: '{colors.cyan.50}', _dark: '{colors.cyan.800}' } },
-        fg: { value: { _light: '{colors.cyan.500}', _dark: '{colors.cyan.100}' } },
+        fg: { value: { _light: '{colors.cyan.800}', _dark: '{colors.cyan.100}' } },
       },
       pink: {
         bg: { value: { _light: '{colors.pink.50}', _dark: '{colors.pink.800}' } },
-        fg: { value: { _light: '{colors.pink.500}', _dark: '{colors.pink.100}' } },
+        fg: { value: { _light: '{colors.pink.600}', _dark: '{colors.pink.100}' } },
       },
       // bright badges mainly used in other projects (e.g. autoscout, dev portal, etc.)
       bright: {
@@ -408,31 +416,31 @@ const semanticTokens: ThemingConfig['semanticTokens'] = {
         },
         green: {
           bg: { value: { _light: '{colors.green.100}', _dark: '{colors.green.800}' } },
-          fg: { value: { _light: '{colors.green.600}', _dark: '{colors.green.200}' } },
+          fg: { value: { _light: '{colors.green.700}', _dark: '{colors.green.200}' } },
         },
         red: {
           bg: { value: { _light: '{colors.red.100}', _dark: '{colors.red.800}' } },
-          fg: { value: { _light: '{colors.red.600}', _dark: '{colors.red.200}' } },
+          fg: { value: { _light: '{colors.red.700}', _dark: '{colors.red.200}' } },
         },
         blue: {
           bg: { value: { _light: '{colors.blue.100}', _dark: '{colors.blue.800}' } },
-          fg: { value: { _light: '{colors.blue.600}', _dark: '{colors.blue.200}' } },
+          fg: { value: { _light: '{colors.blue.700}', _dark: '{colors.blue.200}' } },
         },
         yellow: {
           bg: { value: { _light: '{colors.yellow.100}', _dark: '{colors.yellow.800}' } },
-          fg: { value: { _light: '{colors.yellow.600}', _dark: '{colors.yellow.200}' } },
+          fg: { value: { _light: '{colors.yellow.700}', _dark: '{colors.yellow.200}' } },
         },
         teal: {
           bg: { value: { _light: '{colors.teal.100}', _dark: '{colors.teal.800}' } },
-          fg: { value: { _light: '{colors.teal.600}', _dark: '{colors.teal.200}' } },
+          fg: { value: { _light: '{colors.teal.700}', _dark: '{colors.teal.200}' } },
         },
         cyan: {
           bg: { value: { _light: '{colors.cyan.100}', _dark: '{colors.cyan.800}' } },
-          fg: { value: { _light: '{colors.cyan.600}', _dark: '{colors.cyan.200}' } },
+          fg: { value: { _light: '{colors.cyan.800}', _dark: '{colors.cyan.100}' } },
         },
         orange: {
-          bg: { value: { _light: '{colors.orange.100}', _dark: '{colors.orange.600}' } },
-          fg: { value: { _light: '{colors.orange.600}', _dark: '{colors.orange.100}' } },
+          bg: { value: { _light: '{colors.orange.100}', _dark: '{colors.orange.800}' } },
+          fg: { value: { _light: '{colors.orange.700}', _dark: '{colors.orange.100}' } },
         },
         purple: {
           bg: { value: { _light: '{colors.purple.50}', _dark: '{colors.purple.600}' } },

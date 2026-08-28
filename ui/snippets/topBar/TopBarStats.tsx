@@ -78,7 +78,11 @@ const TopBarStats = () => {
             </Skeleton>
             { hasNativeCoinPriceValue && data?.coin_price_change_percentage && !(isMobile && Boolean(config.UI.featuredNetworks.items)) && (
               <Skeleton loading={ isPlaceholderData }>
-                <chakra.span color={ Number(data.coin_price_change_percentage) >= 0 ? 'green.500' : 'red.500' }>
+                { /* Light mode only: green.500 is 3.10:1 and red.500 3.94:1 on this
+                     background. green.700 / red.600 clear AA; dark mode is unchanged. */ }
+                <chakra.span color={ Number(data.coin_price_change_percentage) >= 0 ?
+                  { _light: 'green.700', _dark: 'green.500' } :
+                  { _light: 'red.600', _dark: 'red.500' } }>
                   { Number(data.coin_price_change_percentage).toFixed(2) }%
                 </chakra.span>
               </Skeleton>

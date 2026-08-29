@@ -6,6 +6,7 @@ import type { SocketMessage } from 'lib/socket/types';
 import type { AddressCoinBalanceHistoryResponse } from 'types/api/address';
 
 import useApiQuery, { getResourceKey } from 'lib/api/useApiQuery';
+import { useMultichainContext } from 'lib/contexts/multichain';
 import useIsMounted from 'lib/hooks/useIsMounted';
 import getQueryParamString from 'lib/router/getQueryParamString';
 import useSocketChannel from 'lib/socket/useSocketChannel';
@@ -35,6 +36,10 @@ const AddressCoinBalance = ({ shouldRender = true, isQueryEnabled = true, native
   const [ socketAlert, setSocketAlert ] = React.useState(false);
   const queryClient = useQueryClient();
   const router = useRouter();
+  // useApiQuery keys every resource as [resource, chainId, params], so a cache
+  // write that omits the chain id addresses a different entry entirely on a
+  // multichain address page and silently does nothing.
+  const chainId = useMultichainContext()?.chain?.id;
   const isMounted = useIsMounted();
 
   const scrollRef = React.useRef<HTMLDivElement>(null);
@@ -104,6 +109,7 @@ const AddressCoinBalance = ({ shouldRender = true, isQueryEnabled = true, native
       getResourceKey('general:address_coin_balance', {
         pathParams: { hash: addressHash },
         queryParams: filters,
+        chainId,
       }),
       (prevData: AddressCoinBalanceHistoryResponse | undefined) => {
         if (!prevData) {
@@ -118,7 +124,20 @@ const AddressCoinBalance = ({ shouldRender = true, isQueryEnabled = true, native
           ],
         };
       });
-  }, [ addressHash, filters, queryClient, tokenFilter ]);
+
+    // The chart reads a different cache than the history list, and this view now
+    // always renders it, so a socket balance update refreshed the list while the
+    // chart kept showing the previous daily balance until something else
+    // refetched it. Both branches above leave the chart on the native filter,
+    // which is what the render below passes.
+    queryClient.invalidateQueries({
+      queryKey: getResourceKey('general:address_coin_balance_chart', {
+        pathParams: { hash: addressHash },
+        queryParams: { token_contract_address_hash: NATIVE_ASSET_FILTER },
+        chainId,
+      }),
+    });
+  }, [ addressHash, chainId, filters, queryClient, tokenFilter ]);
 
   const channel = useSocketChannel({
     topic: `addresses:${ addressHash.toLowerCase() }`,
@@ -149,6 +168,7 @@ const AddressCoinBalance = ({ shouldRender = true, isQueryEnabled = true, native
         addressHash={ addressHash }
         tokenFilter={ tokenFilter === ALL_ASSETS_FILTER ? NATIVE_ASSET_FILTER : tokenFilter }
         token={ selectedToken }
+        isQueryEnabled={ isQueryEnabled }
       />
       <div ref={ scrollRef }></div>
       <AddressCoinBalanceHistory query={ coinBalanceQuery } nativeExchangeRate={ nativeExchangeRate }/>

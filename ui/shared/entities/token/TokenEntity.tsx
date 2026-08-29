@@ -66,10 +66,28 @@ function isListIconMissing(addressHash: string) {
   return false;
 }
 
+function markListIconMissing(addressHash: string) {
+  // Sweep on write as well as on read. isListIconMissing/1 drops an entry only
+  // when that same address is rendered again, so a token list whose icons all
+  // fail once would hold every one of those addresses for the rest of the
+  // session even after the TTL passed - the TTL bounded staleness but not
+  // memory. Writes only happen on an icon error, so this scan is rare and the
+  // map it walks is small.
+  const now = Date.now();
+
+  for (const [ hash, seenAt ] of missingListIcons) {
+    if (now - seenAt >= MISSING_ICON_TTL_MS) {
+      missingListIcons.delete(hash);
+    }
+  }
+
+  missingListIcons.set(addressHash, now);
+}
+
 const Icon = (props: IconProps) => {
   const addressHash = props.token.address_hash;
   const handleListIconError = React.useCallback(() => {
-    missingListIcons.set(addressHash, Date.now());
+    markListIconMissing(addressHash);
   }, [ addressHash ]);
 
   if (props.noIcon) {

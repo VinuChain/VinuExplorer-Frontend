@@ -14,12 +14,18 @@ interface Props {
   addressHash: string;
   tokenFilter: string;
   token?: TokenInfo;
+  isQueryEnabled?: boolean;
 }
 
-const AddressCoinBalanceChart = ({ addressHash, tokenFilter, token }: Props) => {
+const AddressCoinBalanceChart = ({ addressHash, tokenFilter, token, isQueryEnabled = true }: Props) => {
+  // The parent disables its queries while an address-like route is still being
+  // resolved or redirected, and this chart is now mounted on the default
+  // filter rather than only on a token one, so without this it would fetch
+  // against a hash the parent has already decided not to trust.
   const { data, isPending, isError } = useApiQuery('general:address_coin_balance_chart', {
     pathParams: { hash: addressHash },
     queryParams: { token_contract_address_hash: tokenFilter },
+    queryOptions: { enabled: isQueryEnabled },
   });
   const chartsConfig = useChartsConfig();
 

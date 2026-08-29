@@ -41,7 +41,15 @@ Promise<GetServerSidePropsResult<Props<Pathname>>> => {
   let uuid = cookies.getFromCookieString(req.headers.cookie || '', cookies.NAMES.UUID);
   if (!uuid) {
     uuid = crypto.randomUUID();
-    res.setHeader('Set-Cookie', `${ cookies.NAMES.UUID }=${ uuid }`);
+    // This one sets the header directly rather than through cookies.set, so it
+    // never picked up Path or Secure. Built from the same helper so the UUID
+    // cookie cannot be the one that still travels in the clear.
+    const { path, secure } = cookies.getDefaultAttributes();
+
+    res.setHeader(
+      'Set-Cookie',
+      `${ cookies.NAMES.UUID }=${ uuid }; Path=${ path }; SameSite=Lax${ secure ? '; Secure' : '' }`,
+    );
   }
 
   const isTrackingDisabled = process.env.DISABLE_TRACKING === 'true';

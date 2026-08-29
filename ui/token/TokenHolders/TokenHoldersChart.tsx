@@ -2,7 +2,10 @@ import { Box, Flex, Text } from '@chakra-ui/react';
 import React, { useCallback } from 'react';
 
 import useApiQuery from 'lib/api/useApiQuery';
+import getErrorObjStatusCode from 'lib/errors/getErrorObjStatusCode';
 import { Button } from 'toolkit/chakra/button';
+import { Skeleton } from 'toolkit/chakra/skeleton';
+import DataFetchAlert from 'ui/shared/DataFetchAlert';
 
 export const CHART_PERIODS = [ '24h', '7d', '30d', '90d' ] as const;
 export type ChartPeriod = typeof CHART_PERIODS[number];
@@ -42,6 +45,9 @@ const TokenHoldersChart = ({ hash, period, onChangePeriod }: Props) => {
     queryParams: { period },
   });
 
+  // 404 = the backend has not materialised this series yet; anything else is a real failure.
+  const isNotComputed = query.isError && getErrorObjStatusCode(query.error) === 404;
+
   return (
     <Box>
       <Flex gap={ 2 } mb={ 3 }>
@@ -49,8 +55,9 @@ const TokenHoldersChart = ({ hash, period, onChangePeriod }: Props) => {
           <PeriodButton key={ p } period={ p } isActive={ period === p } onSelect={ onChangePeriod }/>
         )) }
       </Flex>
-      { query.isError && <Text color="text.secondary">Holder count history is being computed.</Text> }
-      { query.isLoading && <Text color="text.secondary">Loading...</Text> }
+      { isNotComputed && <Text color="text.secondary">Holder count history is being computed.</Text> }
+      { query.isError && !isNotComputed && <DataFetchAlert/> }
+      { query.isLoading && <Skeleton loading h="120px" w="100%"/> }
       { query.data && query.data.items.length === 0 && (
         <Text color="text.secondary">No holder count history yet for the selected period.</Text>
       ) }

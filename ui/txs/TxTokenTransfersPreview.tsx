@@ -14,6 +14,9 @@ type Props = {
 };
 
 const TxTokenTransfersPreview = ({ tx, isLoading }: Props) => {
+  // List endpoints serialise token_transfers only for the watchlist
+  // (backend transaction_view: single_tx?/watchlist gate); other tx lists
+  // send null, so rendering nothing there is by design, not a missing wire.
   const transfers = tx.token_transfers ?? [];
 
   if (transfers.length === 0) {

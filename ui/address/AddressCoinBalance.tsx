@@ -145,9 +145,11 @@ const AddressCoinBalance = ({ shouldRender = true, isQueryEnabled = true, native
         isLoading={ tokenBalancesQuery.isPlaceholderData }
         onChange={ handleTokenFilterChange }
       />
-      { tokenFilter !== ALL_ASSETS_FILTER && (
-        <AddressCoinBalanceChart addressHash={ addressHash } tokenFilter={ tokenFilter } token={ selectedToken }/>
-      ) }
+      <AddressCoinBalanceChart
+        addressHash={ addressHash }
+        tokenFilter={ tokenFilter === ALL_ASSETS_FILTER ? NATIVE_ASSET_FILTER : tokenFilter }
+        token={ selectedToken }
+      />
       <div ref={ scrollRef }></div>
       <AddressCoinBalanceHistory query={ coinBalanceQuery } nativeExchangeRate={ nativeExchangeRate }/>
     </>

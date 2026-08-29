@@ -260,7 +260,8 @@ export default function useNavItems(): ReturnType {
       },
     ].filter(Boolean);
 
-    const validatorsNavItems = [
+    // Mainnet-only dapps (chain 207, see docs/FORK.md); testnet has no deployment to link to.
+    const validatorsNavItems = config.chain.id === '207' ? [
       {
         text: 'Validators',
         url: 'https://validator.v9000.dev/',
@@ -273,7 +274,7 @@ export default function useNavItems(): ReturnType {
         icon: 'payment_link',
         isActive: false,
       },
-    ].filter(Boolean);
+    ] : [];
 
     const statsNavItem = (() => {
       const uptimeItem = {
@@ -367,12 +368,12 @@ export default function useNavItems(): ReturnType {
         isActive: tokensNavItems.flat().some(item => isInternalItem(item) && item.isActive),
         subItems: tokensNavItems,
       },
-      {
+      validatorsNavItems.length > 0 ? {
         text: 'Validators',
         icon: 'validator',
         isActive: false,
         subItems: validatorsNavItems,
-      },
+      } : null,
       marketplaceFeature.isEnabled ? {
         text: marketplaceFeature.titles.menu_item,
         nextRoute: { pathname: '/apps' as const },

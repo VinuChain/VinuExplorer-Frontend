@@ -42,7 +42,10 @@ const semanticTokens: ThemingConfig['semanticTokens'] = {
       primary: { value: { _light: '{colors.theme.text.primary._light}', _dark: '{colors.theme.text.primary._dark}' } },
       secondary: { value: { _light: '{colors.theme.text.secondary._light}', _dark: '{colors.theme.text.secondary._dark}' } },
       error: { value: '{colors.red.500}' },
-      success: { value: { _light: '{colors.green.500}', _dark: '{colors.green.200}' } },
+      // green.500 is 3.24:1 on the page background - measured on the live
+      // block page, where the burnt-fees percentage uses this token and was
+      // the last color-contrast node axe reported. green.700 is 6.42:1.
+      success: { value: { _light: '{colors.green.700}', _dark: '{colors.green.200}' } },
     },
     bg: {
       primary: { value: { _light: '{colors.theme.bg.primary._light}', _dark: '{colors.theme.bg.primary._dark}' } },

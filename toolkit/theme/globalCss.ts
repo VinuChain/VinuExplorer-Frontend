@@ -23,17 +23,25 @@ const globalCss: SystemConfig['globalCss'] = {
     color: 'global.body.fg',
     WebkitTapHighlightColor: 'transparent',
     fontVariantLigatures: 'no-contextual',
-    focusRingStyle: 'hidden',
   },
-  // `focusRingStyle: 'hidden'` above disables Chakra's focus ring globally,
-  // which leaves keyboard users with no visible focus indicator at all - a
-  // WCAG 2.4.7 (Focus Visible, AA) failure that axe cannot detect, since it
-  // does not evaluate focus styles. Verified on the live site: the first tab
-  // stop matched :focus-visible with outline: none and box-shadow: none.
+  // `body` used to set `focusRingStyle: 'hidden'`, which resolves Chakra's
+  // `--focus-ring-style` to `hidden` for every component that draws a ring.
+  // Keyboard users got no visible focus indicator anywhere - a WCAG 2.4.7
+  // (Focus Visible, AA) failure axe cannot detect, because it does not
+  // evaluate focus styles.
   //
-  // Restored for keyboard focus only, so pointer interaction is unchanged.
-  // The selector is deliberately low specificity, so any component that
-  // defines its own _focusVisible treatment still wins; this is the floor.
+  // A `*:focus-visible` rule alone did NOT fix it, which is worth recording:
+  // the elements matched `:focus-visible` and still computed
+  // `outline: none 0px`, because each component's own rule carries higher
+  // specificity than the universal selector and resolved the ring to
+  // `hidden`. Measured on the deployed site, four of the first five tab stops
+  // were still invisible; only a plain anchor with no Chakra rule picked the
+  // floor up.
+  //
+  // Removing the token is the fix: Chakra's own ring returns, and it is
+  // mode-aware - measured `rgb(26, 32, 44)` on light and `rgb(226, 232, 240)`
+  // on dark, both 2px with a 2px offset. The rule below stays as the floor
+  // for anything Chakra does not style itself.
   '*:focus-visible': {
     outline: '2px solid',
     outlineColor: { _light: 'blue.600', _dark: 'blue.300' },

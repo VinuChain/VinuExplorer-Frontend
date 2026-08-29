@@ -1,6 +1,7 @@
 import type { BrowserContext } from '@playwright/test';
 import React from 'react';
 
+import config from 'configs/app';
 import * as rewardsBalanceMock from 'mocks/rewards/balance';
 import * as dailyRewardMock from 'mocks/rewards/dailyReward';
 import * as profileMock from 'mocks/user/profile';
@@ -11,6 +12,12 @@ import { test, expect } from 'playwright/lib';
 import * as pwConfig from 'playwright/utils/config';
 
 import HeroBanner from './HeroBanner';
+
+test('heading uses the configured network name', async({ render }) => {
+  const component = await render(<HeroBanner/>);
+
+  await expect(component.getByRole('heading', { level: 1 })).toContainText(`official explorer for ${ config.chain.name }`);
+});
 
 const authTest = test.extend<{ context: BrowserContext }>({
   context: contextWithAuth,

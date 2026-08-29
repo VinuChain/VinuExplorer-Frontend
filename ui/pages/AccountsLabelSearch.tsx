@@ -6,6 +6,7 @@ import React from 'react';
 import type { AddressMetadataTagType } from 'types/api/addressMetadata';
 import type { EntityTag as TEntityTag, EntityTagType } from 'ui/shared/EntityTags/types';
 
+import config from 'configs/app';
 import useAddressesMetadata from 'lib/address/useAddressesMetadata';
 import getQueryParamString from 'lib/router/getQueryParamString';
 import { TOP_ADDRESS } from 'stubs/address';
@@ -215,15 +216,20 @@ const AccountsLabelAddressSearch = ({ slug, tagType, tagName, isCategoryBrowse }
   const addressRows = React.useMemo(() => {
     return enrichedItems?.map((item, index) => ({ item, rank: pageStartIndex + index + 1 }));
   }, [ enrichedItems, pageStartIndex ]);
+  // The sort below re-orders only the rows already fetched, so it is offered
+  // only when this page IS the whole result set. On a paginated result it would
+  // present a page-local reordering as a sort of everything.
+  const isClientSortable = !isPlaceholderData && pagination.page === 1 && !data?.next_page_params;
   const sortedAddressRows = React.useMemo(() => {
     if (!addressRows) return undefined;
+    if (!isClientSortable) return addressRows;
 
     return [ ...addressRows ].sort((a, b) => {
       const result = compareAddressLabelRows(a, b, sort.field);
       return sort.direction === 'asc' ? result : -result;
     });
-  }, [ addressRows, sort.direction, sort.field ]);
-  const sortValue = `${ sort.field }_${ sort.direction }`;
+  }, [ addressRows, isClientSortable, sort.direction, sort.field ]);
+  const sortValue = isClientSortable ? `${ sort.field }_${ sort.direction }` : undefined;
   const handleSortToggle = React.useCallback((field: AddressesLabelSearchSortField) => {
     setSort((current) => ({
       field,
@@ -238,7 +244,7 @@ const AccountsLabelAddressSearch = ({ slug, tagType, tagName, isCategoryBrowse }
           top={ pagination.isVisible ? ACTION_BAR_HEIGHT_DESKTOP : 0 }
           items={ sortedAddressRows }
           sortValue={ sortValue }
-          onSortToggle={ handleSortToggle }
+          onSortToggle={ isClientSortable ? handleSortToggle : undefined }
           isLoading={ isPlaceholderData }
         />
       </Box>
@@ -364,15 +370,18 @@ const AccountsLabelTokenSearch = ({ slug, tagType, tagName, isCategoryBrowse }: 
   const tokenRows = React.useMemo(() => {
     return data?.items.map((item, index) => ({ item, rank: pageStartIndex + index + 1 }));
   }, [ data?.items, pageStartIndex ]);
+  // Same page-local caveat as the address table above.
+  const isClientSortable = !isPlaceholderData && pagination.page === 1 && !data?.next_page_params;
   const sortedTokenRows = React.useMemo(() => {
     if (!tokenRows) return undefined;
+    if (!isClientSortable) return tokenRows;
 
     return [ ...tokenRows ].sort((a, b) => {
       const result = compareTokenLabelRows(a, b, sort.field);
       return sort.direction === 'asc' ? result : -result;
     });
-  }, [ sort.direction, sort.field, tokenRows ]);
-  const sortValue = `${ sort.field }_${ sort.direction }`;
+  }, [ isClientSortable, sort.direction, sort.field, tokenRows ]);
+  const sortValue = isClientSortable ? `${ sort.field }_${ sort.direction }` : undefined;
   const handleSortToggle = React.useCallback((field: TokenLabelSearchSortField) => {
     setSort((current) => ({
       field,
@@ -387,7 +396,7 @@ const AccountsLabelTokenSearch = ({ slug, tagType, tagName, isCategoryBrowse }: 
           top={ pagination.isVisible ? ACTION_BAR_HEIGHT_DESKTOP : 0 }
           items={ sortedTokenRows }
           sortValue={ sortValue }
-          onSortToggle={ handleSortToggle }
+          onSortToggle={ isClientSortable ? handleSortToggle : undefined }
           isLoading={ isPlaceholderData }
         />
       </Box>
@@ -454,7 +463,7 @@ const AccountsLabelTokenSearch = ({ slug, tagType, tagName, isCategoryBrowse }: 
         </Link>
       </Flex>
       <chakra.p>
-        Tracks key token metrics for VinuChain contracts tagged as { label }. Only indexed tokens with updated token metadata are listed.
+        Tracks key token metrics for { config.chain.name } contracts tagged as { label }. Only indexed tokens with updated token metadata are listed.
       </chakra.p>
       <chakra.p textStyle="xs">
         Label source attribution is required if this data is reused externally.

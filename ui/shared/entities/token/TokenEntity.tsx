@@ -38,7 +38,58 @@ const Link = chakra((props: LinkProps) => {
 
 type IconProps = Pick<EntityProps, 'token' | 'className'> & EntityBase.IconBaseProps;
 
+// Negative cache for vinuchain-lists icons, so scrolling a token list does not
+// re-request raw.githubusercontent.com for the same missing token on every
+// mount.
+//
+// It expires, because an <img> error event carries no HTTP status: a transient
+// network failure, a GitHub 5xx and a real 404 are indistinguishable here.
+// Remembering them forever meant one blip hid that token's icon for the rest of
+// the session. A short TTL keeps the request saving for a genuine 404 while
+// letting a transient failure heal itself.
+// ponytail: TTL map, a registry-backed allowlist would remove the first request too.
+const MISSING_ICON_TTL_MS = 5 * 60 * 1000;
+const missingListIcons = new Map<string, number>();
+
+function isListIconMissing(addressHash: string) {
+  const seenAt = missingListIcons.get(addressHash);
+
+  if (seenAt === undefined) {
+    return false;
+  }
+
+  if (Date.now() - seenAt < MISSING_ICON_TTL_MS) {
+    return true;
+  }
+
+  missingListIcons.delete(addressHash);
+  return false;
+}
+
+function markListIconMissing(addressHash: string) {
+  // Sweep on write as well as on read. isListIconMissing/1 drops an entry only
+  // when that same address is rendered again, so a token list whose icons all
+  // fail once would hold every one of those addresses for the rest of the
+  // session even after the TTL passed - the TTL bounded staleness but not
+  // memory. Writes only happen on an icon error, so this scan is rare and the
+  // map it walks is small.
+  const now = Date.now();
+
+  for (const [ hash, seenAt ] of missingListIcons) {
+    if (now - seenAt >= MISSING_ICON_TTL_MS) {
+      missingListIcons.delete(hash);
+    }
+  }
+
+  missingListIcons.set(addressHash, now);
+}
+
 const Icon = (props: IconProps) => {
+  const addressHash = props.token.address_hash;
+  const handleListIconError = React.useCallback(() => {
+    markListIconMissing(addressHash);
+  }, [ addressHash ]);
+
   if (props.noIcon) {
     return null;
   }
@@ -48,8 +99,8 @@ const Icon = (props: IconProps) => {
     borderRadius: props.token.type === 'ERC-20' ? 'full' : 'base',
   };
 
-  const addressHash = props.token.address_hash;
-  const vinuchainListsUrl =
+  const vinuchainListsUrl = isListIconMissing(addressHash) ?
+    undefined :
     `https://raw.githubusercontent.com/VinuChain/vinuchain-lists/main/tokens/${ addressHash }/${ addressHash }.png`;
   const iconSrc = props.token.icon_url ?? vinuchainListsUrl;
 
@@ -58,6 +109,7 @@ const Icon = (props: IconProps) => {
       { ...styles }
       className={ props.className }
       src={ iconSrc }
+      onError={ props.token.icon_url ? undefined : handleListIconError }
       alt={ `${ props.token.name || 'token' } logo` }
       fallback={ <TokenLogoPlaceholder/> }
       shield={ props.shield ?? (props.chain ? { src: props.chain.logo } : undefined) }

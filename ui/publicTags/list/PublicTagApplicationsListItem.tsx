@@ -2,6 +2,7 @@ import React from 'react';
 
 import type { PublicTagApplicationRow } from 'types/api/publicTagSubmissions';
 
+import { Button } from 'toolkit/chakra/button';
 import AddressEntity from 'ui/shared/entities/address/AddressEntity';
 import ListItemMobileGrid from 'ui/shared/ListItemMobile/ListItemMobileGrid';
 import TimeWithTooltip from 'ui/shared/time/TimeWithTooltip';
@@ -63,7 +64,7 @@ const PublicTagApplicationsListItem = ({ item, isLoading, onEdit }: Props) => {
         <>
           <ListItemMobileGrid.Label isLoading={ isLoading }>&nbsp;</ListItemMobileGrid.Label>
           <ListItemMobileGrid.Value>
-            <button type="button" onClick={ handleEdit } style={{ cursor: 'pointer', textDecoration: 'underline' }}>Edit</button>
+            <Button variant="link" size="sm" onClick={ handleEdit }>Edit</Button>
           </ListItemMobileGrid.Value>
         </>
       ) }

@@ -4,6 +4,7 @@ import React from 'react';
 
 import config from 'configs/app';
 import useApiQuery from 'lib/api/useApiQuery';
+import { currencyUnits } from 'lib/units';
 import { HOMEPAGE_STATS, HOMEPAGE_STATS_MICROSERVICE } from 'stubs/stats';
 import GasInfoTooltip from 'ui/shared/gas/GasInfoTooltip';
 import GasPrice from 'ui/shared/gas/GasPrice';
@@ -23,10 +24,10 @@ const Stats = () => {
   const [ hasGasTracker, setHasGasTracker ] = React.useState(config.features.gasTracker.isEnabled);
 
   // data from stats microservice is prioritized over data from stats api
-  // VinuChain: poll every 10s so the home-page stats card matches the live
-  // chain tip without requiring a manual page refresh. Both stats backends
-  // are configured to recompute their counters on the same cadence — see
-  // VinuChain ops.md "Blockscout Stats Counter Cadence Override".
+  // VinuChain: poll every 10s so the home-page stats card follows the chain
+  // tip without a manual page refresh. This is only the client poll interval:
+  // the backend /api/v2/stats payload is cached for 60s and stats-rs counters
+  // are recomputed on their own schedule, so a poll can return unchanged data.
   const statsQuery = useApiQuery('stats:pages_main', {
     queryOptions: {
       refetchOnMount: false,
@@ -220,7 +221,8 @@ const Stats = () => {
         value: apiData.feeless_tx_percentage < 0.005 && BigNumber(apiData.total_fee_refunded).gt(0) ?
           '<0.01%' :
           `${ apiData.feeless_tx_percentage.toLocaleString(undefined, { maximumFractionDigits: 2 }) }%`,
-        hint: `All-time share of transactions with a Payback refund; ${ BigNumber(apiData.total_fee_refunded).div(WEI).dp(2).toFormat() } VC total refunded`,
+        hint: 'Share of transactions with a Payback refund; ' +
+          `${ BigNumber(apiData.total_fee_refunded).div(WEI).dp(2).toFormat() } ${ currencyUnits.ether } total refunded`,
         isLoading,
       },
     ]

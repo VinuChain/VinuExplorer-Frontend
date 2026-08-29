@@ -21,11 +21,12 @@ const LayoutError = ({ children }: Props) => {
           <Layout.MainColumn>
             <HeaderAlert/>
             <HeaderDesktop/>
-            <AppErrorBoundary>
-              <main>
+            { /* main outside the boundary - see Layout.tsx */ }
+            <main id="main" tabIndex={ -1 }>
+              <AppErrorBoundary>
                 { children }
-              </main>
-            </AppErrorBoundary>
+              </AppErrorBoundary>
+            </main>
           </Layout.MainColumn>
         </Layout.MainArea>
         <Layout.Footer/>

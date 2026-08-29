@@ -52,7 +52,10 @@ const DEFAULT_THEME_COLORS = {
       _dark: { value: '{colors.gray.400}' },
     },
     secondary: {
-      _light: { value: '{colors.gray.400}' },
+      // gray.400 is 2.26:1 on the page background, under the 3:1 WCAG 1.4.11
+      // sets for graphics that carry meaning - and axe does not test 1.4.11
+      // for graphics, so no scan ever reported it. gray.500 is 4.02:1.
+      _light: { value: '{colors.gray.500}' },
       _dark: { value: '{colors.gray.500}' },
     },
   },

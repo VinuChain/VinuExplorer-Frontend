@@ -4,7 +4,7 @@ import React from 'react';
 
 import type { TabItemRegular } from 'toolkit/components/AdaptiveTabs/types';
 import type { TokenType } from 'types/api/token';
-import type { TokensClientSortingField, TokensSorting, TokensSortingValue } from 'types/api/tokens';
+import type { TokensSorting, TokensSortingValue } from 'types/api/tokens';
 
 import config from 'configs/app';
 import useDebounce from 'lib/hooks/useDebounce';
@@ -41,14 +41,10 @@ const TABS_RIGHT_SLOT_PROPS: SlotProps = {
 
 const bridgedTokensFeature = config.features.bridgedTokens;
 
+// Every offered sort is one the API applies, so this no longer has to filter
+// out a client-only field or cast its way past the wider type.
 function getTokensApiSorting(value: TokensSortingValue) {
-  const sorting = getSortParamsFromValue<TokensSortingValue, TokensClientSortingField, TokensSorting['order']>(value);
-
-  if (!sorting || sorting.sort === 'label') {
-    return undefined;
-  }
-
-  return sorting as TokensSorting;
+  return getSortParamsFromValue<TokensSortingValue, TokensSorting['sort'], TokensSorting['order']>(value);
 }
 
 const Tokens = () => {

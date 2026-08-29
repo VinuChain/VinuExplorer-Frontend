@@ -22,11 +22,18 @@ const LayoutDefault = ({ children }: Props) => {
           <Layout.MainColumn>
             <HeaderAlert/>
             <HeaderDesktop/>
-            <AppErrorBoundary>
-              <Layout.Content>
+            { /* The main landmark wraps the boundary rather than sitting
+              * inside it. AppErrorBoundary replaces its whole subtree when it
+              * catches, so with #main inside, a crashed page removed the
+              * target that the skip link in Container - which is outside the
+              * boundary and still rendered - points at, leaving keyboard users
+              * stranded in the nav on exactly the screen they most need to
+              * leave. This way the error screen renders inside main. */ }
+            <Layout.Content>
+              <AppErrorBoundary>
                 { children }
-              </Layout.Content>
-            </AppErrorBoundary>
+              </AppErrorBoundary>
+            </Layout.Content>
           </Layout.MainColumn>
         </Layout.MainArea>
         <Layout.Footer/>

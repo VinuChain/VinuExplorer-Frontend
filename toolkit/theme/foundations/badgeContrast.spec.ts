@@ -28,6 +28,31 @@ function resolve(ref: string): string {
   return value;
 }
 
+// Separators are spelled as "comma with optional padding" OR "whitespace"
+// rather than [,\s] wrapped in \s* - the padded and unpadded branches would
+// otherwise match the same input two ways, which is a backtracking foothold.
+const RGB = /^rgba?\(\s*(\d{1,3})(?:\s*,\s*|\s+)(\d{1,3})(?:\s*,\s*|\s+)(\d{1,3})(?:\s*[,/]\s*([\d.]+))?\s*\)$/i;
+
+function parseRgb(value: string): { hex: string; alpha: number } | null {
+  const match = RGB.exec(value.trim());
+
+  if (!match) {
+    return null;
+  }
+
+  const [ , r, g, b, a ] = match;
+  const channels = [ r, g, b ].map((channel) => Math.min(255, Number(channel)));
+
+  if (channels.some((channel) => !Number.isFinite(channel))) {
+    return null;
+  }
+
+  return {
+    hex: `#${ channels.map((channel) => channel.toString(16).padStart(2, '0')).join('') }`,
+    alpha: a === undefined ? 1 : Number(a),
+  };
+}
+
 function relativeLuminance(hex: string): number {
   const [ r, g, b ] = [ 1, 3, 5 ]
     .map((offset) => parseInt(hex.slice(offset, offset + 2), 16) / 255)
@@ -62,6 +87,10 @@ function flatten(group: BadgeGroup, prefix = ''): Array<[ string, Entry ]> {
 
 const badge = (semanticTokens?.colors as Record<string, unknown> | undefined)?.badge as BadgeGroup;
 
+type ModeValue = { value: string };
+type ModePair = { _light: ModeValue; _dark: ModeValue };
+const theme = (colors as unknown as { theme: { icon: { secondary: ModePair }; bg: { primary: ModePair } } }).theme;
+
 const cases = flatten(badge)
   .filter(([ , entry ]) => isOpaque(entry))
   .flatMap(([ name, entry ]) => ([ '_light', '_dark' ] as const).map((mode) => {
@@ -81,5 +110,53 @@ describe('badge colour contrast', () => {
 
   it.each(cases)('$label meets WCAG AA', ({ ratio }) => {
     expect(ratio).toBeGreaterThanOrEqual(AA_NORMAL_TEXT);
+  });
+});
+
+// WCAG 1.4.11 Non-text Contrast: 3:1 for graphics that carry meaning. axe does
+// not test this for graphics, so the accessibility scans that found every text
+// violation on this site reported nothing while icon.secondary sat at 2.26:1.
+describe('icon colour contrast', () => {
+  const AA_NON_TEXT = 3;
+
+  // Three shapes reach here. bg.primary is a literal hex rather than a
+  // {colors.x.y} reference - the file notes that colour links do not resolve in
+  // that block. And NEXT_PUBLIC_COLOR_THEME_OVERRIDES is documented in rgba()
+  // form, which the checked-in MegaETH preset uses, so a supported theme merges
+  // values that are neither hex nor a token reference; without this the helper
+  // handed them to resolve() and the suite threw before measuring anything,
+  // failing a valid configuration on its input format rather than its contrast.
+  const colour = (value: string): string | null => {
+    if (HEX.test(value)) {
+      return value;
+    }
+
+    const rgb = parseRgb(value);
+
+    if (rgb) {
+      // A translucent override would need compositing against whatever is
+      // behind it, which the token does not carry - the same reason the alpha
+      // badge palettes above are out of scope.
+      return rgb.alpha === 1 ? rgb.hex : null;
+    }
+
+    return resolve(value);
+  };
+
+  it('parses the documented rgba override format', () => {
+    expect(colour('rgba(16, 17, 18, 1)')).toBe('#101112');
+    expect(colour('rgb(255, 0, 8)')).toBe('#ff0008');
+    expect(colour('rgba(16, 17, 18, 0.5)')).toBeNull();
+  });
+
+  it.each([ '_light', '_dark' ] as const)('icon.secondary meets WCAG AA in %s mode', (mode) => {
+    const icon = colour(theme.icon.secondary[mode].value);
+    const background = colour(theme.bg.primary[mode].value);
+
+    if (icon === null || background === null) {
+      return;
+    }
+
+    expect(contrastRatio(icon, background)).toBeGreaterThanOrEqual(AA_NON_TEXT);
   });
 });

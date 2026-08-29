@@ -70,21 +70,27 @@ const TokensListItem = ({
         gridTemplateColumns="minmax(0, 1fr)"
       >
         <GridItem display="flex">
-          <TokenEntity
-            token={ token }
-            chain={ chainInfo }
-            isLoading={ isLoading }
-            jointSymbol
-            noCopy
-            w="auto"
-            textStyle="sm"
-            fontWeight="700"
-          />
-          <TokenSocialLinks
-            socials={ 'socials' in token ? token.socials : undefined }
-            fields={ [ 'website', 'twitter', 'telegram', 'coingecko', 'coinmarketcap' ] }
-            boxSize={ 4 }
-          />
+          { /* WCAG 2.5.8: the social icons sat flush against the name link, so
+            * neither cleared the 24px spacing exception. This is the wrapper
+            * TokensTableItem already uses; minW 0 is load-bearing for the
+            * name's tail truncation at 390px. */ }
+          <Flex alignItems="center" columnGap={ 2 } minW={ 0 }>
+            <TokenEntity
+              token={ token }
+              chain={ chainInfo }
+              isLoading={ isLoading }
+              jointSymbol
+              noCopy
+              w="auto"
+              textStyle="sm"
+              fontWeight="700"
+            />
+            <TokenSocialLinks
+              socials={ 'socials' in token ? token.socials : undefined }
+              fields={ [ 'website', 'twitter', 'telegram', 'coingecko', 'coinmarketcap' ] }
+              boxSize={ 4 }
+            />
+          </Flex>
           <Flex ml={ 3 } flexShrink={ 0 } columnGap={ 1 }>
             <Tag loading={ isLoading }>{ getTokenTypeName(type) }</Tag>
             { bridgedChainTag && <Tag loading={ isLoading }>{ bridgedChainTag }</Tag> }
@@ -94,7 +100,7 @@ const TokensListItem = ({
           </Skeleton>
         </GridItem>
       </Grid>
-      <Flex justifyContent="space-between" alignItems="center" width="150px" ml={ 7 } mt={ -2 }>
+      <Flex justifyContent="space-between" alignItems="center" width="150px" ml={ 7 }>
         <AddressEntity
           address={{ hash: addressHash, filecoin: { robust: filecoinRobustAddress } }}
           isLoading={ isLoading }

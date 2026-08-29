@@ -8,7 +8,7 @@ interface Props {
 
 const Content = ({ children, className }: Props) => {
   return (
-    <Box pt={{ base: 0, lg: 6 }} as="main" flexGrow={ 1 } className={ className }>
+    <Box pt={{ base: 0, lg: 6 }} as="main" id="main" tabIndex={ -1 } className={ className } flexGrow={ 1 }>
       { children }
     </Box>
   );

@@ -62,6 +62,10 @@ function flatten(group: BadgeGroup, prefix = ''): Array<[ string, Entry ]> {
 
 const badge = (semanticTokens?.colors as Record<string, unknown> | undefined)?.badge as BadgeGroup;
 
+type ModeValue = { value: string };
+type ModePair = { _light: ModeValue; _dark: ModeValue };
+const theme = (colors as unknown as { theme: { icon: { secondary: ModePair }; bg: { primary: ModePair } } }).theme;
+
 const cases = flatten(badge)
   .filter(([ , entry ]) => isOpaque(entry))
   .flatMap(([ name, entry ]) => ([ '_light', '_dark' ] as const).map((mode) => {
@@ -81,5 +85,23 @@ describe('badge colour contrast', () => {
 
   it.each(cases)('$label meets WCAG AA', ({ ratio }) => {
     expect(ratio).toBeGreaterThanOrEqual(AA_NORMAL_TEXT);
+  });
+});
+
+// WCAG 1.4.11 Non-text Contrast: 3:1 for graphics that carry meaning. axe does
+// not test this for graphics, so the accessibility scans that found every text
+// violation on this site reported nothing while icon.secondary sat at 2.26:1.
+describe('icon colour contrast', () => {
+  const AA_NON_TEXT = 3;
+
+  // bg.primary is a literal hex rather than a {colors.x.y} reference - the file
+  // notes that colour links do not resolve in that block - so accept both.
+  const colour = (value: string) => HEX.test(value) ? value : resolve(value);
+
+  it.each([ '_light', '_dark' ] as const)('icon.secondary meets WCAG AA in %s mode', (mode) => {
+    const icon = colour(theme.icon.secondary[mode].value);
+    const background = colour(theme.bg.primary[mode].value);
+
+    expect(contrastRatio(icon, background)).toBeGreaterThanOrEqual(AA_NON_TEXT);
   });
 });

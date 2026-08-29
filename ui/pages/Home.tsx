@@ -31,7 +31,7 @@ const Home = () => {
   })();
 
   return (
-    <Box as="main">
+    <Box as="main" id="main" tabIndex={ -1 }>
       <HeroBanner/>
       <Flex flexDir={{ base: 'column', lg: 'row' }} columnGap={ 2 } rowGap={ 1 } mt={ 3 } _empty={{ mt: 0 }}>
         <Stats/>

@@ -43,6 +43,4 @@ export interface TokensSorting {
 
 export type TokensSortingField = TokensSorting['sort'];
 
-export type TokensClientSortingField = TokensSortingField | 'label';
-
-export type TokensSortingValue = `${ TokensClientSortingField }-${ TokensSorting['order'] }` | 'default';
+export type TokensSortingValue = `${ TokensSortingField }-${ TokensSorting['order'] }` | 'default';

@@ -22,7 +22,7 @@ const LayoutError = ({ children }: Props) => {
             <HeaderAlert/>
             <HeaderDesktop/>
             <AppErrorBoundary>
-              <main>
+              <main id="main" tabIndex={ -1 }>
                 { children }
               </main>
             </AppErrorBoundary>

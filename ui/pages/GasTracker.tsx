@@ -48,7 +48,7 @@ const GasTracker = () => {
       rowGap={ 1 }
       flexDir={{ base: 'column', lg: 'row' }}
     >
-      { typeof enrichedData?.network_utilization_percentage === 'number' && enrichedData.network_utilization_percentage >= 0.01 &&
+      { typeof enrichedData?.network_utilization_percentage === 'number' &&
         <GasTrackerNetworkUtilization percentage={ enrichedData.network_utilization_percentage } isLoading={ isLoading }/> }
       { enrichedData?.gas_price_updated_at && (
         <Skeleton loading={ isLoading } whiteSpace="pre" display="flex" alignItems="center">

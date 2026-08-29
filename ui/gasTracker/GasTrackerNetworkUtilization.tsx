@@ -11,7 +11,11 @@ interface Props {
 }
 
 const GasTrackerNetworkUtilization = ({ percentage, isLoading }: Props) => {
-  const { load, color } = getNetworkUtilizationParams(percentage);
+  const { load, color, isMeasurable } = getNetworkUtilizationParams(percentage);
+
+  if (!isMeasurable) {
+    return null;
+  }
 
   return (
     <Skeleton loading={ isLoading } whiteSpace="pre-wrap">

@@ -104,19 +104,20 @@ const LatestBlocks = () => {
     );
   }
 
-  const networkUtilization = getNetworkUtilizationParams(statsQueryResult.data?.network_utilization_percentage ?? 0);
+  const utilization = statsQueryResult.data?.network_utilization_percentage ?? 0;
+  const networkUtilization = getNetworkUtilizationParams(utilization);
 
   return (
     <Box width={{ base: '100%', lg: '280px' }} flexShrink={ 0 }>
       <Heading level="3">Latest blocks</Heading>
-      { statsQueryResult.data?.network_utilization_percentage !== undefined && (
+      { networkUtilization.isMeasurable && (
         <Skeleton loading={ statsQueryResult.isPlaceholderData } mt={ 2 } display="inline-block" textStyle="sm">
           <Text as="span">
             Network utilization:{ nbsp }
           </Text>
           <Tooltip content={ `${ upperFirst(networkUtilization.load) } load` }>
             <Text as="span" color={ networkUtilization.color } fontWeight={ 700 }>
-              { statsQueryResult.data?.network_utilization_percentage.toFixed(2) }%
+              { utilization.toFixed(2) }%
             </Text>
           </Tooltip>
         </Skeleton>

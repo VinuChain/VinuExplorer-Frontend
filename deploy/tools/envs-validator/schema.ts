@@ -103,6 +103,7 @@ const schema = yup
     NEXT_PUBLIC_DATA_AVAILABILITY_ENABLED: yup.boolean(),
     NEXT_PUBLIC_ADVANCED_FILTER_ENABLED: yup.boolean(),
     NEXT_PUBLIC_CELO_ENABLED: yup.boolean(),
+    NEXT_PUBLIC_VINU_EPOCHS_ENABLED: yup.boolean(),
     NEXT_PUBLIC_IS_ACCOUNT_SUPPORTED: yup.boolean(),
     NEXT_PUBLIC_ACCOUNT_AUTH_URL: yup.string(),
     NEXT_PUBLIC_DEX_POOLS_ENABLED: yup.boolean()

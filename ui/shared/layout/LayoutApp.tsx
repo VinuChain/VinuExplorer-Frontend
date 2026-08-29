@@ -33,11 +33,12 @@ const LayoutApp = ({ children }: Props) => {
             paddingBottom={ 0 }
             paddingX={{ base: 4, lg: 6 }}
           >
-            <AppErrorBoundary>
-              <Layout.Content pt={{ base: 0, lg: 2 }} flexGrow={ 1 }>
+            { /* main outside the boundary - see Layout.tsx */ }
+            <Layout.Content pt={{ base: 0, lg: 2 }} flexGrow={ 1 }>
+              <AppErrorBoundary>
                 { children }
-              </Layout.Content>
-            </AppErrorBoundary>
+              </AppErrorBoundary>
+            </Layout.Content>
           </Layout.MainColumn>
         </Layout.MainArea>
       </Layout.Container>

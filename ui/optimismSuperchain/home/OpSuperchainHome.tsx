@@ -41,7 +41,7 @@ const OpSuperchainHome = () => {
   }, [ chains?.length ]);
 
   return (
-    <Box as="main" id="main" tabIndex={ -1 }>
+    <Box>
       <HeroBanner/>
       <Stats/>
       <LatestTxs/>

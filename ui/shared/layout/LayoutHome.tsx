@@ -1,3 +1,4 @@
+import { chakra } from '@chakra-ui/react';
 import React from 'react';
 
 import type { Props } from './types';
@@ -21,9 +22,15 @@ const LayoutHome = ({ children }: Props) => {
             paddingTop={{ base: 3, lg: 6 }}
           >
             <HeaderAlert mb={ 3 }/>
-            <AppErrorBoundary>
-              { children }
-            </AppErrorBoundary>
+            { /* main outside the boundary - see Layout.tsx. Home and
+              * OpSuperchainHome each carried this landmark themselves, which
+              * put it inside the boundary; it is unstyled, so hoisting it here
+              * changes nothing visually and covers both. */ }
+            <chakra.main id="main" tabIndex={ -1 }>
+              <AppErrorBoundary>
+                { children }
+              </AppErrorBoundary>
+            </chakra.main>
           </Layout.MainColumn>
         </Layout.MainArea>
         <Layout.Footer/>

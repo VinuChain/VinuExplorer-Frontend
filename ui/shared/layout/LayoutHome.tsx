@@ -9,6 +9,10 @@ import HeaderMobile from 'ui/snippets/header/HeaderMobile';
 
 import * as Layout from './components';
 
+const ErrorMain = ({ children }: { children: React.ReactNode }) => (
+  <chakra.main id="main" tabIndex={ -1 }>{ children }</chakra.main>
+);
+
 const LayoutHome = ({ children }: Props) => {
   return (
     <Layout.Root content={ children }>
@@ -22,15 +26,19 @@ const LayoutHome = ({ children }: Props) => {
             paddingTop={{ base: 3, lg: 6 }}
           >
             <HeaderAlert mb={ 3 }/>
-            { /* main outside the boundary - see Layout.tsx. Home and
-              * OpSuperchainHome each carried this landmark themselves, which
-              * put it inside the boundary; it is unstyled, so hoisting it here
-              * changes nothing visually and covers both. */ }
-            <chakra.main id="main" tabIndex={ -1 }>
-              <AppErrorBoundary>
-                { children }
-              </AppErrorBoundary>
-            </chakra.main>
+            { /* The landmark stays on the page rather than moving here.
+              * Layout.Root returns its content prop directly until mounted, so
+              * a landmark placed in this layout is absent from the
+              * server-rendered and no-JS output entirely. Home and
+              * OpSuperchainHome keep theirs, which covers that path.
+              *
+              * That leaves the error path, where the boundary replaces the
+              * children that carry it - so the error screen gets its own via
+              * the Container the boundary already accepts. Exactly one #main
+              * exists either way. */ }
+            <AppErrorBoundary Container={ ErrorMain }>
+              { children }
+            </AppErrorBoundary>
           </Layout.MainColumn>
         </Layout.MainArea>
         <Layout.Footer/>

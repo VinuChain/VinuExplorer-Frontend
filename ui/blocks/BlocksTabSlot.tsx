@@ -27,18 +27,19 @@ const BlocksTabSlot = ({ pagination }: Props) => {
     },
   });
 
-  const networkUtilization = getNetworkUtilizationParams(statsQuery.data?.network_utilization_percentage ?? 0);
+  const utilization = statsQuery.data?.network_utilization_percentage ?? 0;
+  const networkUtilization = getNetworkUtilizationParams(utilization);
 
   return (
     <Flex alignItems="center" columnGap={ 8 } display={{ base: 'none', lg: 'flex' }}>
-      { statsQuery.data?.network_utilization_percentage !== undefined && (
+      { networkUtilization.isMeasurable && (
         <Box>
           <Text as="span" fontSize="sm">
             Network utilization (last 50 blocks):{ nbsp }
           </Text>
           <Tooltip content={ `${ upperFirst(networkUtilization.load) } load` }>
             <Skeleton display="inline-block" fontSize="sm" color={ networkUtilization.color } fontWeight={ 600 } loading={ statsQuery.isPlaceholderData }>
-              <span>{ statsQuery.data.network_utilization_percentage.toFixed(2) }%</span>
+              <span>{ utilization.toFixed(2) }%</span>
             </Skeleton>
           </Tooltip>
         </Box>

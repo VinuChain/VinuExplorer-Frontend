@@ -132,7 +132,7 @@ export default function useNavItems(): ReturnType {
       icon: 'MUD_menu',
       isActive: pathname === '/mud-worlds',
     } : null;
-    const epochs = config.features.celo.isEnabled ? {
+    const epochs = config.features.celo.isEnabled || config.features.vinuEpochs.isEnabled ? {
       text: 'Epochs',
       nextRoute: { pathname: '/epochs' as const },
       icon: 'hourglass',

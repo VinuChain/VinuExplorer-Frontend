@@ -33,6 +33,7 @@ import type {
   ValidatorsZilliqaResponse,
   ValidatorZilliqa,
 } from 'types/api/validators';
+import type { VinuEpoch, VinuEpochsResponse } from 'types/api/vinuEpochs';
 import type { WithdrawalsResponse, WithdrawalsCounters } from 'types/api/withdrawals';
 import type {
   ZkEvmL2TxnBatchesItem,
@@ -194,6 +195,17 @@ export const GENERAL_API_MISC_RESOURCES = {
   },
 
   // EPOCHS
+  // VinuChain staking epochs. Namespaced under /vinu because upstream's
+  // /api/v2/celo/epochs is an unrelated data model.
+  vinu_epochs: {
+    path: '/api/v2/vinu/epochs',
+    filterFields: [],
+    paginated: true,
+  },
+  vinu_epoch: {
+    path: '/api/v2/vinu/epochs/:number',
+    pathParams: [ 'number' as const ],
+  },
   epochs_celo: {
     path: '/api/v2/celo/epochs',
     filterFields: [],
@@ -295,6 +307,8 @@ R extends 'general:validators_blackfort' ? ValidatorsBlackfortResponse :
 R extends 'general:validators_blackfort_counters' ? ValidatorsBlackfortCountersResponse :
 R extends 'general:validators_zilliqa' ? ValidatorsZilliqaResponse :
 R extends 'general:validator_zilliqa' ? ValidatorZilliqa :
+R extends 'general:vinu_epochs' ? VinuEpochsResponse :
+R extends 'general:vinu_epoch' ? VinuEpoch :
 R extends 'general:epochs_celo' ? CeloEpochListResponse :
 R extends 'general:epoch_celo' ? CeloEpochDetails :
 R extends 'general:epoch_celo_election_rewards' ? CeloEpochElectionRewardDetailsResponse :

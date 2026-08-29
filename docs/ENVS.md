@@ -826,6 +826,7 @@ For blockchains that use the Celo platform.
 | Variable | Type| Description | Compulsoriness  | Default value | Example value | Version |
 | --- | --- | --- | --- | --- | --- | --- |
 | NEXT_PUBLIC_CELO_ENABLED | `boolean` | Indicates that it is a Celo-based chain. | - | - | `true` | v1.37.0+ |
+| NEXT_PUBLIC_VINU_EPOCHS_ENABLED | `boolean` | Shows the VinuChain staking Epochs page, read live from the SFC contract. Mutually exclusive with the Celo epochs page, which uses the same route. | - | - | `true` | - |
 
 &nbsp;
 

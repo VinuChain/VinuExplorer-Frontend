@@ -93,14 +93,16 @@ const AdaptiveTabsList = (props: Props) => {
   }
 
   const isReady = !isLoading && tabsCut !== undefined;
-  // The triggers are gated on more than one tab, so a single tab paired with a slot leaves the list
-  // mounted with nothing in it once the loading placeholders stop rendering. That is left alone:
-  // axe puts `tablist` in the `reviewEmpty` set for `aria-required-children`, so an empty one is
-  // reported as incomplete rather than as a violation, which is a strict improvement on the invalid
-  // children it used to hold, and keeping it preserves the row's height. What it must not do is
-  // earn a gap - `AddressContract` sets `ml: 0` on its slot in exactly this case, and gapping
-  // against an empty list moved that slot 8px to the right.
-  const hasTabTriggers = tabs.length > 1 || !isReady;
+  // The list can be mounted with nothing visible in it: with a single tab the triggers are gated
+  // off, and with `tabsCut === 0` every trigger is positioned off-screen. It stays mounted either
+  // way - axe puts `tablist` in the `reviewEmpty` set for `aria-required-children`, so an empty one
+  // is reported as incomplete rather than as a violation, which is a strict improvement on the
+  // invalid children it used to hold, and keeping it preserves the row's height.
+  //
+  // What an empty list must not do is earn a gap. It is still an in-flow flex item, so gapping
+  // against it adds space the old layout never had: `AddressContract` sets `ml: 0` on its slot in
+  // exactly the single-tab case, and the gap moved that slot 8px to the right.
+  const hasVisibleTriggers = !isReady || (tabs.length > 1 && (tabsCut ?? 0) > 0);
 
   return (
     // `role="tablist"` may only contain tabs, and the slots hold links, navs and pagination
@@ -123,7 +125,7 @@ const AdaptiveTabsList = (props: Props) => {
       // `secondary` is the only variant whose recipe gaps the list, and the slots used to sit
       // inside it and inherit that gap. They are siblings of the list now, so the row repeats it
       // rather than letting the space between the tabs and the slots silently close up.
-      columnGap={ variant === 'secondary' && hasTabTriggers ? 2 : undefined }
+      columnGap={ variant === 'secondary' && hasVisibleTriggers ? 2 : undefined }
       // Hidden tabs and the hidden menu trigger are parked at `left: -9999px`, and the recipe
       // makes `TabsList` `position: relative`, so it was their containing block. The wrapper takes
       // that over now that they are no longer all inside the list, so they keep resolving against
@@ -170,8 +172,14 @@ const AdaptiveTabsList = (props: Props) => {
         </Box>
       )
       }
-      { /* the recipe gives the list `width: 100%`, which would push the slots out of the row now
-         * that they are siblings rather than children, so it sizes to its tabs instead */ }
+      { /* The recipe gives the list `width: 100%`, which would push the slots out of the row now
+         * that they are siblings rather than children, so it sizes to its tabs instead. That is a
+         * deliberate limitation: sizing to content means the root's `fitted` and `justify` props,
+         * which need spare width inside the list to distribute, do not work through this
+         * component. No caller uses them here - the one `fitted` usage builds its tabs from
+         * `TabsRoot`/`TabsList` directly - and `tabsListProps` is the escape hatch if one ever
+         * needs to. Vertical orientation is unsupported for the same reason: this row is a
+         * horizontal flex container. */ }
       <TabsList w="auto" flexShrink={ 0 } flexWrap="nowrap" alignItems="center" { ...tabsListProps }>
         { tabs.length > 1 && tabs.map((tab, index) => {
           const value = getTabValue(tab);

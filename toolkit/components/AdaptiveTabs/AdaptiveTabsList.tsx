@@ -108,7 +108,14 @@ const AdaptiveTabsList = (props: Props) => {
     // and the element `useIsSticky` watches. `TabsList` is left holding only the tab triggers.
     <Box
       ref={ listRef }
+      // the two AddressContract tests screenshot this row; the tablist they used to target no
+      // longer holds the slots, so it is no longer the element that shows what they check
+      data-testid="tabs-row"
       display="flex"
+      // `secondary` is the only variant whose recipe gaps the list, and the slots used to sit
+      // inside it and inherit that gap. They are siblings of the list now, so the row repeats it
+      // rather than letting the space between the tabs and the slots silently close up.
+      columnGap={ variant === 'secondary' ? 2 : undefined }
       // Hidden tabs and the hidden menu trigger are parked at `left: -9999px`, and the recipe
       // makes `TabsList` `position: relative`, so it was their containing block. The wrapper takes
       // that over now that they are no longer all inside the list, so they keep resolving against

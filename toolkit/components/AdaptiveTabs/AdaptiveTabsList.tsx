@@ -93,6 +93,14 @@ const AdaptiveTabsList = (props: Props) => {
   }
 
   const isReady = !isLoading && tabsCut !== undefined;
+  // The triggers are gated on more than one tab, so a single tab paired with a slot leaves the list
+  // mounted with nothing in it once the loading placeholders stop rendering. That is left alone:
+  // axe puts `tablist` in the `reviewEmpty` set for `aria-required-children`, so an empty one is
+  // reported as incomplete rather than as a violation, which is a strict improvement on the invalid
+  // children it used to hold, and keeping it preserves the row's height. What it must not do is
+  // earn a gap - `AddressContract` sets `ml: 0` on its slot in exactly this case, and gapping
+  // against an empty list moved that slot 8px to the right.
+  const hasTabTriggers = tabs.length > 1 || !isReady;
 
   return (
     // `role="tablist"` may only contain tabs, and the slots hold links, navs and pagination
@@ -115,7 +123,7 @@ const AdaptiveTabsList = (props: Props) => {
       // `secondary` is the only variant whose recipe gaps the list, and the slots used to sit
       // inside it and inherit that gap. They are siblings of the list now, so the row repeats it
       // rather than letting the space between the tabs and the slots silently close up.
-      columnGap={ variant === 'secondary' ? 2 : undefined }
+      columnGap={ variant === 'secondary' && hasTabTriggers ? 2 : undefined }
       // Hidden tabs and the hidden menu trigger are parked at `left: -9999px`, and the recipe
       // makes `TabsList` `position: relative`, so it was their containing block. The wrapper takes
       // that over now that they are no longer all inside the list, so they keep resolving against
@@ -162,13 +170,8 @@ const AdaptiveTabsList = (props: Props) => {
         </Box>
       )
       }
-      { /* The recipe gives the list `width: 100%`, which would push the slots out of the row now
-         * that they are siblings rather than children, so it sizes to its tabs instead.
-         *
-         * With a single tab and a slot the list mounts with no triggers, because they are gated on
-         * more than one tab. That is deliberate: axe lists `tablist` in the `reviewEmpty` set for
-         * `aria-required-children`, so an empty one is reported as incomplete rather than as a
-         * violation - a strict improvement on the invalid children it used to hold. */ }
+      { /* the recipe gives the list `width: 100%`, which would push the slots out of the row now
+         * that they are siblings rather than children, so it sizes to its tabs instead */ }
       <TabsList w="auto" flexShrink={ 0 } flexWrap="nowrap" alignItems="center" { ...tabsListProps }>
         { tabs.length > 1 && tabs.map((tab, index) => {
           const value = getTabValue(tab);

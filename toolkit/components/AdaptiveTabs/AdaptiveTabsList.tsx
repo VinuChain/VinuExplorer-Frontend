@@ -112,8 +112,8 @@ const AdaptiveTabsList = (props: Props) => {
       // Hidden tabs and the hidden menu trigger are parked at `left: -9999px`, and the recipe
       // makes `TabsList` `position: relative`, so it was their containing block. The wrapper takes
       // that over now that they are no longer all inside the list, so they keep resolving against
-      // the tabs row. The sticky spread below overrides this when sticky is enabled.
-      position="relative"
+      // the tabs row.
+      position={ props.stickyEnabled ? 'sticky' : 'relative' }
       flexWrap="nowrap"
       alignItems="center"
       whiteSpace="nowrap"
@@ -136,7 +136,6 @@ const AdaptiveTabsList = (props: Props) => {
       }}
       {
         ...(props.stickyEnabled ? {
-          position: 'sticky',
           boxShadow: { base: isSticky ? 'md' : 'none', lg: 'none' },
           top: 0,
           zIndex: { base: 'sticky2', lg: 'docked' },

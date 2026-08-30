@@ -17,6 +17,9 @@ const DETECTIVE_CONFIG = {
 
 const DIRECTORIES_WITH_TESTS = [
   path.resolve(ROOT_DIR, './ui'),
+  // toolkit components have component tests too, and a test that is never discovered guards
+  // nothing on a pull request
+  path.resolve(ROOT_DIR, './toolkit'),
 ];
 const VISITED = {};
 

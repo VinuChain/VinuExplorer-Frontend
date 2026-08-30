@@ -20,6 +20,9 @@ import ContractDetailsInfo from './info/ContractDetailsInfo';
 import useContractDetailsTabs from './useContractDetailsTabs';
 
 const TAB_LIST_PROPS = { flexWrap: 'wrap', rowGap: 2 };
+// The wrap has to reach the trigger list as well as the row around it: the list sizes to its
+// tabs by default, so it needs to be allowed to shrink before its triggers can wrap.
+const TABS_LIST_PROPS = { flexWrap: 'wrap' as const, rowGap: 2, flexShrink: 1, minW: 0 };
 const LEFT_SLOT_PROPS = { w: { base: '100%', lg: 'auto' } };
 
 type Props = {
@@ -102,6 +105,7 @@ const ContractDetails = ({ addressData, channel, mainContractQuery }: Props) => 
         size="sm"
         leftSlot={ addressSelector }
         listProps={ TAB_LIST_PROPS }
+        tabsListProps={ TABS_LIST_PROPS }
         leftSlotProps={ LEFT_SLOT_PROPS }
       />
     </>

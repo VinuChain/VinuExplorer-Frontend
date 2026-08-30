@@ -117,7 +117,7 @@ test.describe('auto verification status', () => {
     const channel = await socketServer.joinChannel(socket, 'addresses:' + addressData.hash.toLowerCase());
 
     socketServer.sendMessage(socket, channel, 'eth_bytecode_db_lookup_started', { });
-    const tabs = component.getByRole('tablist').first();
+    const tabs = component.getByTestId('tabs-row').first();
     await expect(tabs).toHaveScreenshot();
   });
 
@@ -153,7 +153,7 @@ test.describe('auto verification status', () => {
     const channel = await socketServer.joinChannel(socket, 'addresses:' + addressData.hash.toLowerCase());
 
     socketServer.sendMessage(socket, channel, 'smart_contract_was_not_verified', { });
-    const tabs = component.getByRole('tablist').first();
+    const tabs = component.getByTestId('tabs-row').first();
     await expect(tabs).toHaveScreenshot();
   });
 });

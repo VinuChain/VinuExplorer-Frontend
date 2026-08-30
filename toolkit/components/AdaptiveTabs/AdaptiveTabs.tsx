@@ -19,6 +19,7 @@ const AdaptiveTabs = (props: Props) => {
     rightSlotProps,
     leftSlot,
     leftSlotProps,
+    tabsListProps,
     stickyEnabled,
     size,
     variant,
@@ -62,6 +63,7 @@ const AdaptiveTabs = (props: Props) => {
         listProps={ listProps }
         leftSlot={ leftSlot }
         leftSlotProps={ leftSlotProps }
+        tabsListProps={ tabsListProps }
         rightSlot={ rightSlot }
         rightSlotProps={ rightSlotProps }
         stickyEnabled={ stickyEnabled }

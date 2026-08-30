@@ -21,7 +21,10 @@ export interface SlotProps extends HTMLChakraProps<'div'> {
 
 export interface BaseProps {
   tabs: Array<TabItemRegular>;
+  // styles the tabs row - the element holding the tabs and both slots - not the trigger list
   listProps?: HTMLChakraProps<'div'> | (({ isSticky, activeTab }: { isSticky: boolean; activeTab: string }) => HTMLChakraProps<'div'>);
+  // styles only the `role="tablist"` element, for callers that need to lay the triggers out
+  tabsListProps?: HTMLChakraProps<'div'>;
   rightSlot?: React.ReactNode;
   rightSlotProps?: SlotProps;
   leftSlot?: React.ReactNode;
@@ -68,6 +71,7 @@ const AdaptiveTabsList = (props: Props) => {
     rightSlotProps,
     leftSlot,
     leftSlotProps,
+    tabsListProps,
     stickyEnabled,
     isLoading,
     variant,
@@ -89,10 +93,44 @@ const AdaptiveTabsList = (props: Props) => {
   }
 
   const isReady = !isLoading && tabsCut !== undefined;
+  // The list can be mounted with nothing visible in it: with a single tab the triggers are gated
+  // off, and with `tabsCut === 0` every trigger is positioned off-screen. It stays mounted either
+  // way - axe puts `tablist` in the `reviewEmpty` set for `aria-required-children`, so an empty one
+  // is reported as incomplete rather than as a violation, which is a strict improvement on the
+  // invalid children it used to hold, and keeping it preserves the row's height.
+  //
+  // What an empty list must not do is earn a gap. It is still an in-flow flex item, so gapping
+  // against it adds space the old layout never had: `AddressContract` sets `ml: 0` on its slot in
+  // exactly the single-tab case, and the gap moved that slot 8px to the right.
+  const hasVisibleTriggers = !isReady || (tabs.length > 1 && (tabsCut ?? 0) > 0);
 
   return (
-    <TabsList
+    // `role="tablist"` may only contain tabs, and the slots hold links, navs and pagination
+    // controls. axe flagged the block page with `aria-required-children`:
+    // "Element has children which are not allowed: a[tabindex], nav[tabindex]". Only focusable
+    // descendants trip the rule, so the fix is to keep the slots out of the tablist rather than
+    // to relabel them - `role="presentation"`, `aria-owns` listing only the tabs, and
+    // `tabindex="-1"` were each measured against the rule and all three still failed.
+    //
+    // Every row-level style therefore moves from `TabsList` up to this wrapper, which keeps the
+    // three things that measure the row pointing at the same element they did before: the width
+    // `useAdaptiveTabs` cuts tabs against, the scroll container `useScrollToActiveTab` scrolls,
+    // and the element `useIsSticky` watches. `TabsList` is left holding only the tab triggers.
+    <Box
       ref={ listRef }
+      // the two AddressContract tests screenshot this row; the tablist they used to target no
+      // longer holds the slots, so it is no longer the element that shows what they check
+      data-testid="tabs-row"
+      display="flex"
+      // `secondary` is the only variant whose recipe gaps the list, and the slots used to sit
+      // inside it and inherit that gap. They are siblings of the list now, so the row repeats it
+      // rather than letting the space between the tabs and the slots silently close up.
+      columnGap={ variant === 'secondary' && hasVisibleTriggers ? 2 : undefined }
+      // Hidden tabs and the hidden menu trigger are parked at `left: -9999px`, and the recipe
+      // makes `TabsList` `position: relative`, so it was their containing block. The wrapper takes
+      // that over now that they are no longer all inside the list, so they keep resolving against
+      // the tabs row.
+      position={ props.stickyEnabled ? 'sticky' : 'relative' }
       flexWrap="nowrap"
       alignItems="center"
       whiteSpace="nowrap"
@@ -115,7 +153,6 @@ const AdaptiveTabsList = (props: Props) => {
       }}
       {
         ...(props.stickyEnabled ? {
-          position: 'sticky',
           boxShadow: { base: isSticky ? 'md' : 'none', lg: 'none' },
           top: 0,
           zIndex: { base: 'sticky2', lg: 'docked' },
@@ -135,57 +172,68 @@ const AdaptiveTabsList = (props: Props) => {
         </Box>
       )
       }
-      { tabs.length > 1 && tabsList.map((tab, index) => {
-        const value = getTabValue(tab);
-        const ref = tabsRefs[index];
+      { /* The recipe gives the list `width: 100%`, which would push the slots out of the row now
+         * that they are siblings rather than children, so it sizes to its tabs instead. That is a
+         * deliberate limitation: sizing to content means the root's `fitted` and `justify` props,
+         * which need spare width inside the list to distribute, do not work through this
+         * component. No caller uses them here - the one `fitted` usage builds its tabs from
+         * `TabsRoot`/`TabsList` directly - and `tabsListProps` is the escape hatch if one ever
+         * needs to. Vertical orientation is unsupported for the same reason: this row is a
+         * horizontal flex container. */ }
+      <TabsList w="auto" flexShrink={ 0 } flexWrap="nowrap" alignItems="center" { ...tabsListProps }>
+        { tabs.length > 1 && tabs.map((tab, index) => {
+          const value = getTabValue(tab);
+          const ref = tabsRefs[index];
 
-        if (tab.id === 'menu') {
           return (
-            <AdaptiveTabsMenu
-              key="menu"
+            <TabsTrigger
+              key={ value }
+              value={ value }
               ref={ ref }
-              tabs={ tabs }
-              tabsCut={ tabsCut ?? 0 }
-              isActive={ activeTabIndex > 0 && tabsCut !== undefined && tabsCut > 0 && activeTabIndex >= tabsCut }
-              { ...getMenuStyles(tabs.length, tabsCut, isLoading) }
-            />
-          );
-        }
-
-        return (
-          <TabsTrigger
-            key={ value }
-            value={ value }
-            ref={ ref }
-            scrollSnapAlign="start"
-            flexShrink={ 0 }
-            { ...getItemStyles(index, tabsCut, isLoading) }
-          >
-            { typeof tab.title === 'function' ? tab.title() : tab.title }
-            <TabsCounter count={ tab.count }/>
-          </TabsTrigger>
-        );
-      }) }
-      { tabs.slice(0, isReady ? 0 : 5).map((tab, index) => {
-        const value = `${ getTabValue(tab) }-pre`;
-        return (
-          <TabsTrigger
-            key={ value }
-            value={ value }
-            flexShrink={ 0 }
-            bgColor={
-              activeTabIndex === index && (variant === 'solid' || variant === undefined) ?
-                { _light: 'blackAlpha.50', _dark: 'whiteAlpha.50' } :
-                undefined
-            }
-          >
-            <Skeleton loading>
+              scrollSnapAlign="start"
+              flexShrink={ 0 }
+              { ...getItemStyles(index, tabsCut, isLoading) }
+            >
               { typeof tab.title === 'function' ? tab.title() : tab.title }
               <TabsCounter count={ tab.count }/>
-            </Skeleton>
-          </TabsTrigger>
-        );
-      }) }
+            </TabsTrigger>
+          );
+        }) }
+        { tabs.slice(0, isReady ? 0 : 5).map((tab, index) => {
+          const value = `${ getTabValue(tab) }-pre`;
+          return (
+            <TabsTrigger
+              key={ value }
+              value={ value }
+              flexShrink={ 0 }
+              bgColor={
+                activeTabIndex === index && (variant === 'solid' || variant === undefined) ?
+                  { _light: 'blackAlpha.50', _dark: 'whiteAlpha.50' } :
+                  undefined
+              }
+            >
+              <Skeleton loading>
+                { typeof tab.title === 'function' ? tab.title() : tab.title }
+                <TabsCounter count={ tab.count }/>
+              </Skeleton>
+            </TabsTrigger>
+          );
+        }) }
+      </TabsList>
+      { /* The menu trigger is a Popover control rendered as a focusable div, not a `role="tab"`,
+         * so it trips the same `aria-required-children` rule as the slots whenever the tabs
+         * overflow and it becomes visible. Rendering it as a sibling keeps it in the same
+         * position in the row - the list sizes to its tabs - and keeps `tabsRefs[tabs.length]`,
+         * which is the width `useAdaptiveTabs` cuts against. */ }
+      { tabs.length > 1 && (
+        <AdaptiveTabsMenu
+          ref={ tabsRefs[tabs.length] }
+          tabs={ tabs }
+          tabsCut={ tabsCut ?? 0 }
+          isActive={ activeTabIndex > 0 && tabsCut !== undefined && tabsCut > 0 && activeTabIndex >= tabsCut }
+          { ...getMenuStyles(tabs.length, tabsCut, isLoading) }
+        />
+      ) }
       {
         rightSlot ? (
           <Box
@@ -199,7 +247,7 @@ const AdaptiveTabsList = (props: Props) => {
         ) :
           null
       }
-    </TabsList>
+    </Box>
   );
 };
 

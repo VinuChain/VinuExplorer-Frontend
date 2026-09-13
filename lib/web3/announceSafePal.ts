@@ -137,10 +137,15 @@ export default function announceSafePal(
       if (done) {
         return;
       }
-      const late = findSafePalProvider(win as AnnounceTarget);
-      if (late) {
+      try {
+        const late = findSafePalProvider(win as AnnounceTarget);
+        if (late) {
+          stop();
+          startAnnouncing(win as AnnounceTarget, late);
+        }
+      } catch {
+        // Runs from a timer or listener, outside the outer try.
         stop();
-        startAnnouncing(win as AnnounceTarget, late);
       }
     }
     // A SafePal that announces itself needs nothing from us.

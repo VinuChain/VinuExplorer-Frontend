@@ -5,6 +5,7 @@ import React from 'react';
 import { WagmiProvider } from 'wagmi';
 
 import config from 'configs/app';
+import announceSafePal from 'lib/web3/announceSafePal';
 import { chains } from 'lib/web3/chains';
 import wagmiConfig from 'lib/web3/wagmiConfig';
 import { useColorMode } from 'toolkit/chakra/color-mode';
@@ -19,6 +20,10 @@ const init = () => {
     if (!feature.isEnabled || !wagmiConfig.adapter) {
       return;
     }
+
+    // Before createAppKit, so SafePal's announcement is already answering when
+    // AppKit requests providers. See lib/web3/announceSafePal.ts.
+    announceSafePal();
 
     createAppKit({
       adapters: [ wagmiConfig.adapter ],

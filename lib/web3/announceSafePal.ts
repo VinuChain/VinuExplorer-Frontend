@@ -70,9 +70,47 @@ const newUuid = () =>
 
 type AnnounceTarget = SafePalWindow & EventTarget;
 
+// A wallet can inject after this module runs (a slow content script, a mobile
+// in-app browser). Same budget as the landing site's AddToWallet button:
+// re-check every 400ms for 3.2s, alongside the events that mark injection.
+const LATE_INJECTION_POLL_MS = 400;
+const LATE_INJECTION_MAX_TRIES = 8;
+
+function startAnnouncing(win: AnnounceTarget, provider: Eip1193Provider) {
+  // EIP-6963 wallets answer requestProvider synchronously, so one request
+  // settles whether SafePal speaks the protocol itself.
+  let selfAnnounced = false;
+  const onAnnounce = (event: Event) => {
+    const detail = (event as CustomEvent<{ info?: { name?: string; rdns?: string }; provider?: unknown }>).detail;
+    if (detail?.provider === provider || /safepal/i.test(`${ detail?.info?.name ?? '' } ${ detail?.info?.rdns ?? '' }`)) {
+      selfAnnounced = true;
+    }
+  };
+  win.addEventListener('eip6963:announceProvider', onAnnounce);
+  win.dispatchEvent(new Event('eip6963:requestProvider'));
+  win.removeEventListener('eip6963:announceProvider', onAnnounce);
+  if (selfAnnounced) {
+    return;
+  }
+
+  const detail = Object.freeze({
+    info: Object.freeze({ uuid: newUuid(), name: 'SafePal', icon: SAFEPAL_ICON, rdns: SAFEPAL_RDNS }),
+    provider,
+  });
+  const announce = () => win.dispatchEvent(new CustomEvent('eip6963:announceProvider', { detail }));
+  win.addEventListener('eip6963:requestProvider', announce);
+  announce();
+}
+
 /**
  * Announce SafePal over EIP-6963 unless it already does so. Call before
  * createAppKit. Never throws: a wallet shim must not take the page down.
+ *
+ * If SafePal is not on the page yet, keep watching briefly rather than giving
+ * up: AppKit's EIP-6963 store keeps its announceProvider listener for the life
+ * of the page, so an announcement made seconds later still adds the row. Stops
+ * at the first of: SafePal found, SafePal announcing itself, or the poll
+ * budget running out.
  */
 export default function announceSafePal(
   win: AnnounceTarget | undefined = typeof window !== 'undefined' ? window : undefined,
@@ -82,32 +120,44 @@ export default function announceSafePal(
   }
   try {
     const provider = findSafePalProvider(win);
-    if (!provider) {
+    if (provider) {
+      startAnnouncing(win, provider);
       return;
     }
 
-    // EIP-6963 wallets answer requestProvider synchronously, so one request
-    // settles whether SafePal speaks the protocol itself.
-    let selfAnnounced = false;
-    const onAnnounce = (event: Event) => {
-      const detail = (event as CustomEvent<{ info?: { name?: string; rdns?: string }; provider?: unknown }>).detail;
-      if (detail?.provider === provider || /safepal/i.test(`${ detail?.info?.name ?? '' } ${ detail?.info?.rdns ?? '' }`)) {
-        selfAnnounced = true;
+    let done = false;
+    let tries = 0;
+    const stop = () => {
+      done = true;
+      clearInterval(pollId);
+      win.removeEventListener('ethereum#initialized', check);
+      win.removeEventListener('eip6963:announceProvider', onSelfAnnounce);
+    };
+    function check() {
+      if (done) {
+        return;
+      }
+      const late = findSafePalProvider(win as AnnounceTarget);
+      if (late) {
+        stop();
+        startAnnouncing(win as AnnounceTarget, late);
+      }
+    }
+    // A SafePal that announces itself needs nothing from us.
+    const onSelfAnnounce = (event: Event) => {
+      const info = (event as CustomEvent<{ info?: { name?: string; rdns?: string } }>).detail?.info;
+      if (/safepal/i.test(`${ info?.name ?? '' } ${ info?.rdns ?? '' }`)) {
+        stop();
       }
     };
-    win.addEventListener('eip6963:announceProvider', onAnnounce);
-    win.dispatchEvent(new Event('eip6963:requestProvider'));
-    win.removeEventListener('eip6963:announceProvider', onAnnounce);
-    if (selfAnnounced) {
-      return;
-    }
-
-    const detail = Object.freeze({
-      info: Object.freeze({ uuid: newUuid(), name: 'SafePal', icon: SAFEPAL_ICON, rdns: SAFEPAL_RDNS }),
-      provider,
-    });
-    const announce = () => win.dispatchEvent(new CustomEvent('eip6963:announceProvider', { detail }));
-    win.addEventListener('eip6963:requestProvider', announce);
-    announce();
+    const pollId = setInterval(() => {
+      tries += 1;
+      check();
+      if (!done && tries >= LATE_INJECTION_MAX_TRIES) {
+        stop();
+      }
+    }, LATE_INJECTION_POLL_MS);
+    win.addEventListener('ethereum#initialized', check);
+    win.addEventListener('eip6963:announceProvider', onSelfAnnounce);
   } catch {}
 }

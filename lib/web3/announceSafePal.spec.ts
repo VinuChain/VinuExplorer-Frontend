@@ -1,4 +1,4 @@
-import { describe, expect, it } from 'vitest';
+import { afterEach, describe, expect, it, vi } from 'vitest';
 
 import announceSafePal, { findSafePalProvider } from './announceSafePal';
 
@@ -77,5 +77,58 @@ describe('announceSafePal', () => {
     announceSafePal(win);
     expect(announcementsAfterRequest(win)).toHaveLength(0);
     expect(() => announceSafePal(undefined)).not.toThrow();
+  });
+});
+
+describe('announceSafePal — late injection', () => {
+  afterEach(() => {
+    vi.useRealTimers();
+  });
+
+  it('announces a SafePal that injects after init, found by the poll', () => {
+    // Codex on #67: a one-shot check gave up on a wallet injected a moment later.
+    vi.useFakeTimers();
+    const win = fakeWindow({});
+    announceSafePal(win);
+    expect(announcementsAfterRequest(win)).toHaveLength(0);
+
+    const sp = provider({ isSafePal: true });
+    (win as { safepalProvider?: unknown }).safepalProvider = sp;
+    vi.advanceTimersByTime(400);
+
+    const seen = announcementsAfterRequest(win);
+    expect(seen).toHaveLength(1);
+    expect(seen[0].provider).toBe(sp);
+  });
+
+  it('announces on ethereum#initialized without waiting for the poll', () => {
+    vi.useFakeTimers();
+    const win = fakeWindow({});
+    announceSafePal(win);
+    const sp = provider({ isSafePal: true });
+    (win as { ethereum?: unknown }).ethereum = sp;
+    win.dispatchEvent(new Event('ethereum#initialized'));
+    expect(announcementsAfterRequest(win)).toHaveLength(1);
+  });
+
+  it('gives up after the poll budget and never announces a later arrival', () => {
+    vi.useFakeTimers();
+    const win = fakeWindow({});
+    announceSafePal(win);
+    vi.advanceTimersByTime(400 * 8);
+    (win as { safepalProvider?: unknown }).safepalProvider = provider({ isSafePal: true });
+    vi.advanceTimersByTime(400 * 4);
+    expect(announcementsAfterRequest(win)).toHaveLength(0);
+    expect(vi.getTimerCount()).toBe(0);
+  });
+
+  it('stops watching when SafePal announces itself', () => {
+    vi.useFakeTimers();
+    const win = fakeWindow({});
+    announceSafePal(win);
+    win.dispatchEvent(new CustomEvent('eip6963:announceProvider', {
+      detail: { info: { name: 'SafePal', rdns: 'io.safepal.wallet' }, provider: provider({ isSafePal: true }) },
+    }));
+    expect(vi.getTimerCount()).toBe(0);
   });
 });

@@ -15,6 +15,7 @@ import useProfileQuery from 'ui/snippets/auth/useProfileQuery';
 
 import UserProfileButton from './UserProfileButton';
 import UserProfileContent from './UserProfileContent';
+import { hasWalletConnectOnlyInMenu } from './utils';
 
 interface Props {
   buttonSize?: ButtonProps['size'];
@@ -36,7 +37,7 @@ const UserProfileDesktop = ({ buttonSize, buttonVariant = 'header' }: Props) => 
   const { address: web3Address } = useAccount();
 
   const handleProfileButtonClick = React.useCallback(() => {
-    if (profileQuery.data || web3Address) {
+    if (profileQuery.data || web3Address || hasWalletConnectOnlyInMenu()) {
       mixpanel.logEvent(mixpanel.EventTypes.ACCOUNT_ACCESS, { Action: 'Dropdown open' });
       profileMenu.onOpen();
       return;
@@ -105,7 +106,7 @@ const UserProfileDesktop = ({ buttonSize, buttonVariant = 'header' }: Props) => 
             onClick={ handleProfileButtonClick }
           />
         </PopoverTrigger>
-        { (profileQuery.data || web3Address) && profileMenu.open && (
+        { (profileQuery.data || web3Address || hasWalletConnectOnlyInMenu()) && profileMenu.open && (
           <PopoverContent w="280px">
             <PopoverBody>
               <UserProfileContent

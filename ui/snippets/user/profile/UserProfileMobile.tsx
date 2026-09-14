@@ -14,6 +14,7 @@ import useProfileQuery from 'ui/snippets/auth/useProfileQuery';
 
 import UserProfileButton from './UserProfileButton';
 import UserProfileContent from './UserProfileContent';
+import { hasWalletConnectOnlyInMenu } from './utils';
 
 const initialScreen = {
   type: config.features.blockchainInteraction.isEnabled ? 'select_method' as const : 'email' as const,
@@ -30,7 +31,7 @@ const UserProfileMobile = () => {
   const { address: web3Address } = useAccount();
 
   const handleProfileButtonClick = React.useCallback(() => {
-    if (profileQuery.data || web3Address) {
+    if (profileQuery.data || web3Address || hasWalletConnectOnlyInMenu()) {
       mixpanel.logEvent(mixpanel.EventTypes.ACCOUNT_ACCESS, { Action: 'Dropdown open' });
       profileMenu.onOpen();
       return;

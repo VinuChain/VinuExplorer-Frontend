@@ -16,7 +16,7 @@
 > | ------------------- | --------------------------------------------------------------------------------------------- |
 > | Upstream base       | `blockscout/frontend` merge-base `fba6438be` (2025-12-13; 33 commits before `v2.6.0`)          |
 > | Networks            | mainnet chain ID **207** · RPC `rpc.vinuchain.org` · explorer `vinuexplorer.org`              |
-> |                     | testnet chain ID **206** · RPC `vinufoundation-rpc.com` · explorer `testnet.vinuexplorer.org` |
+> |                     | testnet chain ID **206** · RPC `testnet-rpc.vinuchain.org` · explorer `testnet.vinuexplorer.org` |
 > | Image               | `ghcr.io/vinuchain/vinuexplorer-frontend:<short-sha>`                                         |
 > | Publish             | push to `main` → build the immutable short-SHA image                                          |
 > | Deploy and rollback | backend `deploy.yml` (push or `workflow_dispatch frontend_image_tag`) → CodeDeploy testnet → mainnet → served-SHA check at `/node-api/config` |

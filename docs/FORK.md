@@ -24,7 +24,7 @@ deploy or recover using only this repository.
 | Network | Chain ID | RPC | Explorer |
 | --- | --- | --- | --- |
 | Mainnet | **207** | `rpc.vinuchain.org` | `mainnet.vinuexplorer.org` (`vinuexplorer.org` 301s here) |
-| Testnet | **206** | `vinufoundation-rpc.com` | `testnet.vinuexplorer.org` |
+| Testnet | **206** | `testnet-rpc.vinuchain.org` | `testnet.vinuexplorer.org` |
 
 There is **no VinuChain env preset committed in `configs/envs/`**. Production
 runtime configuration (chain config, API hosts, feature flags, secrets) is

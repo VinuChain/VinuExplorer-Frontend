@@ -26,7 +26,7 @@ describe('generateSiteSchema', () => {
       expect((org as { sameAs?: Array<string> }).sameAs).toContain('https://www.vinuchain.org');
       expect((org as { sameAs?: Array<string> }).sameAs).toContain('https://vinuchain.vinuswap.org');
       expect((org as { sameAs?: Array<string> }).sameAs).toContain('https://www.vinufinance.app');
-      expect((org as { sameAs?: Array<string> }).sameAs).toContain('https://vinufoundation.org');
+      expect((org as { sameAs?: Array<string> }).sameAs).toContain('https://vinu.org');
     });
 
     it('emits WebSite with mainnet URL', async() => {

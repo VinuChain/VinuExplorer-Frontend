@@ -9,7 +9,7 @@ const SAME_AS_LINKS = [
   'https://www.vinuchain.org',
   'https://vinuchain.vinuswap.org',
   'https://www.vinufinance.app',
-  'https://vinufoundation.org',
+  'https://vinu.org',
 ];
 
 /**

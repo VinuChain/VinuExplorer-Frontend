@@ -32,7 +32,6 @@ const TAB_LIST_PROPS = {
   marginTop: -5,
   alignItems: 'center',
 };
-const TABS_HEIGHT = 88;
 
 const TABS_RIGHT_SLOT_PROPS: SlotProps = {
   ml: 8,
@@ -162,7 +161,6 @@ const Tokens = () => {
           onSortChange={ handleSortChange }
           actionBar={ isMobile ? actionBar : null }
           hasActiveFilters={ Boolean(searchTerm || tokenTypes) }
-          tableTop={ hasMultipleTabs ? TABS_HEIGHT : undefined }
         />
       ),
     },
@@ -177,7 +175,6 @@ const Tokens = () => {
           actionBar={ isMobile ? actionBar : null }
           hasActiveFilters={ Boolean(searchTerm || bridgeChains) }
           description={ description }
-          tableTop={ hasMultipleTabs ? TABS_HEIGHT : undefined }
         />
       ),
     } : undefined,

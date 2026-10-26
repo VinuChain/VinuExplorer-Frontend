@@ -393,7 +393,7 @@ const AccountsLabelTokenSearch = ({ slug, tagType, tagName, isCategoryBrowse }: 
     <>
       <Box hideBelow="lg" overflowX="auto" maxW="100%">
         <TokenLabelSearchTable
-          top={ pagination.isVisible ? ACTION_BAR_HEIGHT_DESKTOP : 0 }
+          top={ 0 }
           items={ sortedTokenRows }
           sortValue={ sortValue }
           onSortToggle={ isClientSortable ? handleSortToggle : undefined }

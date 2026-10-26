@@ -3,7 +3,6 @@ import React from 'react';
 import type { TokensSortingField, TokensSortingValue } from 'types/api/tokens';
 
 import { TableBody, TableColumnHeader, TableColumnHeaderSortable, TableHeaderSticky, TableRoot, TableRow } from 'toolkit/chakra/table';
-import { ACTION_BAR_HEIGHT_DESKTOP } from 'ui/shared/ActionBar';
 import { default as getNextSortValueShared } from 'ui/shared/sort/getNextSortValue';
 
 import type { TokenWithMetadata } from './tokenLabelUtils';
@@ -24,10 +23,9 @@ type Props = {
   sorting?: TokensSortingValue;
   setSorting?: (value: TokensSortingValue) => void;
   isLoading?: boolean;
-  top?: number;
 };
 
-const TokensTable = ({ items, page, isLoading, sorting, setSorting, top }: Props) => {
+const TokensTable = ({ items, page, isLoading, sorting, setSorting }: Props) => {
 
   const hasSorting = setSorting && sorting;
 
@@ -41,7 +39,9 @@ const TokensTable = ({ items, page, isLoading, sorting, setSorting, top }: Props
 
   return (
     <TableRoot minW="1120px" w="100%" tableLayout="fixed">
-      <TableHeaderSticky top={ top ?? ACTION_BAR_HEIGHT_DESKTOP }>
+      { /* The parent wrapper scrolls horizontally (overflow-x: auto), which makes it the
+    * sticky scrollport; a non-zero top would offset the header down over row 1. */ }
+      <TableHeaderSticky top={ 0 }>
         <TableRow>
           { hasSorting ? (
             <TableColumnHeaderSortable

@@ -20,10 +20,9 @@ interface Props {
   actionBar?: React.ReactNode;
   hasActiveFilters: boolean;
   description?: React.ReactNode;
-  tableTop?: number;
 }
 
-const Tokens = ({ query, onSortChange, sort, actionBar, description, hasActiveFilters, tableTop }: Props) => {
+const Tokens = ({ query, onSortChange, sort, actionBar, description, hasActiveFilters }: Props) => {
 
   const { isError, isPlaceholderData, data, pagination } = query;
   const hashesForMetadata = React.useMemo(
@@ -88,7 +87,6 @@ const Tokens = ({ query, onSortChange, sort, actionBar, description, hasActiveFi
           isLoading={ isPlaceholderData }
           setSorting={ onSortChange }
           sorting={ sort }
-          top={ tableTop }
         />
       </Box>
     </>

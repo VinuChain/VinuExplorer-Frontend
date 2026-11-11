@@ -45,34 +45,47 @@ const HashStringShortenDynamic = ({ hash, fontWeight = '400', noTooltip, tailLen
       return;
     }
 
-    const shadowEl = document.createElement('span');
-    shadowEl.style.opacity = '0';
-    parent.appendChild(shadowEl);
-    shadowEl.textContent = hash;
+    const measure = getMeasurer(parent);
+    let parentWidth = parent.getBoundingClientRect().width;
 
-    const parentWidth = getWidth(parent);
-
-    if (getWidth(shadowEl) > parentWidth) {
-      const tail = hash.slice(-tailLength);
-      let leftI = HEAD_MIN_LENGTH;
-      let rightI = hash.length - tailLength;
-
-      while (rightI - leftI > 1) {
-        const medI = ((rightI - leftI) % 2) ? leftI + (rightI - leftI + 1) / 2 : leftI + (rightI - leftI) / 2;
-        const res = hash.slice(0, medI) + '...' + tail;
-        shadowEl.textContent = res;
-        if (getWidth(shadowEl) < parentWidth) {
-          leftI = medI;
-        } else {
-          rightI = medI;
-        }
-      }
-      setDisplayedString(hash.slice(0, rightI - 1) + '...' + tail);
-    } else {
+    // hidden parent (width 0) or no canvas: keep the full hash, same as the old DOM-based measurement did
+    if (!measure || !parentWidth) {
       setDisplayedString(hash);
+      return;
     }
 
-    parent.removeChild(shadowEl);
+    const hashWidth = measure(hash);
+    if (hashWidth > parentWidth) {
+      // a parent sized by its content (for example an already shortened hash) grows when the full hash is added,
+      // and the old measurement judged the fit against that grown width. This is the only DOM write and costs
+      // one layout; it is skipped whenever the hash already fits.
+      const shadowEl = document.createElement('span');
+      shadowEl.style.opacity = '0';
+      shadowEl.textContent = hash;
+      parent.appendChild(shadowEl);
+      parentWidth = parent.getBoundingClientRect().width;
+      parent.removeChild(shadowEl);
+    }
+
+    if (hashWidth <= parentWidth) {
+      setDisplayedString(hash);
+      return;
+    }
+
+    const tail = hash.slice(-tailLength);
+    let leftI = HEAD_MIN_LENGTH;
+    let rightI = hash.length - tailLength;
+
+    while (rightI - leftI > 1) {
+      const medI = ((rightI - leftI) % 2) ? leftI + (rightI - leftI + 1) / 2 : leftI + (rightI - leftI) / 2;
+      const res = hash.slice(0, medI) + '...' + tail;
+      if (measure(res) < parentWidth) {
+        leftI = medI;
+      } else {
+        rightI = medI;
+      }
+    }
+    setDisplayedString(hash.slice(0, rightI - 1) + '...' + tail);
   }, [ hash, tailLength ]);
 
   // we want to do recalculation when isFontFaceLoaded flag is changed
@@ -113,8 +126,33 @@ const HashStringShortenDynamic = ({ hash, fontWeight = '400', noTooltip, tailLen
   return content;
 };
 
-function getWidth(el: HTMLElement) {
-  return el.getBoundingClientRect().width;
+let canvasContext: CanvasRenderingContext2D | null | undefined;
+
+// returns a text width function in the parent's font, or null when there is no canvas (SSR, jsdom)
+// measuring on a canvas does not touch the DOM, so it never forces a layout
+function getMeasurer(parent: HTMLElement) {
+  if (canvasContext === undefined) {
+    try {
+      canvasContext = typeof document === 'undefined' ? null : document.createElement('canvas').getContext('2d');
+    } catch {
+      canvasContext = null;
+    }
+  }
+  const ctx = canvasContext;
+  if (!ctx) {
+    return null;
+  }
+
+  const style = getComputedStyle(parent);
+  ctx.font = `${ style.fontStyle } ${ style.fontWeight } ${ style.fontSize } ${ style.fontFamily }`;
+  const letterSpacing = parseFloat(style.letterSpacing) || 0; // 'normal' parses to NaN
+
+  // the app turns contextual alternates off (globalCss) but a canvas cannot, and Inter turns the x in "0x0" into a wider
+  // "×"; measuring the "0x" prefix on its own keeps that alternate away
+  const noContextual = style.fontVariantLigatures.includes('no-contextual');
+  const width = (text: string) => ctx.measureText(text).width;
+
+  return (text: string) => (noContextual && text.startsWith('0x') ? width('0x') + width(text.slice(2)) : width(text)) + letterSpacing * text.length;
 }
 
 export default React.memo(HashStringShortenDynamic);

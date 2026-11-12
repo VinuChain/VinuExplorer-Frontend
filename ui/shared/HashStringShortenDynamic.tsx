@@ -11,7 +11,7 @@
 import type { BoxProps } from '@chakra-ui/react';
 import { chakra } from '@chakra-ui/react';
 import { debounce } from 'es-toolkit';
-import React, { useCallback, useEffect, useRef } from 'react';
+import React, { useCallback, useEffect, useLayoutEffect, useRef } from 'react';
 import type { FontFace } from 'use-font-face-observer';
 import useFontFaceObserver from 'use-font-face-observer';
 
@@ -20,6 +20,7 @@ import { BODY_TYPEFACE, HEADING_TYPEFACE } from 'toolkit/theme/foundations/typog
 
 const TAIL_LENGTH = 4;
 const HEAD_MIN_LENGTH = 4;
+const MAX_VERIFY_STEPS = 3;
 
 interface Props extends BoxProps {
   hash: string;
@@ -33,6 +34,8 @@ interface Props extends BoxProps {
 const HashStringShortenDynamic = ({ hash, fontWeight = '400', noTooltip, tailLength = TAIL_LENGTH, as = 'span', tooltipInteractive, ...props }: Props) => {
   const elementRef = useRef<HTMLSpanElement>(null);
   const [ displayedString, setDisplayedString ] = React.useState(hash ?? '');
+  const [ calcId, setCalcId ] = React.useState(0);
+  const verifySteps = useRef(0);
 
   const isFontFaceLoaded = useFontFaceObserver([
     { family: BODY_TYPEFACE, weight: String(fontWeight) as FontFace['weight'] },
@@ -48,12 +51,16 @@ const HashStringShortenDynamic = ({ hash, fontWeight = '400', noTooltip, tailLen
     const measure = getMeasurer(parent);
     let parentWidth = getUntransformedWidth(parent);
 
-    // hidden parent (width 0) or no canvas: keep the full hash, same as the old DOM-based measurement did
-    if (!measure || !parentWidth) {
+    verifySteps.current = 0;
+    setCalcId((id) => id + 1);
+
+    // no canvas (SSR, jsdom): keep the full hash
+    if (!measure) {
       setDisplayedString(hash);
       return;
     }
 
+    // a hidden parent (width 0) falls through to the search and gets the shortest form, same as the old DOM-based measurement
     const hashWidth = measure(hash);
     if (hashWidth > parentWidth) {
       // a parent sized by its content (for example an already shortened hash) grows when the full hash is added,
@@ -99,10 +106,39 @@ const HashStringShortenDynamic = ({ hash, fontWeight = '400', noTooltip, tailLen
     const resizeHandler = debounce(calculateString, 100);
 
     window.addEventListener('resize', resizeHandler);
+    // the font weight in use may differ from the one useFontFaceObserver waits for
+    document.fonts?.addEventListener?.('loadingdone', calculateString);
     return function cleanup() {
       window.removeEventListener('resize', resizeHandler);
+      document.fonts?.removeEventListener?.('loadingdone', calculateString);
     };
   }, [ calculateString ]);
+
+  // canvas widths can still differ from the rendered text (fonts, rounding), so check the real width once per commit.
+  // Only reads happen here, so all instances of a commit share one layout; clipping the tail is the worst outcome
+  // for a hash, so on overflow cut one more head char (bounded)
+  useLayoutEffect(() => {
+    const el = elementRef.current;
+    const parent = el?.parentNode as HTMLElement | null;
+    if (!el || !parent || verifySteps.current >= MAX_VERIFY_STEPS) {
+      return;
+    }
+    const parentWidth = getUntransformedWidth(parent);
+    const elWidth = el.getBoundingClientRect().width;
+    const layoutWidth = el.offsetWidth;
+    const width = layoutWidth > 0 && Math.abs(elWidth - layoutWidth) > 1 ? layoutWidth : elWidth;
+    if (!parentWidth || width <= parentWidth) {
+      return;
+    }
+    const head = displayedString.endsWith('...' + hash.slice(-tailLength)) && displayedString.length < hash.length ?
+      displayedString.length - 3 - tailLength :
+      hash.length - tailLength - 3; // a full hash that overflows: the first shortened form is 1 char shorter
+    if (head <= HEAD_MIN_LENGTH) {
+      return;
+    }
+    verifySteps.current++;
+    setDisplayedString(hash.slice(0, head - 1) + '...' + hash.slice(-tailLength));
+  }, [ displayedString, calcId, hash, tailLength ]);
 
   if (!hash) {
     return null;

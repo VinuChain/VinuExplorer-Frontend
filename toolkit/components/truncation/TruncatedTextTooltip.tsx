@@ -1,11 +1,8 @@
 import type { Placement } from '@floating-ui/dom';
-import { debounce } from 'es-toolkit';
 import React from 'react';
-import useFontFaceObserver from 'use-font-face-observer';
 
 import { Tooltip } from '../../chakra/tooltip';
 import { useDisclosure } from '../../hooks/useDisclosure';
-import { BODY_TYPEFACE } from '../../theme/foundations/typography';
 
 export interface TruncatedTextTooltipProps {
   children: React.ReactNode;
@@ -19,40 +16,14 @@ export const TruncatedTextTooltip = React.memo(({ children, label, placement, in
   const [ isTruncated, setTruncated ] = React.useState(false);
   const { open, onToggle, onOpen, onClose } = useDisclosure();
 
-  const isFontFaceLoaded = useFontFaceObserver([
-    { family: BODY_TYPEFACE },
-  ]);
-
-  const updatedTruncateState = React.useCallback(() => {
-    if (childRef.current) {
-      const scrollWidth = childRef.current.scrollWidth;
-      const clientWidth = childRef.current.clientWidth;
-
-      if (scrollWidth > clientWidth) {
-        setTruncated(true);
-      } else {
-        setTruncated(false);
-      }
-    }
-  }, []);
-
-  // FIXME: that should be useLayoutEffect, but it keeps complaining about SSR
-  // let's keep it as it is until the first issue
-  React.useEffect(() => {
-    updatedTruncateState();
-  }, [ updatedTruncateState, isFontFaceLoaded ]);
-
-  // we want to do recalculation when isFontFaceLoaded flag is changed
-  // but we don't want to create more resize event listeners
-  // that's why there are separate useEffect hooks
-  React.useEffect(() => {
-    const handleResize = debounce(updatedTruncateState, 1000);
-    window.addEventListener('resize', handleResize);
-
-    return function cleanup() {
-      window.removeEventListener('resize', handleResize);
-    };
-  }, [ updatedTruncateState ]);
+  // the layout read (scrollWidth) happens on the first interaction, not on every mount:
+  // rows are rendered by the hundreds and nobody hovers most of them
+  const checkAndOpen = React.useCallback(() => {
+    const node = childRef.current;
+    const truncated = Boolean(node && node.scrollWidth > node.clientWidth);
+    setTruncated(truncated);
+    truncated && onOpen();
+  }, [ onOpen ]);
 
   // as for now it supports only one child
   // and it is not cleared how to manage case with two or more children
@@ -61,19 +32,37 @@ export const TruncatedTextTooltip = React.memo(({ children, label, placement, in
     onClick?: () => void;
     onMouseEnter?: () => void;
     onMouseLeave?: () => void;
+    onFocus?: (event: React.FocusEvent) => void;
+    onBlur?: (event: React.FocusEvent) => void;
   };
   const handleClick = React.useCallback((event: React.MouseEvent) => {
     event.stopPropagation();
+    if (!isTruncated) {
+      checkAndOpen();
+      return;
+    }
     onToggle();
-  }, [ onToggle ]);
+  }, [ onToggle, isTruncated, checkAndOpen ]);
+
+  const childProps = child.props as Pick<typeof child, 'onFocus' | 'onBlur'>;
+  const handleFocus = React.useCallback((event: React.FocusEvent) => {
+    childProps.onFocus?.(event);
+    checkAndOpen();
+  }, [ childProps, checkAndOpen ]);
+  const handleBlur = React.useCallback((event: React.FocusEvent) => {
+    childProps.onBlur?.(event);
+    onClose();
+  }, [ childProps, onClose ]);
 
   const modifiedChildren = React.cloneElement(
     child,
     {
       ref: childRef,
       onClick: handleClick,
-      onMouseEnter: onOpen,
+      onMouseEnter: checkAndOpen,
       onMouseLeave: onClose,
+      onFocus: handleFocus,
+      onBlur: handleBlur,
     } as React.HTMLAttributes<HTMLElement>,
   );
 

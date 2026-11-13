@@ -21,7 +21,7 @@ const SolidityscanReportButton = ({ score, isLoading, ...rest }: Props) => {
   const onFocusCapture = usePreventFocusAfterModalClosing();
 
   return (
-    <Tooltip content="Security score" disableOnMobile>
+    <Tooltip eager content="Security score" disableOnMobile>
       <Box>
         <PopoverTrigger>
           <Button

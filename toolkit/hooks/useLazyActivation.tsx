@@ -6,6 +6,32 @@ export interface LazyActivation {
   // whether the activating gesture included a click before the deferred mount happened
   // (e.g. a tap on a touch device) — lets the caller open the mounted trigger right away
   clicked: boolean;
+  // child-index path from the trigger node down to the element that received focus; the swap
+  // re-creates the whole subtree, so a focused descendant (button inside a container trigger)
+  // has to be found again by position
+  focusPath: Array<number>;
+}
+
+export function getNodePath(root: Node, target: Node | null): Array<number> {
+  const path: Array<number> = [];
+  let node = target;
+  while (node && node !== root) {
+    const parent: Node | null = node.parentNode;
+    if (!parent) {
+      return [];
+    }
+    path.unshift(Array.prototype.indexOf.call(parent.childNodes, node));
+    node = parent;
+  }
+  return node === root ? path : [];
+}
+
+export function resolveNodePath(root: Node | null, path: Array<number>): Node | null {
+  let node: Node | null | undefined = root;
+  for (const index of path) {
+    node = node?.childNodes[index];
+  }
+  return node ?? null;
 }
 
 interface Result {
@@ -15,7 +41,7 @@ interface Result {
     onPointerDown: (event: React.PointerEvent) => void;
     onPointerUp: () => void;
     onPointerCancel: () => void;
-    onFocus: () => void;
+    onFocus: (event: React.FocusEvent) => void;
     onClick: () => void;
   };
 }
@@ -38,6 +64,7 @@ export function useLazyActivation(): Result {
   const [ activation, setActivation ] = React.useState<LazyActivation | null>(null);
   const typeRef = React.useRef<LazyActivation['type'] | null>(null);
   const clickedRef = React.useRef(false);
+  const focusPathRef = React.useRef<Array<number>>([]);
   const isPressedRef = React.useRef(false);
   const isTouchGestureRef = React.useRef(false);
   const timeoutRef = React.useRef<number | null>(null);
@@ -67,7 +94,7 @@ export function useLazyActivation(): Result {
       // of a click sequence — an async commit can land between mousedown and mouseup, and
       // the browser then never synthesizes the click (its mousedown target is detached).
       flushSync(() => {
-        setActivation((prev) => prev ?? { type: typeRef.current ?? 'pointer', clicked: clickedRef.current });
+        setActivation((prev) => prev ?? { type: typeRef.current ?? 'pointer', clicked: clickedRef.current, focusPath: focusPathRef.current });
       });
     }, delay);
   }, []);
@@ -107,8 +134,11 @@ export function useLazyActivation(): Result {
       isPressedRef.current = false;
       isTouchGestureRef.current = false;
     },
-    onFocus: () => {
-      typeRef.current = typeRef.current ?? 'focus';
+    onFocus: (event: React.FocusEvent) => {
+      if (typeRef.current === null) {
+        typeRef.current = 'focus';
+        focusPathRef.current = getNodePath(event.currentTarget, event.target as Node);
+      }
       // during a press/touch gesture the focus event arrives mid-sequence — wait for the click
       if (!isPressedRef.current && !isTouchGestureRef.current) {
         schedule(0);

@@ -4,7 +4,7 @@ import React from 'react';
 import { test, expect } from 'playwright/lib';
 import { Skeleton } from 'toolkit/chakra/skeleton';
 import { Tooltip } from 'toolkit/chakra/tooltip';
-import { TooltipClickStory } from 'toolkit/chakra/TooltipClickStory';
+import { TooltipClickStory, TooltipControlledStory, TooltipMountCountStory } from 'toolkit/chakra/TooltipClickStory';
 import { TruncatedText } from 'toolkit/components/truncation/TruncatedText';
 
 test.use({ viewport: { width: 300, height: 200 } });
@@ -47,6 +47,73 @@ test('disabled tooltip never mounts', async({ render, page }) => {
   await expect(page.locator(POSITIONER)).toHaveCount(0);
 });
 
+// failure mode: lazyMount={ false } ignored, so content (nav sub-links) is missing from the DOM until hovered
+test('lazyMount false keeps the content in the DOM before any interaction', async({ render, page }) => {
+  await render(<Tooltip content="tip text" lazyMount={ false }><button>trigger</button></Tooltip>);
+  await expect(page.locator(POSITIONER)).toHaveCount(1);
+  await expect(page.getByText('tip text')).toHaveCount(1);
+});
+
+// failure mode: focus lands on a button inside a container trigger, the swap destroys it and focus falls to body
+test('keyboard focus on a descendant of the trigger survives the activation', async({ render, page }) => {
+  await render(<Tooltip content="tip text"><div><button>inner button</button></div></Tooltip>);
+
+  await page.keyboard.press('Tab');
+  await expect(page.getByText('inner button')).toBeFocused();
+  await expect(page.getByText('tip text')).toBeVisible();
+  await expect(page.getByText('inner button')).toBeFocused();
+});
+
+// failure mode: the first tap lands on the swapped-out node and the tooltip opens only on the second tap
+test.describe('touch', () => {
+  test.use({ hasTouch: true });
+
+  test('opens on the first tap', async({ render, page }) => {
+    await render(<Tooltip content="tip text"><button>trigger</button></Tooltip>);
+    await page.getByText('trigger').tap();
+    await expect(page.getByText('tip text')).toBeVisible();
+  });
+});
+
+// failure mode: a tooltip disabled on mobile still swaps (remounts) its trigger on tap
+test('disableOnMobile never remounts the trigger', async({ render, page }) => {
+  await render(<TooltipMountCountStory disableOnMobile/>);
+  await expect(page.getByText('mounts: 1')).toBeVisible();
+
+  await page.getByText('trigger').hover();
+  await page.getByText('trigger').click();
+  await page.waitForTimeout(400);
+  await expect(page.getByText('mounts: 1')).toBeVisible();
+  await expect(page.locator(POSITIONER)).toHaveCount(0);
+});
+
+// failure mode: a popover trigger wrapped in a lazy tooltip is swapped out mid-click and the popover loses its anchor
+test('eager tooltip never swaps its trigger', async({ render, page }) => {
+  await render(<TooltipMountCountStory eager/>);
+  await page.getByText('trigger').hover();
+  await expect(page.getByText('tip text')).toBeVisible();
+  await expect(page.getByText('mounts: 1')).toBeVisible();
+});
+
+// failure mode: a controlled tooltip that starts closed never shows when the caller opens it later
+test('controlled tooltip starting closed opens when the caller opens it', async({ render, page }) => {
+  await render(<TooltipControlledStory/>);
+  await expect(page.locator(POSITIONER)).toHaveCount(0);
+
+  await page.getByText('open it').click();
+  await expect(page.getByText('tip text')).toBeVisible();
+});
+
+// failure mode: pointer leaves the swapped node within openDelay and the tooltip sticks open
+test('leaving right after the first hover does not leave the tooltip open', async({ render, page }) => {
+  await render(<Tooltip content="tip text"><button>trigger</button></Tooltip>);
+
+  await page.getByText('trigger').hover();
+  await page.mouse.move(250, 180);
+  await page.waitForTimeout(600);
+  await expect(page.getByText('tip text')).toBeHidden();
+});
+
 test('skeleton row keeps its box, loading and idle', async({ render, page }) => {
   await render(
     <Box display="flex" flexDirection="column" gap={ 2 }>
@@ -85,4 +152,26 @@ test('truncated text shows its tooltip on hover only when truncated', async({ re
 
   await page.getByText(/a very long/).hover();
   await expect(page.getByRole('tooltip')).toBeVisible();
+});
+
+// the rest of the specs run at 300px, i.e. the mobile branch; cover the desktop one too
+test.describe('desktop viewport', () => {
+  test.use({ viewport: { width: 1280, height: 300 } });
+
+  test('opens on hover and on descendant focus', async({ render, page }) => {
+    await render(
+      <Box display="flex" gap={ 4 }>
+        <Tooltip content="hover tip"><button>hover me</button></Tooltip>
+        <Tooltip content="focus tip"><div><button>inner button</button></div></Tooltip>
+      </Box>,
+    );
+
+    await page.getByText('hover me').hover();
+    await expect(page.getByText('hover tip')).toBeVisible();
+
+    await page.getByText('hover me').focus();
+    await page.keyboard.press('Tab');
+    await expect(page.getByText('inner button')).toBeFocused();
+    await expect(page.getByText('focus tip')).toBeVisible();
+  });
 });

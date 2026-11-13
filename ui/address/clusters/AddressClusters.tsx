@@ -72,7 +72,7 @@ const AddressClusters = ({ query, addressHash }: Props) => {
 
   return (
     <PopoverRoot>
-      <Tooltip content="List of clusters registered to this address" disableOnMobile>
+      <Tooltip eager content="List of clusters registered to this address" disableOnMobile>
         <div>
           <PopoverTrigger>
             <Button

@@ -5,7 +5,8 @@ import * as React from 'react';
 import config from 'configs/app';
 import useIsMobile from 'lib/hooks/useIsMobile';
 
-import { useLazyActivation } from '../hooks/useLazyActivation';
+import type { LazyActivation } from '../hooks/useLazyActivation';
+import { resolveNodePath, useLazyActivation } from '../hooks/useLazyActivation';
 
 export interface TooltipProps extends ChakraTooltip.RootProps {
   selected?: boolean;
@@ -17,12 +18,15 @@ export interface TooltipProps extends ChakraTooltip.RootProps {
   triggerProps?: ChakraTooltip.TriggerProps;
   disabled?: boolean;
   disableOnMobile?: boolean;
+  // mount the tooltip machine right away instead of on first interaction; needed when the trigger
+  // wraps a popover trigger or other element that must not be swapped out while a click is handled
+  eager?: boolean;
 }
 
 interface TooltipImplProps extends TooltipProps {
   innerRef: React.ForwardedRef<HTMLDivElement>;
   // how the lazily mounted tooltip was activated; undefined when mounted for other reasons
-  activation?: 'pointer' | 'focus';
+  activation?: LazyActivation;
 }
 
 const TooltipImpl = (props: TooltipImplProps) => {
@@ -111,15 +115,23 @@ const TooltipImpl = (props: TooltipImplProps) => {
     if (!activation) {
       return;
     }
-    if (activation === 'focus') {
-      triggerNodeRef.current?.focus({ preventScroll: true });
+    if (activation.type === 'focus') {
+      // the focused element (the trigger itself or a descendant) was re-created by the swap
+      const focusTarget = resolveNodePath(triggerNodeRef.current, activation.focusPath) ?? triggerNodeRef.current;
+      (focusTarget as HTMLElement | null)?.focus?.({ preventScroll: true });
+    }
+    if (activation.clicked && isMobile) {
+      // a tap landed on the node that was swapped out: its click never reached the new trigger
+      setOpen(true);
+      onOpenChange?.({ open: true });
+      return;
     }
     const timeoutId = window.setTimeout(() => {
       const node = triggerNodeRef.current;
       if (!node) {
         return;
       }
-      const isStillActive = activation === 'pointer' ? node.matches(':hover') : node.contains(document.activeElement);
+      const isStillActive = activation.type === 'pointer' ? node.matches(':hover') : node.contains(document.activeElement);
       if (isStillActive) {
         setOpen(true);
         onOpenChange?.({ open: true });
@@ -204,16 +216,18 @@ const TooltipImpl = (props: TooltipImplProps) => {
 // handlers, see useLazyActivation); the real tooltip is mounted on demand and opened manually.
 // Once mounted (or opened externally) it stays mounted.
 export const Tooltip = React.forwardRef<HTMLDivElement, TooltipProps>(
-  function Tooltip(props, ref) {
+  function Tooltip({ eager, ...props }, ref) {
     const { activation, handlers } = useLazyActivation();
     const isMountedRef = React.useRef(false);
+    const isMobile = useIsMobile();
 
-    // controlled or default-open tooltips cannot defer mounting
-    if (props.open ?? props.defaultOpen) {
+    // controlled or default-open tooltips cannot defer mounting, nor can the ones whose
+    // content must be in the DOM from the start (e.g. nav sub-links that crawlers should see)
+    if (eager || (props.open ?? props.defaultOpen) || props.lazyMount === false) {
       isMountedRef.current = true;
     }
 
-    if (props.disabled) {
+    if (props.disabled || (props.disableOnMobile && isMobile)) {
       return props.children;
     }
 
@@ -248,6 +262,6 @@ export const Tooltip = React.forwardRef<HTMLDivElement, TooltipProps>(
     }
 
     isMountedRef.current = true;
-    return <TooltipImpl { ...props } innerRef={ ref } activation={ activation?.type }/>;
+    return <TooltipImpl { ...props } innerRef={ ref } activation={ activation ?? undefined }/>;
   },
 );

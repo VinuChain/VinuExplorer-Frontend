@@ -18,7 +18,7 @@ const VerifyWith = ({ className, links, label, longText, shortText }: Props) => 
 
   return (
     <PopoverRoot>
-      <Tooltip content={ label } disableOnMobile>
+      <Tooltip eager content={ label } disableOnMobile>
         <Box className={ className }>
           <PopoverTrigger>
             <Button

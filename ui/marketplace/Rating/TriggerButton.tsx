@@ -34,7 +34,7 @@ const TriggerButton = (
   const isMobile = useIsMobile();
 
   return (
-    <Tooltip
+    <Tooltip eager
       content={ getTooltipText(canRate) }
       closeOnClick={ Boolean(canRate) || isMobile }
       disableOnMobile={ canRate }

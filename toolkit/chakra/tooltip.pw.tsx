@@ -75,8 +75,7 @@ test.describe('touch', () => {
   });
 });
 
-// failure mode: the lazily mounted tooltip re-reads the breakpoint, gets the SSR fallback (desktop) on a phone,
-// and skips the tap force-open; dispatchEvent clicks without leaving the trigger in :hover
+// guard: a click activation on a phone opens the tooltip even without :hover (dispatchEvent leaves no hover)
 test('mobile: a click activation force-opens the tooltip without hover', async({ render, page }) => {
   await render(<Tooltip content="tip text"><button>trigger</button></Tooltip>);
   await page.getByText('trigger').dispatchEvent('click');

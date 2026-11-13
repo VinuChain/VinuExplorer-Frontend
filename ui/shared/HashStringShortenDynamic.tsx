@@ -48,12 +48,13 @@ const HashStringShortenDynamic = ({ hash, fontWeight = '400', noTooltip, tailLen
     const measure = getMeasurer(parent);
     let parentWidth = getUntransformedWidth(parent);
 
-    // hidden parent (width 0) or no canvas: keep the full hash, same as the old DOM-based measurement did
-    if (!measure || !parentWidth) {
+    // no canvas (SSR, jsdom): keep the full hash
+    if (!measure) {
       setDisplayedString(hash);
       return;
     }
 
+    // a hidden parent (width 0) falls through to the search and gets the shortest form, same as the old DOM-based measurement
     const hashWidth = measure(hash);
     if (hashWidth > parentWidth) {
       // a parent sized by its content (for example an already shortened hash) grows when the full hash is added,

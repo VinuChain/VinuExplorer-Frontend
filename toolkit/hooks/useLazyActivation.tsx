@@ -36,6 +36,8 @@ export function resolveNodePath(root: Node | null, path: Array<number>): Node | 
 
 interface Result {
   activation: LazyActivation | null;
+  // forget the activation and any gesture state; the next interaction activates again
+  reset: () => void;
   handlers: {
     onPointerEnter: (event: React.PointerEvent) => void;
     onPointerDown: (event: React.PointerEvent) => void;
@@ -107,6 +109,16 @@ export function useLazyActivation(): Result {
     };
   }, []);
 
+  const reset = React.useCallback(() => {
+    cancel();
+    typeRef.current = null;
+    clickedRef.current = false;
+    focusPathRef.current = [];
+    isPressedRef.current = false;
+    isTouchGestureRef.current = false;
+    setActivation(null);
+  }, [ cancel ]);
+
   const handlers = React.useMemo(() => ({
     onPointerEnter: (event: React.PointerEvent) => {
       typeRef.current = typeRef.current ?? 'pointer';
@@ -118,6 +130,12 @@ export function useLazyActivation(): Result {
     },
     onPointerDown: (event: React.PointerEvent) => {
       isPressedRef.current = true;
+      // the press can be released outside the trigger, where none of its handlers see the pointerup
+      const release = () => {
+        isPressedRef.current = false;
+      };
+      document.addEventListener('pointerup', release, { once: true });
+      document.addEventListener('pointercancel', release, { once: true });
       if (event.pointerType !== 'mouse') {
         isTouchGestureRef.current = true;
       }
@@ -154,5 +172,5 @@ export function useLazyActivation(): Result {
     },
   }), [ schedule, cancel ]);
 
-  return { activation, handlers };
+  return { activation, handlers, reset };
 }

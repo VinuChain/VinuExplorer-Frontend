@@ -27,12 +27,16 @@ interface TooltipImplProps extends TooltipProps {
   innerRef: React.ForwardedRef<HTMLDivElement>;
   // how the lazily mounted tooltip was activated; undefined when mounted for other reasons
   activation?: LazyActivation;
+  // the breakpoint as settled in the always-mounted lazy wrapper; a hook call here would start from
+  // the SSR fallback on its first render, which is wrong for the activation handling below
+  isMobile: boolean;
 }
 
 const TooltipImpl = (props: TooltipImplProps) => {
   const {
     innerRef,
     activation,
+    isMobile,
     showArrow: showArrowProp,
     onOpenChange,
     variant,
@@ -56,8 +60,6 @@ const TooltipImpl = (props: TooltipImplProps) => {
 
   const [ open, setOpen ] = React.useState<boolean>(defaultOpen);
   const timeoutRef = React.useRef<number | null>(null);
-
-  const isMobile = useIsMobile();
 
   const handleOpenChange = React.useCallback((details: { open: boolean }) => {
     setOpen(details.open);
@@ -217,9 +219,9 @@ const TooltipImpl = (props: TooltipImplProps) => {
 // Once mounted (or opened externally) it stays mounted.
 export const Tooltip = React.forwardRef<HTMLDivElement, TooltipProps>(
   function Tooltip({ eager, ...props }, ref) {
-    const { activation, handlers } = useLazyActivation();
+    const { activation, handlers, reset: resetActivation } = useLazyActivation();
     const isMountedRef = React.useRef(false);
-    const isMobile = useIsMobile();
+    const isMobile = Boolean(useIsMobile());
 
     // controlled or default-open tooltips cannot defer mounting, nor can the ones whose
     // content must be in the DOM from the start (e.g. nav sub-links that crawlers should see)
@@ -227,7 +229,18 @@ export const Tooltip = React.forwardRef<HTMLDivElement, TooltipProps>(
       isMountedRef.current = true;
     }
 
-    if (props.disabled || (props.disableOnMobile && isMobile)) {
+    const isDisabled = Boolean(props.disabled || (props.disableOnMobile && isMobile));
+
+    // a disabled tooltip forgets its activation, otherwise re-enabling would replay it
+    // (e.g. re-focus the trigger and steal focus from wherever the user went meanwhile)
+    React.useEffect(() => {
+      if (isDisabled) {
+        isMountedRef.current = false;
+        resetActivation();
+      }
+    }, [ isDisabled, resetActivation ]);
+
+    if (isDisabled) {
       return props.children;
     }
 
@@ -262,6 +275,6 @@ export const Tooltip = React.forwardRef<HTMLDivElement, TooltipProps>(
     }
 
     isMountedRef.current = true;
-    return <TooltipImpl { ...props } innerRef={ ref } activation={ activation ?? undefined }/>;
+    return <TooltipImpl { ...props } innerRef={ ref } activation={ activation ?? undefined } isMobile={ isMobile }/>;
   },
 );

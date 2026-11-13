@@ -4,7 +4,7 @@ import React from 'react';
 import { test, expect } from 'playwright/lib';
 import { Skeleton } from 'toolkit/chakra/skeleton';
 import { Tooltip } from 'toolkit/chakra/tooltip';
-import { TooltipClickStory, TooltipControlledStory, TooltipMountCountStory } from 'toolkit/chakra/TooltipClickStory';
+import { TooltipClickStory, TooltipControlledStory, TooltipMountCountStory, TooltipToggleStory } from 'toolkit/chakra/TooltipClickStory';
 import { TruncatedText } from 'toolkit/components/truncation/TruncatedText';
 
 test.use({ viewport: { width: 300, height: 200 } });
@@ -173,5 +173,53 @@ test.describe('desktop viewport', () => {
     await page.keyboard.press('Tab');
     await expect(page.getByText('inner button')).toBeFocused();
     await expect(page.getByText('focus tip')).toBeVisible();
+  });
+
+  // failure mode: the lazily mounted tooltip re-reads the breakpoint on its first render, gets the SSR
+  // fallback (mobile), renders raw children, and keyboard focus drops to the body
+  test('disableOnMobile tooltip keeps keyboard focus and opens on desktop', async({ render, page }) => {
+    await render(<Tooltip content="tip text" disableOnMobile><button>trigger</button></Tooltip>);
+
+    await page.keyboard.press('Tab');
+    await expect(page.getByText('trigger')).toBeFocused();
+    await expect(page.getByText('tip text')).toBeVisible();
+    await expect(page.getByText('trigger')).toBeFocused();
+  });
+
+  // failure mode: a click that activates the tooltip is treated as a tap on desktop and force-opens it
+  test('a click without hover does not force-open the tooltip on desktop', async({ render, page }) => {
+    await render(<Tooltip content="tip text" disableOnMobile><button>trigger</button></Tooltip>);
+
+    await page.getByText('trigger').dispatchEvent('click');
+    await page.waitForTimeout(600);
+    await expect(page.getByText('tip text')).toBeHidden();
+  });
+
+  // failure mode: activation is never reset, so re-enabling replays the old focus activation and steals focus
+  test('re-enabling a tooltip does not steal focus', async({ render, page }) => {
+    await render(<TooltipToggleStory/>);
+
+    await page.keyboard.press('Tab');
+    await expect(page.getByText('trigger')).toBeFocused();
+    await expect(page.getByText('tip text')).toBeVisible();
+
+    await page.getByText('toggle').click();
+    await page.getByLabel('other input').click();
+    await expect(page.getByLabel('other input')).toBeFocused();
+
+    await page.getByText('toggle').click();
+    await page.waitForTimeout(400);
+    await expect(page.getByText('toggle')).toBeFocused();
+  });
+
+  // failure mode: a press released outside the trigger leaves the pressed flag set, so hover never activates the tooltip
+  test('press released outside the trigger does not block later hover activation', async({ render, page }) => {
+    await render(<Tooltip content="tip text"><button>trigger</button></Tooltip>);
+
+    await page.getByText('trigger').dispatchEvent('pointerdown', { pointerType: 'mouse', bubbles: true });
+    await page.evaluate(() => document.body.dispatchEvent(new PointerEvent('pointerup', { bubbles: true, pointerType: 'mouse' })));
+
+    await page.getByText('trigger').hover();
+    await expect(page.getByText('tip text')).toBeVisible();
   });
 });

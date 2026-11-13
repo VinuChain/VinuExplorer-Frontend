@@ -39,3 +39,16 @@ export const TooltipMountCountStory = ({ disableOnMobile, eager }: { disableOnMo
     </>
   );
 };
+
+// test story: a tooltip that the caller disables and re-enables while focus moves elsewhere
+export const TooltipToggleStory = () => {
+  const [ disabled, setDisabled ] = React.useState(false);
+  const handleToggle = React.useCallback(() => setDisabled((value) => !value), []);
+  return (
+    <>
+      <Tooltip content="tip text" disabled={ disabled }><button>trigger</button></Tooltip>
+      <input aria-label="other input"/>
+      <button onClick={ handleToggle }>toggle</button>
+    </>
+  );
+};

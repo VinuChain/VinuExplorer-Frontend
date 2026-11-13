@@ -75,6 +75,14 @@ test.describe('touch', () => {
   });
 });
 
+// failure mode: the lazily mounted tooltip re-reads the breakpoint, gets the SSR fallback (desktop) on a phone,
+// and skips the tap force-open; dispatchEvent clicks without leaving the trigger in :hover
+test('mobile: a click activation force-opens the tooltip without hover', async({ render, page }) => {
+  await render(<Tooltip content="tip text"><button>trigger</button></Tooltip>);
+  await page.getByText('trigger').dispatchEvent('click');
+  await expect(page.getByText('tip text')).toBeVisible();
+});
+
 // failure mode: a tooltip disabled on mobile still swaps (remounts) its trigger on tap
 test('disableOnMobile never remounts the trigger', async({ render, page }) => {
   await render(<TooltipMountCountStory disableOnMobile/>);
@@ -175,8 +183,7 @@ test.describe('desktop viewport', () => {
     await expect(page.getByText('focus tip')).toBeVisible();
   });
 
-  // failure mode: the lazily mounted tooltip re-reads the breakpoint on its first render, gets the SSR
-  // fallback (mobile), renders raw children, and keyboard focus drops to the body
+  // guard: the lazily mounted tooltip must use the settled breakpoint, so keyboard focus stays on the trigger
   test('disableOnMobile tooltip keeps keyboard focus and opens on desktop', async({ render, page }) => {
     await render(<Tooltip content="tip text" disableOnMobile><button>trigger</button></Tooltip>);
 

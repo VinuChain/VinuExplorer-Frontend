@@ -133,9 +133,11 @@ export function useLazyActivation(): Result {
       // the press can be released outside the trigger, where none of its handlers see the pointerup
       const release = () => {
         isPressedRef.current = false;
+        document.removeEventListener('pointerup', release);
+        document.removeEventListener('pointercancel', release);
       };
-      document.addEventListener('pointerup', release, { once: true });
-      document.addEventListener('pointercancel', release, { once: true });
+      document.addEventListener('pointerup', release);
+      document.addEventListener('pointercancel', release);
       if (event.pointerType !== 'mouse') {
         isTouchGestureRef.current = true;
       }

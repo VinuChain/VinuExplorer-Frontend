@@ -108,13 +108,12 @@ test('rejected row with reject reason wraps badge in tooltip', async({ render, m
   );
 
   const component = await render(<PublicTagApplicationsList/>);
-  // Wait for real data — only real row has 'Rejected'
-  const badge = component.getByText('Rejected').first();
+  // the status filter button has the same text, so target the row badge by its label
+  const badge = component.locator(`[aria-label="Rejected: ${ reason }"]:visible`).first();
   await expect(badge).toBeVisible();
-  // The Tooltip component renders with data-scope="tooltip" on the root element
-  // and the content is lazy-mounted; assert the tooltip root wraps the badge
-  const tooltipRoot = component.locator('[data-scope="tooltip"]').first();
-  await expect(tooltipRoot).toBeAttached();
+  // the tooltip is mounted lazily on the first interaction, so hover the badge to see the reject reason
+  await badge.hover();
+  await expect(component.page().getByText(reason)).toBeVisible();
 });
 
 test('pagination visible when next_page_params is set', async({ render, mockApiResponse }) => {

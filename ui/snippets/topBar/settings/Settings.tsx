@@ -35,7 +35,7 @@ const Settings = () => {
       // should be false to enable auto-switch to default color theme
       lazyMount={ false }
     >
-      <Tooltip content="Website settings" disableOnMobile open={ tooltip.open } onOpenChange={ handleTooltipOpenChange }>
+      <Tooltip eager content="Website settings" disableOnMobile open={ tooltip.open } onOpenChange={ handleTooltipOpenChange }>
         <Flex alignItems="center">
           <PopoverTrigger>
             <IconButton

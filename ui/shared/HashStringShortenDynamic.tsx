@@ -45,34 +45,48 @@ const HashStringShortenDynamic = ({ hash, fontWeight = '400', noTooltip, tailLen
       return;
     }
 
-    const shadowEl = document.createElement('span');
-    shadowEl.style.opacity = '0';
-    parent.appendChild(shadowEl);
-    shadowEl.textContent = hash;
+    const measure = getMeasurer(parent);
+    let parentWidth = getUntransformedWidth(parent);
 
-    const parentWidth = getWidth(parent);
-
-    if (getWidth(shadowEl) > parentWidth) {
-      const tail = hash.slice(-tailLength);
-      let leftI = HEAD_MIN_LENGTH;
-      let rightI = hash.length - tailLength;
-
-      while (rightI - leftI > 1) {
-        const medI = ((rightI - leftI) % 2) ? leftI + (rightI - leftI + 1) / 2 : leftI + (rightI - leftI) / 2;
-        const res = hash.slice(0, medI) + '...' + tail;
-        shadowEl.textContent = res;
-        if (getWidth(shadowEl) < parentWidth) {
-          leftI = medI;
-        } else {
-          rightI = medI;
-        }
-      }
-      setDisplayedString(hash.slice(0, rightI - 1) + '...' + tail);
-    } else {
+    // no canvas (SSR, jsdom): keep the full hash
+    if (!measure) {
       setDisplayedString(hash);
+      return;
     }
 
-    parent.removeChild(shadowEl);
+    // a hidden parent (width 0) falls through to the search and gets the shortest form, same as the old DOM-based measurement
+    const hashWidth = measure(hash);
+    if (hashWidth > parentWidth) {
+      // a parent sized by its content (for example an already shortened hash) grows when the full hash is added,
+      // and the old measurement judged the fit against that grown width. This is the only DOM write and costs
+      // one layout; it is skipped whenever the hash already fits.
+      const shadowEl = document.createElement('span');
+      shadowEl.style.opacity = '0';
+      shadowEl.textContent = hash;
+      parent.appendChild(shadowEl);
+      parentWidth = getUntransformedWidth(parent);
+      parent.removeChild(shadowEl);
+    }
+
+    if (hashWidth <= parentWidth) {
+      setDisplayedString(hash);
+      return;
+    }
+
+    const tail = hash.slice(-tailLength);
+    let leftI = HEAD_MIN_LENGTH;
+    let rightI = hash.length - tailLength;
+
+    while (rightI - leftI > 1) {
+      const medI = ((rightI - leftI) % 2) ? leftI + (rightI - leftI + 1) / 2 : leftI + (rightI - leftI) / 2;
+      const res = hash.slice(0, medI) + '...' + tail;
+      if (measure(res) < parentWidth) {
+        leftI = medI;
+      } else {
+        rightI = medI;
+      }
+    }
+    setDisplayedString(hash.slice(0, rightI - 1) + '...' + tail);
   }, [ hash, tailLength ]);
 
   // we want to do recalculation when isFontFaceLoaded flag is changed
@@ -113,8 +127,42 @@ const HashStringShortenDynamic = ({ hash, fontWeight = '400', noTooltip, tailLen
   return content;
 };
 
-function getWidth(el: HTMLElement) {
-  return el.getBoundingClientRect().width;
+let canvasContext: CanvasRenderingContext2D | null | undefined;
+
+// returns a text width function in the parent's font, or null when there is no canvas (SSR, jsdom)
+// measuring on a canvas does not touch the DOM, so it never forces a layout
+function getMeasurer(parent: HTMLElement) {
+  if (canvasContext === undefined) {
+    try {
+      canvasContext = typeof document === 'undefined' ? null : document.createElement('canvas').getContext('2d');
+    } catch {
+      canvasContext = null;
+    }
+  }
+  const ctx = canvasContext;
+  if (!ctx) {
+    return null;
+  }
+
+  const style = getComputedStyle(parent);
+  ctx.font = `${ style.fontStyle } ${ style.fontWeight } ${ style.fontSize } ${ style.fontFamily }`;
+  const letterSpacing = parseFloat(style.letterSpacing) || 0; // 'normal' parses to NaN
+
+  // the app turns contextual alternates off (globalCss) but a canvas cannot, and Inter turns the x in any digit-x-digit
+  // run into a wider "×". Cutting the text on both sides of every x that touches a digit keeps that alternate away,
+  // while the rest stays in one piece so kerning (and the sub-pixel fit decisions that depend on it) is unchanged
+  const width = (text: string) => ctx.measureText(text).width;
+  const segmentedWidth = (text: string) => text.split(/(?<=\d)(?=x)|(?<=x)(?=\d)/).reduce((sum, piece) => sum + width(piece), 0);
+  const noContextual = style.fontVariantLigatures.includes('no-contextual');
+
+  return (text: string) => (noContextual ? segmentedWidth(text) : width(text)) + letterSpacing * text.length;
+}
+
+// getBoundingClientRect includes css transforms (for example a popover scaling in), canvas widths do not
+function getUntransformedWidth(el: HTMLElement) {
+  const { width } = el.getBoundingClientRect();
+  const layoutWidth = el.offsetWidth;
+  return layoutWidth > 0 && Math.abs(width - layoutWidth) > 1 ? layoutWidth : width; // width / (width / layoutWidth)
 }
 
 export default React.memo(HashStringShortenDynamic);

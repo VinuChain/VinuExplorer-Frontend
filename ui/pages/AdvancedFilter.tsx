@@ -77,13 +77,13 @@ const AdvancedFilter = () => {
     });
   });
 
-  const [ columns, setColumns ] = React.useState<Record<ColumnsIds, boolean>>(
-    () => getColumnsFromQuery(getQueryParamString(router.query[HIDE_COLUMNS_PARAM])),
-  );
+  // The URL is the only source of truth for visible columns, so Back/Forward
+  // and shared links always match what is on screen.
+  const hiddenColumnsParam = getQueryParamString(router.query[HIDE_COLUMNS_PARAM]);
+  const columns = React.useMemo(() => getColumnsFromQuery(hiddenColumnsParam), [ hiddenColumnsParam ]);
   const onColumnsChange = React.useCallback((next: Record<ColumnsIds, boolean>) => {
-    // the checkbox group only reports checked ids; fill the rest as hidden
+    // the checkbox group only reports checked ids; the rest are hidden
     const full = Object.fromEntries(TABLE_COLUMNS.map((c) => [ c.id, Boolean(next[c.id]) ])) as Record<ColumnsIds, boolean>;
-    setColumns(full);
     const query = { ...router.query };
     const hidden = getHiddenColumnsQuery(full);
     if (hidden) {

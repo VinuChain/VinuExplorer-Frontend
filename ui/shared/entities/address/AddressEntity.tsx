@@ -11,6 +11,7 @@ import { useSettingsContext } from 'lib/contexts/settings';
 import { Image } from 'toolkit/chakra/image';
 import { Skeleton } from 'toolkit/chakra/skeleton';
 import { Tooltip } from 'toolkit/chakra/tooltip';
+import { ZERO_ADDRESS } from 'toolkit/utils/consts';
 import * as EntityBase from 'ui/shared/entities/base/components';
 import FittedTagName from 'ui/shared/EntityTags/FittedTagName';
 import { getCategoryLabel, getTagName } from 'ui/shared/EntityTags/utils';
@@ -76,6 +77,19 @@ const Icon = (props: IconProps) => {
 
   if (props.isLoading) {
     return <Skeleton { ...styles } loading borderRadius="full" flexShrink={ 0 }/>;
+  }
+
+  if (props.address.hash.toLowerCase() === ZERO_ADDRESS) {
+    return (
+      <EntityBase.Icon
+        { ...props }
+        shield={ shield }
+        name="flame"
+        color="orange.500"
+        borderRadius={ 0 }
+        hint={ 'Null address (burn)' + hintPostfix }
+      />
+    );
   }
 
   const isDelegatedAddress = props.address.proxy_type === 'eip7702';

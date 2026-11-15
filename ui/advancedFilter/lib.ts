@@ -112,13 +112,16 @@ export function getFilterTags(filters: AdvancedFilterParams) {
   }).filter(Boolean);
 }
 
-// With both From and To set, people expect rows matching both. The API default
-// is OR, which lists every row matching either side, so pick AND until the
-// user chooses otherwise.
+// With different From and To addresses, people expect rows matching both. The
+// API default is OR, which lists rows matching either side, so pick AND until
+// the user chooses otherwise. The same address on both sides is the "involving
+// X" link from address pages and must stay OR. Exclude lists behave the same
+// under AND and OR, so they are ignored here.
 export function withDefaultAddressRelation(filters: AdvancedFilterParams): AdvancedFilterParams {
-  const hasFrom = Boolean(filters.from_address_hashes_to_include?.length || filters.from_address_hashes_to_exclude?.length);
-  const hasTo = Boolean(filters.to_address_hashes_to_include?.length || filters.to_address_hashes_to_exclude?.length);
-  if (hasFrom && hasTo && !filters.address_relation) {
+  const from = filters.from_address_hashes_to_include?.map((h) => h.toLowerCase()) ?? [];
+  const to = filters.to_address_hashes_to_include?.map((h) => h.toLowerCase()) ?? [];
+  const sameSet = from.length === to.length && from.every((h) => to.includes(h));
+  if (from.length && to.length && !sameSet && !filters.address_relation) {
     return { ...filters, address_relation: 'and' };
   }
   return filters;

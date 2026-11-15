@@ -23,4 +23,14 @@ describe('withDefaultAddressRelation', () => {
   it('leaves a single-sided filter alone', () => {
     expect(withDefaultAddressRelation({ to_address_hashes_to_include: [ B ] }).address_relation).toBeUndefined();
   });
+
+  it('keeps OR for "involving X" links that pass the same address on both sides', () => {
+    const r = withDefaultAddressRelation({ from_address_hashes_to_include: [ A ], to_address_hashes_to_include: [ A ] });
+    expect(r.address_relation).toBeUndefined();
+  });
+
+  it('ignores exclude lists', () => {
+    const r = withDefaultAddressRelation({ from_address_hashes_to_include: [ A ], to_address_hashes_to_exclude: [ B ] });
+    expect(r.address_relation).toBeUndefined();
+  });
 });

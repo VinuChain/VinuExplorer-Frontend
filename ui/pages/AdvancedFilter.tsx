@@ -32,7 +32,7 @@ import { TABLE_COLUMNS } from 'ui/advancedFilter/constants';
 import ExportCSV from 'ui/advancedFilter/ExportCSV';
 import FilterByColumn from 'ui/advancedFilter/FilterByColumn';
 import ItemByColumn from 'ui/advancedFilter/ItemByColumn';
-import { getDurationFromAge, getFilterTags } from 'ui/advancedFilter/lib';
+import { getDurationFromAge, getFilterTags, withDefaultAddressRelation } from 'ui/advancedFilter/lib';
 import ActionBar from 'ui/shared/ActionBar';
 import DataListDisplay from 'ui/shared/DataListDisplay';
 import ChainIcon from 'ui/shared/externalChains/ChainIcon';
@@ -52,7 +52,7 @@ const AdvancedFilter = () => {
   const [ filters, setFilters ] = React.useState<AdvancedFilterParams>(() => {
     const age = getFilterValueFromQuery(ADVANCED_FILTER_AGES, router.query.age);
     const addressRelation = getFilterValueFromQuery(ADVANCED_FILTER_ADDRESS_RELATION, router.query.address_relation);
-    return {
+    return withDefaultAddressRelation({
       transaction_types: getFilterValuesFromQuery(ADVANCED_FILTER_TYPES, router.query.transaction_types),
       methods: getValuesArrayFromQuery(router.query.methods),
       methods_names: getValuesArrayFromQuery(router.query.methods_names),
@@ -70,7 +70,7 @@ const AdvancedFilter = () => {
       from_address_hashes_to_include: getValuesArrayFromQuery(router.query.from_address_hashes_to_include),
       to_address_hashes_to_exclude: getValuesArrayFromQuery(router.query.to_address_hashes_to_exclude),
       from_address_hashes_to_exclude: getValuesArrayFromQuery(router.query.from_address_hashes_to_exclude),
-    };
+    });
   });
 
   const [ columns, setColumns ] = React.useState<Record<ColumnsIds, boolean>>(COLUMNS_CHECKED);
@@ -128,9 +128,10 @@ const AdvancedFilter = () => {
 
   const handleFilterChange = React.useCallback(<T extends keyof AdvancedFilterParams>(field: T, val: AdvancedFilterParams[T]) => {
     setFilters(prevState => {
-      const newState = { ...prevState };
+      const next = { ...prevState };
 
-      newState[field] = val;
+      next[field] = val;
+      const newState = withDefaultAddressRelation(next);
       onFilterChange(newState.age ? omit(newState, [ 'age_from', 'age_to' ]) : newState);
       return newState;
     });

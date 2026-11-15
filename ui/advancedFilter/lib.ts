@@ -111,3 +111,15 @@ export function getFilterTags(filters: AdvancedFilterParams) {
     };
   }).filter(Boolean);
 }
+
+// With both From and To set, people expect rows matching both. The API default
+// is OR, which lists every row matching either side, so pick AND until the
+// user chooses otherwise.
+export function withDefaultAddressRelation(filters: AdvancedFilterParams): AdvancedFilterParams {
+  const hasFrom = Boolean(filters.from_address_hashes_to_include?.length || filters.from_address_hashes_to_exclude?.length);
+  const hasTo = Boolean(filters.to_address_hashes_to_include?.length || filters.to_address_hashes_to_exclude?.length);
+  if (hasFrom && hasTo && !filters.address_relation) {
+    return { ...filters, address_relation: 'and' };
+  }
+  return filters;
+}

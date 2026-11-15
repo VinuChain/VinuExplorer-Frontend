@@ -37,7 +37,7 @@ const ColumnsButton = ({ columns, onChange }: Props) => {
       <PopoverContent>
         <PopoverBody px={ 4 } py={ 6 } display="flex" flexDir="column" rowGap={ 5 }>
           <CheckboxGroup
-            defaultValue={ Object.keys(columns).filter((key) => columns[key as ColumnsIds]) }
+            value={ Object.keys(columns).filter((key) => columns[key as ColumnsIds]) }
             onValueChange={ handleValueChange }
             display="grid"
             gridTemplateColumns="160px 160px"

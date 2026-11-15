@@ -77,15 +77,24 @@ const AdvancedFilter = () => {
     });
   });
 
-  const [ columns, setColumns ] = React.useState<Record<ColumnsIds, boolean>>(
-    () => getColumnsFromQuery(getQueryParamString(router.query[HIDE_COLUMNS_PARAM])),
+  // The URL is the source of truth for visible columns, so Back/Forward and
+  // shared links match the screen. A click shows at once (optimistic) and the
+  // URL takes over again as soon as it changes, so quick clicks are not lost.
+  const hiddenColumnsParam = getQueryParamString(router.query[HIDE_COLUMNS_PARAM]);
+  const [ optimisticHidden, setOptimisticHidden ] = React.useState<string | null>(null);
+  React.useEffect(() => {
+    setOptimisticHidden(null);
+  }, [ hiddenColumnsParam ]);
+  const columns = React.useMemo(
+    () => getColumnsFromQuery(optimisticHidden ?? hiddenColumnsParam),
+    [ optimisticHidden, hiddenColumnsParam ],
   );
   const onColumnsChange = React.useCallback((next: Record<ColumnsIds, boolean>) => {
-    // the checkbox group only reports checked ids; fill the rest as hidden
+    // the checkbox group only reports checked ids; the rest are hidden
     const full = Object.fromEntries(TABLE_COLUMNS.map((c) => [ c.id, Boolean(next[c.id]) ])) as Record<ColumnsIds, boolean>;
-    setColumns(full);
-    const query = { ...router.query };
     const hidden = getHiddenColumnsQuery(full);
+    setOptimisticHidden(hidden ?? '');
+    const query = { ...router.query };
     if (hidden) {
       query[HIDE_COLUMNS_PARAM] = hidden;
     } else {

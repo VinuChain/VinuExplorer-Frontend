@@ -5,7 +5,8 @@ import type { AdvancedFilterAge, AdvancedFilterParams } from 'types/api/advanced
 import dayjs from 'lib/date/dayjs';
 import { HOUR, DAY, MONTH } from 'toolkit/utils/consts';
 
-import { ADVANCED_FILTER_TYPES } from './constants';
+import type { ColumnsIds } from './constants';
+import { ADVANCED_FILTER_TYPES, TABLE_COLUMNS } from './constants';
 
 export function getDurationFromAge(age: AdvancedFilterAge) {
   switch (age) {
@@ -125,4 +126,18 @@ export function withDefaultAddressRelation(filters: AdvancedFilterParams): Advan
     return { ...filters, address_relation: 'and' };
   }
   return filters;
+}
+
+// Column choices live in the URL as `hide_columns=fee,method` so a shared link
+// keeps them. Hidden (not visible) ids are stored, so the default URL stays clean.
+export const HIDE_COLUMNS_PARAM = 'hide_columns';
+
+export function getColumnsFromQuery(value: string | Array<string> | undefined): Record<ColumnsIds, boolean> {
+  const hidden = new Set((Array.isArray(value) ? value.join(',') : value || '').split(',').filter(Boolean));
+  return Object.fromEntries(TABLE_COLUMNS.map((c) => [ c.id, !hidden.has(c.id) ])) as Record<ColumnsIds, boolean>;
+}
+
+export function getHiddenColumnsQuery(columns: Record<ColumnsIds, boolean>): string | undefined {
+  const hidden = TABLE_COLUMNS.filter((c) => !columns[c.id]).map((c) => c.id);
+  return hidden.length ? hidden.join(',') : undefined;
 }

@@ -32,7 +32,14 @@ import { TABLE_COLUMNS } from 'ui/advancedFilter/constants';
 import ExportCSV from 'ui/advancedFilter/ExportCSV';
 import FilterByColumn from 'ui/advancedFilter/FilterByColumn';
 import ItemByColumn from 'ui/advancedFilter/ItemByColumn';
-import { getDurationFromAge, getFilterTags, withDefaultAddressRelation } from 'ui/advancedFilter/lib';
+import {
+  getColumnsFromQuery,
+  getDurationFromAge,
+  getFilterTags,
+  getHiddenColumnsQuery,
+  HIDE_COLUMNS_PARAM,
+  withDefaultAddressRelation,
+} from 'ui/advancedFilter/lib';
 import ActionBar from 'ui/shared/ActionBar';
 import DataListDisplay from 'ui/shared/DataListDisplay';
 import ChainIcon from 'ui/shared/externalChains/ChainIcon';
@@ -41,9 +48,6 @@ import PageTitle from 'ui/shared/Page/PageTitle';
 import Pagination from 'ui/shared/pagination/Pagination';
 import useQueryWithPages from 'ui/shared/pagination/useQueryWithPages';
 import TimeFormatToggle from 'ui/shared/time/TimeFormatToggle';
-
-const COLUMNS_CHECKED = {} as Record<ColumnsIds, boolean>;
-TABLE_COLUMNS.forEach(c => COLUMNS_CHECKED[c.id] = true);
 
 const AdvancedFilter = () => {
   const router = useRouter();
@@ -73,7 +77,22 @@ const AdvancedFilter = () => {
     });
   });
 
-  const [ columns, setColumns ] = React.useState<Record<ColumnsIds, boolean>>(COLUMNS_CHECKED);
+  const [ columns, setColumns ] = React.useState<Record<ColumnsIds, boolean>>(
+    () => getColumnsFromQuery(getQueryParamString(router.query[HIDE_COLUMNS_PARAM])),
+  );
+  const onColumnsChange = React.useCallback((next: Record<ColumnsIds, boolean>) => {
+    // the checkbox group only reports checked ids; fill the rest as hidden
+    const full = Object.fromEntries(TABLE_COLUMNS.map((c) => [ c.id, Boolean(next[c.id]) ])) as Record<ColumnsIds, boolean>;
+    setColumns(full);
+    const query = { ...router.query };
+    const hidden = getHiddenColumnsQuery(full);
+    if (hidden) {
+      query[HIDE_COLUMNS_PARAM] = hidden;
+    } else {
+      delete query[HIDE_COLUMNS_PARAM];
+    }
+    router.replace({ pathname: router.pathname, query }, undefined, { shallow: true });
+  }, [ router ]);
   const { data, isError, isLoading, pagination, onFilterChange, isPlaceholderData } = useQueryWithPages({
     resourceName: 'general:advanced_filter',
     filters,
@@ -249,7 +268,7 @@ const AdvancedFilter = () => {
   const actionBar = (
     <ActionBar mt={ -6 }>
       <ExportCSV filters={ filters }/>
-      <ColumnsButton columns={ columns } onChange={ setColumns }/>
+      <ColumnsButton columns={ columns } onChange={ onColumnsChange }/>
       <Pagination ml="auto" { ...pagination }/>
     </ActionBar>
   );

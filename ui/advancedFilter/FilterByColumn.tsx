@@ -72,7 +72,7 @@ const FilterByColumn = ({ column, filters, columnName, handleFilterChange, searc
           columnName="And/Or"
           isLoading={ isLoading }
           selected
-          w="106px"
+          w="320px"
           value={ filters.address_relation === 'and' ? 'AND' : 'OR' }
         >
           <AddressRelationFilter { ...commonProps } value={ filters.address_relation }/>

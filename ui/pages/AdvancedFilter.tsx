@@ -32,7 +32,14 @@ import { TABLE_COLUMNS } from 'ui/advancedFilter/constants';
 import ExportCSV from 'ui/advancedFilter/ExportCSV';
 import FilterByColumn from 'ui/advancedFilter/FilterByColumn';
 import ItemByColumn from 'ui/advancedFilter/ItemByColumn';
-import { getDurationFromAge, getFilterTags } from 'ui/advancedFilter/lib';
+import {
+  getColumnsFromQuery,
+  getDurationFromAge,
+  getFilterTags,
+  getHiddenColumnsQuery,
+  HIDE_COLUMNS_PARAM,
+  withDefaultAddressRelation,
+} from 'ui/advancedFilter/lib';
 import ActionBar from 'ui/shared/ActionBar';
 import DataListDisplay from 'ui/shared/DataListDisplay';
 import ChainIcon from 'ui/shared/externalChains/ChainIcon';
@@ -42,9 +49,6 @@ import Pagination from 'ui/shared/pagination/Pagination';
 import useQueryWithPages from 'ui/shared/pagination/useQueryWithPages';
 import TimeFormatToggle from 'ui/shared/time/TimeFormatToggle';
 
-const COLUMNS_CHECKED = {} as Record<ColumnsIds, boolean>;
-TABLE_COLUMNS.forEach(c => COLUMNS_CHECKED[c.id] = true);
-
 const AdvancedFilter = () => {
   const router = useRouter();
   const multichainContext = useMultichainContext();
@@ -52,7 +56,7 @@ const AdvancedFilter = () => {
   const [ filters, setFilters ] = React.useState<AdvancedFilterParams>(() => {
     const age = getFilterValueFromQuery(ADVANCED_FILTER_AGES, router.query.age);
     const addressRelation = getFilterValueFromQuery(ADVANCED_FILTER_ADDRESS_RELATION, router.query.address_relation);
-    return {
+    return withDefaultAddressRelation({
       transaction_types: getFilterValuesFromQuery(ADVANCED_FILTER_TYPES, router.query.transaction_types),
       methods: getValuesArrayFromQuery(router.query.methods),
       methods_names: getValuesArrayFromQuery(router.query.methods_names),
@@ -70,10 +74,25 @@ const AdvancedFilter = () => {
       from_address_hashes_to_include: getValuesArrayFromQuery(router.query.from_address_hashes_to_include),
       to_address_hashes_to_exclude: getValuesArrayFromQuery(router.query.to_address_hashes_to_exclude),
       from_address_hashes_to_exclude: getValuesArrayFromQuery(router.query.from_address_hashes_to_exclude),
-    };
+    });
   });
 
-  const [ columns, setColumns ] = React.useState<Record<ColumnsIds, boolean>>(COLUMNS_CHECKED);
+  const [ columns, setColumns ] = React.useState<Record<ColumnsIds, boolean>>(
+    () => getColumnsFromQuery(getQueryParamString(router.query[HIDE_COLUMNS_PARAM])),
+  );
+  const onColumnsChange = React.useCallback((next: Record<ColumnsIds, boolean>) => {
+    // the checkbox group only reports checked ids; fill the rest as hidden
+    const full = Object.fromEntries(TABLE_COLUMNS.map((c) => [ c.id, Boolean(next[c.id]) ])) as Record<ColumnsIds, boolean>;
+    setColumns(full);
+    const query = { ...router.query };
+    const hidden = getHiddenColumnsQuery(full);
+    if (hidden) {
+      query[HIDE_COLUMNS_PARAM] = hidden;
+    } else {
+      delete query[HIDE_COLUMNS_PARAM];
+    }
+    router.replace({ pathname: router.pathname, query }, undefined, { shallow: true });
+  }, [ router ]);
   const { data, isError, isLoading, pagination, onFilterChange, isPlaceholderData } = useQueryWithPages({
     resourceName: 'general:advanced_filter',
     filters,
@@ -128,9 +147,10 @@ const AdvancedFilter = () => {
 
   const handleFilterChange = React.useCallback(<T extends keyof AdvancedFilterParams>(field: T, val: AdvancedFilterParams[T]) => {
     setFilters(prevState => {
-      const newState = { ...prevState };
+      const next = { ...prevState };
 
-      newState[field] = val;
+      next[field] = val;
+      const newState = withDefaultAddressRelation(next);
       onFilterChange(newState.age ? omit(newState, [ 'age_from', 'age_to' ]) : newState);
       return newState;
     });
@@ -248,7 +268,7 @@ const AdvancedFilter = () => {
   const actionBar = (
     <ActionBar mt={ -6 }>
       <ExportCSV filters={ filters }/>
-      <ColumnsButton columns={ columns } onChange={ setColumns }/>
+      <ColumnsButton columns={ columns } onChange={ onColumnsChange }/>
       <Pagination ml="auto" { ...pagination }/>
     </ActionBar>
   );

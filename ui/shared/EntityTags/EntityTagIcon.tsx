@@ -13,7 +13,13 @@ interface Props {
   ignoreColor?: boolean;
 }
 
+// Tags that mark the null address show a flame, like the address itself.
+const BURN_TAG_NAMES = [ 'null address', 'burn' ];
+
 const EntityTagIcon = ({ data, ignoreColor }: Props) => {
+  if (BURN_TAG_NAMES.includes(data.name.trim().toLowerCase())) {
+    return <IconSvg name="flame" boxSize={ 3 } color="orange.500"/>;
+  }
 
   const iconColor = data.meta?.textColor && !ignoreColor ? data.meta.textColor : 'icon.secondary';
   const nameIconFallback = <IconSvg name="publictags_slim" boxSize={ 3 } color={ iconColor }/>;

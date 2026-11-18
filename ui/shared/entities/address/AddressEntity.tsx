@@ -11,7 +11,7 @@ import { useSettingsContext } from 'lib/contexts/settings';
 import { Image } from 'toolkit/chakra/image';
 import { Skeleton } from 'toolkit/chakra/skeleton';
 import { Tooltip } from 'toolkit/chakra/tooltip';
-import { ZERO_ADDRESS } from 'toolkit/utils/consts';
+import { DEAD_ADDRESS, ZERO_ADDRESS } from 'toolkit/utils/consts';
 import * as EntityBase from 'ui/shared/entities/base/components';
 import FittedTagName from 'ui/shared/EntityTags/FittedTagName';
 import { getCategoryLabel, getTagName } from 'ui/shared/EntityTags/utils';
@@ -79,7 +79,8 @@ const Icon = (props: IconProps) => {
     return <Skeleton { ...styles } loading borderRadius="full" flexShrink={ 0 }/>;
   }
 
-  if (props.address.hash.toLowerCase() === ZERO_ADDRESS) {
+  const hashLower = props.address.hash.toLowerCase();
+  if (hashLower === ZERO_ADDRESS || hashLower === DEAD_ADDRESS) {
     return (
       <EntityBase.Icon
         { ...props }
@@ -87,7 +88,7 @@ const Icon = (props: IconProps) => {
         name="flame"
         color="orange.500"
         borderRadius={ 0 }
-        hint={ 'Null address (burn)' + hintPostfix }
+        hint={ (hashLower === DEAD_ADDRESS ? 'Dead address (burn)' : 'Null address (burn)') + hintPostfix }
       />
     );
   }

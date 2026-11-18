@@ -69,6 +69,7 @@ const TokenHoldersTableItem = ({ holder, token, rank, isLoading }: Props) => {
           <Utilization
             value={ BigNumber(holder.value).div(BigNumber(token.total_supply)).dp(4).toNumber() }
             colorScheme="green"
+            labelPosition="left"
             display="inline-flex"
             isLoading={ isLoading }
           />

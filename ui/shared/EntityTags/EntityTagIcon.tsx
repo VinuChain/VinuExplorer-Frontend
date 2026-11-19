@@ -14,7 +14,7 @@ interface Props {
 }
 
 // Tags that mark the null address show a flame, like the address itself.
-const BURN_TAG_NAMES = [ 'null address', 'burn' ];
+const BURN_TAG_NAMES = [ 'null address', 'burn', 'token burn address' ];
 
 const EntityTagIcon = ({ data, ignoreColor }: Props) => {
   if (BURN_TAG_NAMES.includes(data.name.trim().toLowerCase())) {
